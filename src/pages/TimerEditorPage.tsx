@@ -1,8 +1,10 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { TYPE_LABELS } from '../config';
+import { withAlpha } from '../lib/color';
 import { newTimer } from '../lib/timerFactory';
 import { normalizeIntervals, validateIntervals } from '../lib/timerRules';
+import { useSettings } from '../services/settingsContext';
 import { TimerRepository } from '../services/storage';
 import type { Interval, IntervalType, Timer } from '../types';
 
@@ -23,6 +25,7 @@ const toDisplayNumber = (value: number): string =>
 export const TimerEditorPage = () => {
   const { id } = useParams();
   const navigate = useNavigate();
+  const { settings } = useSettings();
   const [draft, setDraft] = useState<Timer>(newTimer());
   const [loading, setLoading] = useState(Boolean(id));
 
@@ -135,8 +138,17 @@ export const TimerEditorPage = () => {
       </div>
 
       <div className="stack">
-        {draft.intervals.map((interval, index) => (
-          <article className="interval-edit" key={`${interval.sequence}-${index}`}>
+        {draft.intervals.map((interval, index) => {
+          const intervalColor = settings.intervalColors[interval.type];
+          return (
+          <article
+            className="interval-edit"
+            key={`${interval.sequence}-${index}`}
+            style={{
+              backgroundColor: withAlpha(intervalColor, 0.22),
+              borderColor: withAlpha(intervalColor, 0.72),
+            }}
+          >
             <div className="interval-edit-head">
               <strong>#{interval.sequence}</strong>
               <select value={interval.type} onChange={(e) => updateIntervalType(index, e.target.value as IntervalType)}>
@@ -191,7 +203,7 @@ export const TimerEditorPage = () => {
               <button className="danger-btn" onClick={() => removeInterval(index)}>Remove</button>
             </div>
           </article>
-        ))}
+        )})}
       </div>
 
       {validation.errors.length > 0 && (

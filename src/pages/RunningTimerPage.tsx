@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
+import { withAlpha } from '../lib/color';
 import { formatClock } from '../lib/time';
 import { useTimerRunner } from '../lib/useTimerRunner';
 import { useSettings } from '../services/settingsContext';
@@ -36,9 +37,6 @@ export const RunningTimerPage = () => {
     return <p className="empty">Timer not found.</p>;
   }
 
-  const current = runner.timeline[runner.state.currentIndex];
-  const currentColor = current ? settings.intervalColors[current.type] : '#D4A017';
-
   const requestPause = () => {
     if (runner.state.status === 'running') {
       setConfirmAction('pause');
@@ -70,11 +68,6 @@ export const RunningTimerPage = () => {
         <p className="run-remaining">Total remaining: {formatClock(runner.state.totalRemainingMs / 1000)}</p>
       </header>
 
-      <div className="chrono" style={{ borderColor: currentColor, boxShadow: `0 0 24px ${currentColor}33` }}>
-        <p className="chrono-label">{current ? current.name : 'Completed'}</p>
-        <p className="chrono-time">{formatClock(runner.state.currentRemainingMs / 1000)}</p>
-      </div>
-
       <div className="actions-row wrap">
         {runner.state.status === 'idle' && <button className="primary-btn" onClick={runner.start}>Start</button>}
         {runner.state.status === 'running' && <button className="secondary-btn" onClick={requestPause}>Pause</button>}
@@ -98,18 +91,26 @@ export const RunningTimerPage = () => {
       <div className="stack timeline-list">
         {runner.timeline.map((entry, index) => {
           const state = index < runner.state.currentIndex ? 'done' : index === runner.state.currentIndex ? 'active' : 'upcoming';
+          const intervalColor = settings.intervalColors[entry.type];
           return (
             <div
               key={entry.id}
               ref={index === runner.state.currentIndex ? activeRef : null}
               className={`timeline-item ${state}`}
-              style={{ borderLeftColor: settings.intervalColors[entry.type] }}
+              style={{
+                backgroundColor: withAlpha(intervalColor, state === 'active' ? 0.28 : 0.2),
+                borderColor: withAlpha(intervalColor, state === 'active' ? 0.85 : 0.68),
+              }}
             >
               <div>
                 <p>{entry.name}</p>
                 <p className="interval-sub">{entry.setNumber ? `Set ${entry.setNumber}` : entry.type}</p>
               </div>
-              <p>{formatClock(entry.durationMs / 1000)}</p>
+              <p className={state === 'active' ? 'timeline-time live' : 'timeline-time'}>
+                {state === 'active'
+                  ? formatClock(runner.state.currentRemainingMs / 1000)
+                  : formatClock(entry.durationMs / 1000)}
+              </p>
             </div>
           );
         })}
