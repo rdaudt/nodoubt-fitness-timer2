@@ -7,7 +7,7 @@ export const BRAND = {
   tagline: 'Results. Confidence. No Doubt.',
   coachName: 'NoDoubt Fitness Coach',
   ctaLabel: 'DM me for coaching',
-  instagramUrl: 'https://instagram.com/nodoubtfitness',
+  instagramUrl: 'https://www.instagram.com/nodoubt.fitness/',
   aboutBio:
     'BCRPA Certified Personal Trainer offering online coaching, personalized workout plans, and nutritional guidance. Results. Confidence. No Doubt.',
 };
