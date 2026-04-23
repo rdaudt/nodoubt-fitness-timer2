@@ -326,12 +326,29 @@ select {
   gap: 0.45rem;
 }
 
+.settings-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
 .settings-color-swatch {
   width: 14px;
   height: 14px;
   border-radius: 2px;
   border: 1px solid var(--border);
   display: inline-block;
+}
+
+.settings-color-input {
+  width: 44px;
+  min-width: 44px;
+  height: 30px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 2px;
+  background: var(--surface-hi);
 }
 
 .interval-edit {
