@@ -34,4 +34,17 @@ describe('timerRules', () => {
     expect(normalized[0].type).toBe('warmup');
     expect(normalized[normalized.length - 1].type).toBe('cooldown');
   });
+
+  it('does not auto-insert trailing rest before cooldown', () => {
+    const normalized = normalizeIntervals([
+      { sequence: 1, name: 'Warmup', type: 'warmup', durationMinutes: 0, durationSeconds: 10 },
+      { sequence: 2, name: 'Work', type: 'work', durationMinutes: 0, durationSeconds: 20 },
+      { sequence: 3, name: 'Cooldown', type: 'cooldown', durationMinutes: 0, durationSeconds: 10 },
+    ]);
+
+    expect(normalized.map((x) => x.type)).toEqual(['warmup', 'work', 'cooldown']);
+
+    const validation = validateIntervals(normalized);
+    expect(validation.valid).toBe(true);
+  });
 });

@@ -27,6 +27,7 @@ export const RunningTimerPage = () => {
   const [timer, setTimer] = useState<Timer | null>(null);
   const [confirmAction, setConfirmAction] = useState<'pause' | 'stop' | null>(null);
   const activeRef = useRef<HTMLDivElement | null>(null);
+  const autoStartedRef = useRef(false);
 
   useEffect(() => {
     TimerRepository.get(id).then((value) => setTimer(value ?? null));
@@ -59,6 +60,24 @@ export const RunningTimerPage = () => {
   useEffect(() => {
     activeRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
   }, [runner.state.currentIndex]);
+
+  useEffect(() => {
+    if (!timer) {
+      return;
+    }
+    if (autoStartedRef.current) {
+      return;
+    }
+    if (runner.state.status !== 'idle') {
+      return;
+    }
+    if (runner.timeline.length === 0) {
+      return;
+    }
+
+    autoStartedRef.current = true;
+    runner.start();
+  }, [runner, timer]);
 
   if (!timer) {
     return <p className="empty">Timer not found.</p>;
@@ -96,7 +115,6 @@ export const RunningTimerPage = () => {
       </header>
 
       <div className="actions-row wrap">
-        {runner.state.status === 'idle' && <button className="primary-btn" onClick={runner.start}>Start</button>}
         {runner.state.status === 'running' && <button className="secondary-btn" onClick={requestPause}>Pause</button>}
         {runner.state.status === 'paused' && <button className="primary-btn" onClick={runner.resume}>Resume</button>}
         {(runner.state.status === 'running' || runner.state.status === 'paused') && (
