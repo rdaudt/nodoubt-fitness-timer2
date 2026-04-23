@@ -62,10 +62,6 @@ export const useTimerRunner = (timer: Timer) => {
     if (state.status !== 'running') {
       return;
     }
-    const ok = window.confirm('Pause the timer?');
-    if (!ok) {
-      return;
-    }
     await WakeLockService.release();
     setState((prev) => ({
       ...prev,
@@ -86,13 +82,6 @@ export const useTimerRunner = (timer: Timer) => {
   }, [state, timeline]);
 
   const stop = useCallback(async () => {
-    if (state.status === 'running') {
-      const ok = window.confirm('Stop the timer?');
-      if (!ok) {
-        return;
-      }
-    }
-
     await WakeLockService.release();
     setState({
       status: 'idle',

@@ -10,6 +10,7 @@ export const RunningTimerPage = () => {
   const { id = '' } = useParams();
   const { settings } = useSettings();
   const [timer, setTimer] = useState<Timer | null>(null);
+  const [confirmAction, setConfirmAction] = useState<'pause' | 'stop' | null>(null);
   const activeRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
@@ -38,6 +39,30 @@ export const RunningTimerPage = () => {
   const current = runner.timeline[runner.state.currentIndex];
   const currentColor = current ? settings.intervalColors[current.type] : '#D4A017';
 
+  const requestPause = () => {
+    if (runner.state.status === 'running') {
+      setConfirmAction('pause');
+    }
+  };
+
+  const requestStop = () => {
+    if (runner.state.status === 'running') {
+      setConfirmAction('stop');
+      return;
+    }
+    runner.stop();
+  };
+
+  const confirm = async () => {
+    if (confirmAction === 'pause') {
+      await runner.pause();
+    }
+    if (confirmAction === 'stop') {
+      await runner.stop();
+    }
+    setConfirmAction(null);
+  };
+
   return (
     <section>
       <header className="run-header">
@@ -52,13 +77,23 @@ export const RunningTimerPage = () => {
 
       <div className="actions-row wrap">
         {runner.state.status === 'idle' && <button className="primary-btn" onClick={runner.start}>Start</button>}
-        {runner.state.status === 'running' && <button className="secondary-btn" onClick={runner.pause}>Pause</button>}
+        {runner.state.status === 'running' && <button className="secondary-btn" onClick={requestPause}>Pause</button>}
         {runner.state.status === 'paused' && <button className="primary-btn" onClick={runner.resume}>Resume</button>}
         {(runner.state.status === 'running' || runner.state.status === 'paused') && (
-          <button className="danger-btn" onClick={runner.stop}>Stop</button>
+          <button className="danger-btn" onClick={requestStop}>Stop</button>
         )}
         {runner.state.status === 'completed' && <Link className="primary-btn" to={`/timer/${timer.id}`}>Done</Link>}
       </div>
+
+      {confirmAction && (
+        <div className="confirm-box">
+          <p className="confirm-text">{confirmAction === 'pause' ? 'Pause the timer?' : 'Stop the timer?'}</p>
+          <div className="actions-row">
+            <button className="primary-btn" onClick={confirm}>Confirm</button>
+            <button className="secondary-btn" onClick={() => setConfirmAction(null)}>Cancel</button>
+          </div>
+        </div>
+      )}
 
       <div className="stack timeline-list">
         {runner.timeline.map((entry, index) => {
