@@ -361,6 +361,21 @@ select {
   line-height: 1.45;
 }
 
+.about-coach-photo {
+  width: min(240px, 70%);
+  margin: 0.25rem auto 0.2rem;
+  display: block;
+  border: none;
+}
+
+.about-coach-name {
+  text-align: center;
+  margin: 0 0 0.8rem;
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 1.35rem;
+  font-weight: 700;
+}
+
 .run-header {
   margin-bottom: 0.7rem;
 }

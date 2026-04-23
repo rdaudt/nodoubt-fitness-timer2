@@ -10,6 +10,7 @@ const navItems = [
 export const AppLayout = () => {
   const location = useLocation();
   const isRunningView = /\/timer\/[^/]+\/run$/.test(location.pathname);
+  const isAboutPage = /^\/about\/?$/.test(location.pathname);
 
   return (
     <div className="app-shell">
@@ -22,10 +23,12 @@ export const AppLayout = () => {
             <p className="brand-name">{BRAND.businessName}</p>
             <p className="brand-tagline">{BRAND.tagline}</p>
           </Link>
-          <div className="coach-wrap" aria-label="Coach Gabe">
-            <img src="/assets/coach-gabe-transparent-cropped.png" alt="Coach Gabe" className="coach-photo" />
-            <p className="coach-name">Coach Gabe</p>
-          </div>
+          {!isAboutPage && (
+            <div className="coach-wrap" aria-label="Coach Gabe">
+              <img src="/assets/coach-gabe-transparent-cropped.png" alt="Coach Gabe" className="coach-photo" />
+              <p className="coach-name">Coach Gabe</p>
+            </div>
+          )}
         </div>
       </header>
 
