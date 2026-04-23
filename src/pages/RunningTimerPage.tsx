@@ -21,6 +21,15 @@ const workCats = [
   '/assets/vintage-apparel-crunches.png',
 ];
 
+const shuffled = (items: string[]): string[] => {
+  const copy = [...items];
+  for (let i = copy.length - 1; i > 0; i -= 1) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [copy[i], copy[j]] = [copy[j], copy[i]];
+  }
+  return copy;
+};
+
 export const RunningTimerPage = () => {
   const { id = '' } = useParams();
   const { settings } = useSettings();
@@ -46,10 +55,23 @@ export const RunningTimerPage = () => {
 
   const runCatByEntryId = useMemo(() => {
     const map: Record<string, string> = {};
+    let workCycle = shuffled(workCats);
+    let workCycleIndex = 0;
+
     runner.timeline.forEach((entry) => {
       if (entry.type === 'work') {
-        const randomIndex = Math.floor(Math.random() * workCats.length);
-        map[entry.id] = workCats[randomIndex];
+        if (workCycle.length === 0) {
+          map[entry.id] = intervalCatByType.work;
+          return;
+        }
+
+        map[entry.id] = workCycle[workCycleIndex];
+        workCycleIndex += 1;
+
+        if (workCycleIndex >= workCycle.length) {
+          workCycle = shuffled(workCats);
+          workCycleIndex = 0;
+        }
       } else {
         map[entry.id] = intervalCatByType[entry.type];
       }
