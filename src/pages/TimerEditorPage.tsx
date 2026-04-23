@@ -22,6 +22,10 @@ const resequence = (intervals: Interval[]): Interval[] =>
 const toDisplayNumber = (value: number): string =>
   Number.isNaN(value) ? '' : String(value);
 
+const lockNumberInput = (e: React.WheelEvent<HTMLInputElement>) => {
+  e.currentTarget.blur();
+};
+
 export const TimerEditorPage = () => {
   const { id } = useParams();
   const navigate = useNavigate();
@@ -46,45 +50,50 @@ export const TimerEditorPage = () => {
 
   const validation = useMemo(() => validateIntervals(draft.intervals), [draft.intervals]);
 
-  const patchIntervalsWithRules = (next: Interval[]) => {
-    const normalized = normalizeIntervals(next);
-    setDraft((prev) => ({ ...prev, intervals: normalized }));
-  };
-
-  const patchIntervalsForTyping = (next: Interval[]) => {
-    setDraft((prev) => ({ ...prev, intervals: resequence(next) }));
-  };
-
   const addInterval = (type: IntervalType) => {
-    patchIntervalsWithRules([...draft.intervals, createInterval(type)]);
+    setDraft((prev) => ({
+      ...prev,
+      intervals: normalizeIntervals([...prev.intervals, createInterval(type)]),
+    }));
   };
 
   const updateIntervalField = (index: number, update: Partial<Interval>) => {
-    const copy = [...draft.intervals];
-    copy[index] = { ...copy[index], ...update };
-    patchIntervalsForTyping(copy);
+    setDraft((prev) => {
+      const copy = [...prev.intervals];
+      copy[index] = { ...copy[index], ...update };
+      return { ...prev, intervals: resequence(copy) };
+    });
   };
 
   const updateIntervalType = (index: number, type: IntervalType) => {
-    const copy = [...draft.intervals];
-    copy[index] = { ...copy[index], type, name: TYPE_LABELS[type] };
-    patchIntervalsWithRules(copy);
+    setDraft((prev) => {
+      const copy = [...prev.intervals];
+      copy[index] = { ...copy[index], type, name: TYPE_LABELS[type] };
+      return { ...prev, intervals: normalizeIntervals(copy) };
+    });
   };
 
   const removeInterval = (index: number) => {
-    const copy = draft.intervals.filter((_, idx) => idx !== index);
-    patchIntervalsWithRules(copy.length > 0 ? copy : [createInterval('work')]);
+    setDraft((prev) => {
+      const copy = prev.intervals.filter((_, idx) => idx !== index);
+      return {
+        ...prev,
+        intervals: normalizeIntervals(copy.length > 0 ? copy : [createInterval('work')]),
+      };
+    });
   };
 
   const moveInterval = (index: number, direction: -1 | 1) => {
-    const target = index + direction;
-    if (target < 0 || target >= draft.intervals.length) {
-      return;
-    }
-    const copy = [...draft.intervals];
-    const [picked] = copy.splice(index, 1);
-    copy.splice(target, 0, picked);
-    patchIntervalsWithRules(copy);
+    setDraft((prev) => {
+      const target = index + direction;
+      if (target < 0 || target >= prev.intervals.length) {
+        return prev;
+      }
+      const copy = [...prev.intervals];
+      const [picked] = copy.splice(index, 1);
+      copy.splice(target, 0, picked);
+      return { ...prev, intervals: normalizeIntervals(copy) };
+    });
   };
 
   const onSave = async () => {
@@ -126,6 +135,7 @@ export const TimerEditorPage = () => {
           type="number"
           min={1}
           value={draft.sets}
+          onWheel={lockNumberInput}
           onChange={(e) => setDraft((prev) => ({ ...prev, sets: Number(e.target.value) || 1 }))}
         />
       </label>
@@ -168,6 +178,7 @@ export const TimerEditorPage = () => {
                 <input
                   type="number"
                   min={0}
+                  onWheel={lockNumberInput}
                   value={toDisplayNumber(interval.durationMinutes)}
                   onChange={(e) => {
                     const raw = e.target.value;
@@ -185,6 +196,7 @@ export const TimerEditorPage = () => {
                   type="number"
                   min={0}
                   max={59}
+                  onWheel={lockNumberInput}
                   value={toDisplayNumber(interval.durationSeconds)}
                   onChange={(e) => {
                     const raw = e.target.value;
