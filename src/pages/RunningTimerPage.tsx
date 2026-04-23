@@ -137,6 +137,7 @@ export const RunningTimerPage = () => {
         {runner.timeline.map((entry, index) => {
           const state = index < runner.state.currentIndex ? 'done' : index === runner.state.currentIndex ? 'active' : 'upcoming';
           const intervalColor = settings.intervalColors[entry.type];
+          const surfaceColor = withAlpha(intervalColor, state === 'active' ? 0.85 : 0.68);
           const showRunningCat = state === 'active' && runner.state.status === 'running';
           return (
             <div
@@ -144,12 +145,11 @@ export const RunningTimerPage = () => {
               ref={index === runner.state.currentIndex ? activeRef : null}
               className={`timeline-item ${state}`}
               style={{
-                backgroundColor: withAlpha(intervalColor, state === 'active' ? 0.28 : 0.2),
-                borderColor: withAlpha(intervalColor, state === 'active' ? 0.85 : 0.68),
+                backgroundColor: surfaceColor,
               }}
             >
               <div>
-                <p>{entry.name}</p>
+                <p className="interval-title">{entry.name}</p>
                 <p className="interval-sub">{entry.setNumber ? `Set ${entry.setNumber}` : entry.type}</p>
                 {showRunningCat && <img className="timeline-cat" src={runCatByEntryId[entry.id]} alt="" aria-hidden="true" />}
               </div>

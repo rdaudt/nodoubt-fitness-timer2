@@ -6,12 +6,12 @@ import { formatClock } from '../lib/time';
 export const IntervalBadge = ({ interval, settings }: { interval: Interval; settings: AppSettings }) => {
   const totalSeconds = interval.durationMinutes * 60 + interval.durationSeconds;
   const intervalColor = settings.intervalColors[interval.type];
+  const surfaceColor = withAlpha(intervalColor, 0.72);
   return (
     <div
       className="interval-row"
       style={{
-        backgroundColor: withAlpha(intervalColor, 0.22),
-        borderColor: withAlpha(intervalColor, 0.72),
+        backgroundColor: surfaceColor,
       }}
     >
       <div>
