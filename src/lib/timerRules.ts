@@ -21,6 +21,7 @@ export const normalizeIntervals = (input: Interval[]): Interval[] => {
   const warmups = cleaned.filter((x) => x.type === 'warmup');
   const cooldowns = cleaned.filter((x) => x.type === 'cooldown');
   const core = cleaned.filter((x) => x.type === 'work' || x.type === 'rest');
+  const hasCooldown = cooldowns.length > 0;
 
   const rebuilt: Interval[] = [];
   if (warmups.length > 0) {
@@ -33,7 +34,8 @@ export const normalizeIntervals = (input: Interval[]): Interval[] => {
 
     if (item.type === 'work') {
       const next = core[i + 1];
-      if (!next || next.type !== 'rest') {
+      const canSkipTrailingRestForCooldown = hasCooldown && i === core.length - 1;
+      if ((!next || next.type !== 'rest') && !canSkipTrailingRestForCooldown) {
         rebuilt.push(defaultRest(rebuilt.length + 1));
       }
     }
@@ -62,8 +64,9 @@ export const validateIntervals = (input: Interval[]): ValidationResult => {
 
     if (item.type === 'work') {
       const next = normalized[idx + 1];
-      if (!next || next.type !== 'rest') {
-        errors.push(`Work interval #${idx + 1} must be followed by rest.`);
+      const validFollower = next && (next.type === 'rest' || next.type === 'cooldown');
+      if (!validFollower) {
+        errors.push(`Work interval #${idx + 1} must be followed by rest (or cooldown when final).`);
       }
     }
   });
