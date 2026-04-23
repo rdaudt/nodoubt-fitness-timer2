@@ -36,9 +36,6 @@ export const RunningTimerPage = () => {
     return <p className="empty">Timer not found.</p>;
   }
 
-  const current = runner.timeline[runner.state.currentIndex];
-  const currentColor = current ? settings.intervalColors[current.type] : '#D4A017';
-
   const requestPause = () => {
     if (runner.state.status === 'running') {
       setConfirmAction('pause');
@@ -69,11 +66,6 @@ export const RunningTimerPage = () => {
         <p className="run-name">{timer.name}</p>
         <p className="run-remaining">Total remaining: {formatClock(runner.state.totalRemainingMs / 1000)}</p>
       </header>
-
-      <div className="chrono" style={{ borderColor: currentColor, boxShadow: `0 0 24px ${currentColor}33` }}>
-        <p className="chrono-label">{current ? current.name : 'Completed'}</p>
-        <p className="chrono-time">{formatClock(runner.state.currentRemainingMs / 1000)}</p>
-      </div>
 
       <div className="actions-row wrap">
         {runner.state.status === 'idle' && <button className="primary-btn" onClick={runner.start}>Start</button>}
@@ -109,7 +101,11 @@ export const RunningTimerPage = () => {
                 <p>{entry.name}</p>
                 <p className="interval-sub">{entry.setNumber ? `Set ${entry.setNumber}` : entry.type}</p>
               </div>
-              <p>{formatClock(entry.durationMs / 1000)}</p>
+              <p className={state === 'active' ? 'timeline-time live' : 'timeline-time'}>
+                {state === 'active'
+                  ? formatClock(runner.state.currentRemainingMs / 1000)
+                  : formatClock(entry.durationMs / 1000)}
+              </p>
             </div>
           );
         })}
