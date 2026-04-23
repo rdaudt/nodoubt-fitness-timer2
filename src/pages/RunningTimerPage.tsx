@@ -1,11 +1,25 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { withAlpha } from '../lib/color';
 import { formatClock } from '../lib/time';
 import { useTimerRunner } from '../lib/useTimerRunner';
 import { useSettings } from '../services/settingsContext';
 import { TimerRepository } from '../services/storage';
-import type { Timer } from '../types';
+import type { IntervalType, Timer } from '../types';
+
+const intervalCatByType: Record<IntervalType, string> = {
+  warmup: '/assets/waking-up-cat.png',
+  work: '/assets/work-cat.png',
+  rest: '/assets/rest-cat-transparent-v4.png',
+  cooldown: '/assets/cooldown-cat.png',
+};
+
+const workCats = [
+  '/assets/cat_1_crawling.png',
+  '/assets/cat_2_boxing.png',
+  '/assets/cat_3_rolling.png',
+  '/assets/cat_4_walking.png',
+];
 
 export const RunningTimerPage = () => {
   const { id = '' } = useParams();
@@ -28,6 +42,19 @@ export const RunningTimerPage = () => {
       updatedAt: new Date().toISOString(),
     },
   );
+
+  const runCatByEntryId = useMemo(() => {
+    const map: Record<string, string> = {};
+    runner.timeline.forEach((entry) => {
+      if (entry.type === 'work') {
+        const randomIndex = Math.floor(Math.random() * workCats.length);
+        map[entry.id] = workCats[randomIndex];
+      } else {
+        map[entry.id] = intervalCatByType[entry.type];
+      }
+    });
+    return map;
+  }, [runner.timeline]);
 
   useEffect(() => {
     activeRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
@@ -92,6 +119,7 @@ export const RunningTimerPage = () => {
         {runner.timeline.map((entry, index) => {
           const state = index < runner.state.currentIndex ? 'done' : index === runner.state.currentIndex ? 'active' : 'upcoming';
           const intervalColor = settings.intervalColors[entry.type];
+          const showRunningCat = state === 'active' && runner.state.status === 'running';
           return (
             <div
               key={entry.id}
@@ -105,6 +133,7 @@ export const RunningTimerPage = () => {
               <div>
                 <p>{entry.name}</p>
                 <p className="interval-sub">{entry.setNumber ? `Set ${entry.setNumber}` : entry.type}</p>
+                {showRunningCat && <img className="timeline-cat" src={runCatByEntryId[entry.id]} alt="" aria-hidden="true" />}
               </div>
               <p className={state === 'active' ? 'timeline-time live' : 'timeline-time'}>
                 {state === 'active'

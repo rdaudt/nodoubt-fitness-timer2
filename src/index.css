@@ -232,6 +232,21 @@ select {
   background: linear-gradient(135deg, var(--accent-deep), var(--accent-hi), var(--accent));
 }
 
+.home-float-cat-wrap {
+  position: fixed;
+  right: 0.9rem;
+  bottom: calc(3.95rem + env(safe-area-inset-bottom));
+  z-index: 8;
+  pointer-events: none;
+}
+
+.home-float-cat {
+  width: 104px;
+  height: auto;
+  object-fit: contain;
+  filter: drop-shadow(0 10px 20px rgba(0, 0, 0, 0.4));
+}
+
 .interval-row,
 .timeline-item {
   display: flex;
@@ -391,19 +406,47 @@ select {
   line-height: 1.45;
 }
 
+.about-page {
+  min-height: calc(100vh - 170px);
+  display: flex;
+  flex-direction: column;
+}
+
 .about-coach-photo {
-  width: min(240px, 70%);
-  margin: 0.25rem auto 0.2rem;
+  width: min(360px, 96%);
+  margin: 0.25rem auto 0.15rem;
   display: block;
   border: none;
 }
 
 .about-coach-name {
   text-align: center;
-  margin: 0 0 0.8rem;
+  margin: 0;
   font-family: 'Barlow Condensed', sans-serif;
-  font-size: 1.35rem;
+  font-size: 1.5rem;
   font-weight: 700;
+}
+
+.about-coach-subname {
+  text-align: center;
+  margin: 0 0 0.8rem;
+  color: var(--muted);
+  font-size: 0.82rem;
+  font-weight: 500;
+}
+
+.about-kobe-btn {
+  margin-top: auto;
+  display: inline-flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 40px;
+  border-radius: 12px;
+  border: 1px solid #3a3f4a;
+  background: #1a1f2b;
+  color: #d7deea;
+  font-size: 0.85rem;
+  font-weight: 500;
 }
 
 .run-header {
@@ -467,6 +510,14 @@ select {
   color: var(--text);
 }
 
+.timeline-cat {
+  display: block;
+  width: 92px;
+  height: auto;
+  margin-top: 0.35rem;
+  object-fit: contain;
+}
+
 .confirm-box {
   border: 1px solid var(--border);
   border-radius: 14px;
@@ -497,6 +548,15 @@ select {
 @media (min-width: 700px) {
   .screen {
     padding: 1.2rem 1.2rem 6.2rem;
+  }
+
+  .home-float-cat-wrap {
+    right: 1.2rem;
+    bottom: calc(4.2rem + env(safe-area-inset-bottom));
+  }
+
+  .home-float-cat {
+    width: 122px;
   }
 
   .coach-wrap {
