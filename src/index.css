@@ -406,19 +406,47 @@ select {
   line-height: 1.45;
 }
 
+.about-page {
+  min-height: calc(100vh - 170px);
+  display: flex;
+  flex-direction: column;
+}
+
 .about-coach-photo {
-  width: min(240px, 70%);
-  margin: 0.25rem auto 0.2rem;
+  width: min(360px, 96%);
+  margin: 0.25rem auto 0.15rem;
   display: block;
   border: none;
 }
 
 .about-coach-name {
   text-align: center;
-  margin: 0 0 0.8rem;
+  margin: 0;
   font-family: 'Barlow Condensed', sans-serif;
-  font-size: 1.35rem;
+  font-size: 1.5rem;
   font-weight: 700;
+}
+
+.about-coach-subname {
+  text-align: center;
+  margin: 0 0 0.8rem;
+  color: var(--muted);
+  font-size: 0.82rem;
+  font-weight: 500;
+}
+
+.about-kobe-btn {
+  margin-top: auto;
+  display: inline-flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 40px;
+  border-radius: 12px;
+  border: 1px solid #3a3f4a;
+  background: #1a1f2b;
+  color: #d7deea;
+  font-size: 0.85rem;
+  font-weight: 500;
 }
 
 .run-header {
@@ -480,6 +508,14 @@ select {
   font-size: 2rem;
   font-weight: 800;
   color: var(--text);
+}
+
+.timeline-cat {
+  display: block;
+  width: 92px;
+  height: auto;
+  margin-top: 0.35rem;
+  object-fit: contain;
 }
 
 .confirm-box {
