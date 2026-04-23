@@ -14,6 +14,12 @@ const createInterval = (type: IntervalType): Interval => ({
   durationSeconds: type === 'work' ? 30 : 15,
 });
 
+const resequence = (intervals: Interval[]): Interval[] =>
+  intervals.map((interval, idx) => ({ ...interval, sequence: idx + 1 }));
+
+const toDisplayNumber = (value: number): string =>
+  Number.isNaN(value) ? '' : String(value);
+
 export const TimerEditorPage = () => {
   const { id } = useParams();
   const navigate = useNavigate();
@@ -37,24 +43,34 @@ export const TimerEditorPage = () => {
 
   const validation = useMemo(() => validateIntervals(draft.intervals), [draft.intervals]);
 
-  const patchIntervals = (next: Interval[]) => {
+  const patchIntervalsWithRules = (next: Interval[]) => {
     const normalized = normalizeIntervals(next);
     setDraft((prev) => ({ ...prev, intervals: normalized }));
   };
 
-  const addInterval = (type: IntervalType) => {
-    patchIntervals([...draft.intervals, createInterval(type)]);
+  const patchIntervalsForTyping = (next: Interval[]) => {
+    setDraft((prev) => ({ ...prev, intervals: resequence(next) }));
   };
 
-  const updateInterval = (index: number, update: Partial<Interval>) => {
+  const addInterval = (type: IntervalType) => {
+    patchIntervalsWithRules([...draft.intervals, createInterval(type)]);
+  };
+
+  const updateIntervalField = (index: number, update: Partial<Interval>) => {
     const copy = [...draft.intervals];
     copy[index] = { ...copy[index], ...update };
-    patchIntervals(copy);
+    patchIntervalsForTyping(copy);
+  };
+
+  const updateIntervalType = (index: number, type: IntervalType) => {
+    const copy = [...draft.intervals];
+    copy[index] = { ...copy[index], type, name: TYPE_LABELS[type] };
+    patchIntervalsWithRules(copy);
   };
 
   const removeInterval = (index: number) => {
     const copy = draft.intervals.filter((_, idx) => idx !== index);
-    patchIntervals(copy.length > 0 ? copy : [createInterval('work')]);
+    patchIntervalsWithRules(copy.length > 0 ? copy : [createInterval('work')]);
   };
 
   const moveInterval = (index: number, direction: -1 | 1) => {
@@ -65,7 +81,7 @@ export const TimerEditorPage = () => {
     const copy = [...draft.intervals];
     const [picked] = copy.splice(index, 1);
     copy.splice(target, 0, picked);
-    patchIntervals(copy);
+    patchIntervalsWithRules(copy);
   };
 
   const onSave = async () => {
@@ -123,7 +139,7 @@ export const TimerEditorPage = () => {
           <article className="interval-edit" key={`${interval.sequence}-${index}`}>
             <div className="interval-edit-head">
               <strong>#{interval.sequence}</strong>
-              <select value={interval.type} onChange={(e) => updateInterval(index, { type: e.target.value as IntervalType, name: TYPE_LABELS[e.target.value as IntervalType] })}>
+              <select value={interval.type} onChange={(e) => updateIntervalType(index, e.target.value as IntervalType)}>
                 <option value="warmup">Warmup</option>
                 <option value="work">Work</option>
                 <option value="rest">Rest</option>
@@ -132,7 +148,7 @@ export const TimerEditorPage = () => {
             </div>
             <label className="field compact">
               Name
-              <input value={interval.name} onChange={(e) => updateInterval(index, { name: e.target.value })} />
+              <input value={interval.name} onChange={(e) => updateIntervalField(index, { name: e.target.value })} />
             </label>
             <div className="duration-grid">
               <label className="field compact">
@@ -140,8 +156,15 @@ export const TimerEditorPage = () => {
                 <input
                   type="number"
                   min={0}
-                  value={interval.durationMinutes}
-                  onChange={(e) => updateInterval(index, { durationMinutes: Math.max(0, Number(e.target.value) || 0) })}
+                  value={toDisplayNumber(interval.durationMinutes)}
+                  onChange={(e) => {
+                    const raw = e.target.value;
+                    if (raw === '') {
+                      updateIntervalField(index, { durationMinutes: Number.NaN });
+                      return;
+                    }
+                    updateIntervalField(index, { durationMinutes: Math.max(0, Number(raw)) });
+                  }}
                 />
               </label>
               <label className="field compact">
@@ -150,8 +173,15 @@ export const TimerEditorPage = () => {
                   type="number"
                   min={0}
                   max={59}
-                  value={interval.durationSeconds}
-                  onChange={(e) => updateInterval(index, { durationSeconds: Math.max(0, Math.min(59, Number(e.target.value) || 0)) })}
+                  value={toDisplayNumber(interval.durationSeconds)}
+                  onChange={(e) => {
+                    const raw = e.target.value;
+                    if (raw === '') {
+                      updateIntervalField(index, { durationSeconds: Number.NaN });
+                      return;
+                    }
+                    updateIntervalField(index, { durationSeconds: Math.max(0, Math.min(59, Number(raw))) });
+                  }}
                 />
               </label>
             </div>
