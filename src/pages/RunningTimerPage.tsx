@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
+import { withAlpha } from '../lib/color';
 import { formatClock } from '../lib/time';
 import { useTimerRunner } from '../lib/useTimerRunner';
 import { useSettings } from '../services/settingsContext';
@@ -90,12 +91,16 @@ export const RunningTimerPage = () => {
       <div className="stack timeline-list">
         {runner.timeline.map((entry, index) => {
           const state = index < runner.state.currentIndex ? 'done' : index === runner.state.currentIndex ? 'active' : 'upcoming';
+          const intervalColor = settings.intervalColors[entry.type];
           return (
             <div
               key={entry.id}
               ref={index === runner.state.currentIndex ? activeRef : null}
               className={`timeline-item ${state}`}
-              style={{ borderLeftColor: settings.intervalColors[entry.type] }}
+              style={{
+                backgroundColor: withAlpha(intervalColor, state === 'active' ? 0.28 : 0.2),
+                borderColor: withAlpha(intervalColor, state === 'active' ? 0.85 : 0.68),
+              }}
             >
               <div>
                 <p>{entry.name}</p>

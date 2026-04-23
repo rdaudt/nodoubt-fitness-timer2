@@ -234,7 +234,6 @@ select {
 
 .interval-row,
 .timeline-item {
-  border-left: 4px solid;
   display: flex;
   justify-content: space-between;
   gap: 1rem;
