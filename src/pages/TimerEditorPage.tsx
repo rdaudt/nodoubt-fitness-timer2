@@ -158,13 +158,13 @@ export const TimerEditorPage = () => {
       <div className="stack">
         {draft.intervals.map((interval, index) => {
           const intervalColor = settings.intervalColors[interval.type];
+          const surfaceColor = withAlpha(intervalColor, 0.72);
           return (
           <article
             className="interval-edit"
             key={`${interval.sequence}-${index}`}
             style={{
-              backgroundColor: withAlpha(intervalColor, 0.22),
-              borderColor: withAlpha(intervalColor, 0.72),
+              backgroundColor: surfaceColor,
             }}
           >
             <div className="interval-edit-head">

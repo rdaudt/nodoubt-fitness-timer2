@@ -195,7 +195,7 @@ select {
 .timeline-item {
   border-radius: 16px;
   background: var(--surface);
-  border: 1px solid var(--border);
+  border: none;
 }
 
 .timer-card {
@@ -259,11 +259,12 @@ select {
 .interval-title {
   margin: 0;
   font-weight: 600;
+  color: #ffffff;
 }
 
 .interval-sub {
   margin: 0;
-  color: var(--muted);
+  color: #ffffff;
   font-size: 0.8rem;
   text-transform: capitalize;
 }
@@ -493,7 +494,6 @@ select {
 }
 
 .timeline-item.active {
-  border-color: var(--accent);
   transform: scale(1.01);
 }
 
