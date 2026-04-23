@@ -232,6 +232,21 @@ select {
   background: linear-gradient(135deg, var(--accent-deep), var(--accent-hi), var(--accent));
 }
 
+.home-float-cat-wrap {
+  position: fixed;
+  right: 0.9rem;
+  bottom: calc(3.95rem + env(safe-area-inset-bottom));
+  z-index: 8;
+  pointer-events: none;
+}
+
+.home-float-cat {
+  width: 104px;
+  height: auto;
+  object-fit: contain;
+  filter: drop-shadow(0 10px 20px rgba(0, 0, 0, 0.4));
+}
+
 .interval-row,
 .timeline-item {
   display: flex;
@@ -497,6 +512,15 @@ select {
 @media (min-width: 700px) {
   .screen {
     padding: 1.2rem 1.2rem 6.2rem;
+  }
+
+  .home-float-cat-wrap {
+    right: 1.2rem;
+    bottom: calc(4.2rem + env(safe-area-inset-bottom));
+  }
+
+  .home-float-cat {
+    width: 122px;
   }
 
   .coach-wrap {
