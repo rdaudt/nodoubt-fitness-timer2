@@ -84,12 +84,12 @@ export const useTimerRunner = (timer: Timer) => {
   const stop = useCallback(async () => {
     await WakeLockService.release();
     setState({
-      status: 'idle',
-      currentIndex: 0,
-      currentRemainingMs: timeline[0]?.durationMs ?? 0,
-      totalRemainingMs: totalMs,
+      status: 'completed',
+      currentIndex: timeline.length > 0 ? Math.min(state.currentIndex, timeline.length - 1) : 0,
+      currentRemainingMs: 0,
+      totalRemainingMs: 0,
     });
-  }, [state.status, timeline, totalMs]);
+  }, [state.currentIndex, timeline]);
 
   useEffect(() => {
     const unlock = () => {

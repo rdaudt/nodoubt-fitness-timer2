@@ -116,6 +116,14 @@ export const TimerEditorPage = () => {
     navigate(`/timer/${next.id}`);
   };
 
+  const onCancel = () => {
+    if (id) {
+      navigate(`/timer/${id}`);
+      return;
+    }
+    navigate('/');
+  };
+
   if (loading) {
     return <p className="empty">Loading...</p>;
   }
@@ -228,6 +236,9 @@ export const TimerEditorPage = () => {
 
       <button className="primary-btn full" disabled={!validation.valid || !draft.name.trim() || draft.sets < 1} onClick={onSave}>
         Save Timer
+      </button>
+      <button className="secondary-btn full" onClick={onCancel}>
+        Cancel
       </button>
     </section>
   );
