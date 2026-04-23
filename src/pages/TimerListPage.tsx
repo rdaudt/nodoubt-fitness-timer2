@@ -28,6 +28,10 @@ export const TimerListPage = () => {
       <a href={BRAND.instagramUrl} target="_blank" rel="noreferrer" className="cta-banner">
         {BRAND.ctaLabel}
       </a>
+
+      <div className="home-float-cat-wrap" aria-hidden="true">
+        <img className="home-float-cat" src="/assets/sleepy-cat-transparent.png" alt="" />
+      </div>
     </section>
   );
 };
