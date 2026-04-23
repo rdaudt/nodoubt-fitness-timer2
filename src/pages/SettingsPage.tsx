@@ -27,7 +27,10 @@ export const SettingsPage = () => {
       <div className="stack">
         {types.map((type) => (
           <label key={type} className="field">
-            {TYPE_LABELS[type]} Color
+            <span className="settings-color-label">
+              <span className="settings-color-swatch" style={{ backgroundColor: draft.intervalColors[type] }} aria-hidden="true" />
+              {TYPE_LABELS[type]} Color
+            </span>
             <input
               aria-label={`${TYPE_LABELS[type]} Color`}
               type="color"

@@ -320,6 +320,20 @@ select {
   margin: 0;
 }
 
+.settings-color-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+}
+
+.settings-color-swatch {
+  width: 14px;
+  height: 14px;
+  border-radius: 2px;
+  border: 1px solid var(--border);
+  display: inline-block;
+}
+
 .interval-edit {
   padding: 0.8rem;
   display: grid;
