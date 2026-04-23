@@ -10,13 +10,12 @@ import type { IntervalType, Timer } from '../types';
 const intervalCatByType: Record<IntervalType, string> = {
   warmup: '/assets/cat-in-pajama-transparent-v3.png',
   work: '/assets/work-cat.png',
-  rest: '/assets/rest-cat-transparent-v4.png',
-  cooldown: '/assets/cooldown-cat.png',
+  rest: '/assets/resting-cat.png',
+  cooldown: '/assets/tired-cat-transparent-v1.png',
 };
 
 const workCats = [
   '/assets/cat_1_crawling.png',
-  '/assets/cat_3_rolling.png',
   '/assets/jab-throwing-cat.png',
   '/assets/vintage-apparel-pushup.png',
   '/assets/vintage-apparel-crunches.png',
