@@ -507,21 +507,6 @@ export const TimerDetailPage = () => {
             <button className="secondary-btn" onClick={() => onQuickAdd('rest')} style={{ color: settings.intervalColors.rest }}>+ REST</button>
             <button className="secondary-btn" onClick={() => onQuickAdd('cooldown')} style={{ color: settings.intervalColors.cooldown }}>+ COOLDOWN</button>
           </div>
-
-          <div className="detail-spotify-wrap">
-            <iframe
-              data-testid="embed-iframe"
-              className="detail-spotify-embed"
-              src="https://open.spotify.com/embed/playlist/6XA7rXVPzA6H3kMrCs8L0E?utm_source=generator"
-              width="100%"
-              height="352"
-              frameBorder="0"
-              allowFullScreen
-              allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"
-              loading="lazy"
-              title="Spotify Workout Playlist"
-            />
-          </div>
         </>
       )}
 
