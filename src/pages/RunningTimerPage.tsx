@@ -15,7 +15,6 @@ const intervalCatByType: Record<IntervalType, string> = {
 };
 
 const workCats = [
-  '/assets/cat_1_crawling.png',
   '/assets/jab-throwing-cat.png',
   '/assets/vintage-apparel-pushup.png',
   '/assets/vintage-apparel-crunches.png',
