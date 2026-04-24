@@ -1,7 +1,8 @@
-﻿import { useRef, useState, type PointerEventHandler } from 'react';
+import { useRef, useState, type MouseEventHandler, type PointerEventHandler } from 'react';
 import { Link } from 'react-router-dom';
-import type { Timer } from '../types';
-import { estimateTimerDurationMs, formatClock } from '../lib/time';
+import { TYPE_LABELS } from '../config';
+import type { AppSettings, Timer } from '../types';
+import { estimateTimerDurationMs, formatClock, formatCompactDuration, getTimerIntervalTypeTotals } from '../lib/time';
 
 const ACTION_WIDTH = 96;
 const OPEN_THRESHOLD = 44;
@@ -9,9 +10,17 @@ const OPEN_THRESHOLD = 44;
 const clamp = (value: number, min: number, max: number): number =>
   Math.min(max, Math.max(min, value));
 
-export const TimerCard = ({ timer, onDelete }: { timer: Timer; onDelete: (id: string) => void }) => {
-  const intervalCount = timer.intervals.length;
+export const TimerCard = ({
+  timer,
+  intervalColors,
+  onDelete,
+}: {
+  timer: Timer;
+  intervalColors: AppSettings['intervalColors'];
+  onDelete: (id: string) => void;
+}) => {
   const totalSeconds = Math.floor(estimateTimerDurationMs(timer) / 1000);
+  const intervalTotals = getTimerIntervalTypeTotals(timer);
   const [translateX, setTranslateX] = useState(0);
   const [open, setOpen] = useState(false);
   const pointerIdRef = useRef<number | null>(null);
@@ -61,6 +70,14 @@ export const TimerCard = ({ timer, onDelete }: { timer: Timer; onDelete: (id: st
     close();
   };
 
+  const onCardLinkClick: MouseEventHandler<HTMLAnchorElement> = (e) => {
+    if (suppressClickRef.current || open) {
+      e.preventDefault();
+      suppressClickRef.current = false;
+      close();
+    }
+  };
+
   return (
     <div className="timer-swipe-row">
       <div className="timer-swipe-action">
@@ -75,25 +92,38 @@ export const TimerCard = ({ timer, onDelete }: { timer: Timer; onDelete: (id: st
         onPointerUp={onPointerUp}
         onPointerCancel={close}
       >
-        <Link
-          className="timer-card"
-          to={`/timer/${timer.id}`}
-          onClick={(e) => {
-            if (suppressClickRef.current || open) {
-              e.preventDefault();
-              suppressClickRef.current = false;
-              close();
-            }
-          }}
-        >
-          <div className="timer-card-head">
-            <h3>{timer.name}</h3>
-            <p>{formatClock(totalSeconds)}</p>
+        <div className="timer-card">
+          <Link className="timer-card-main" to={`/timer/${timer.id}`} onClick={onCardLinkClick}>
+            <div className="timer-card-copy">
+              <h3>{timer.name}</h3>
+              <div className="timer-card-meta-row">
+                <span className="timer-card-sets">
+                  {timer.sets} Set{timer.sets === 1 ? '' : 's'}
+                </span>
+                {intervalTotals.map((item) => (
+                  <span className="timer-type-total" key={item.type}>
+                    <span
+                      className="timer-type-dot"
+                      style={{ backgroundColor: intervalColors[item.type] }}
+                      aria-hidden="true"
+                    />
+                    {TYPE_LABELS[item.type]} {formatCompactDuration(item.durationMs / 1000)}
+                  </span>
+                ))}
+              </div>
+            </div>
+          </Link>
+
+          <div className="timer-card-actions">
+            <div className="timer-card-total">
+              <strong>{formatClock(totalSeconds)}</strong>
+              <span>Total Time</span>
+            </div>
+            <Link className="timer-run-btn" to={`/timer/${timer.id}/run?from=home`} aria-label={`Run ${timer.name}`} onClick={onCardLinkClick}>
+              <span aria-hidden="true">▶</span>
+            </Link>
           </div>
-          <p className="timer-meta">
-            {timer.sets} set{timer.sets === 1 ? '' : 's'} • {intervalCount} interval{intervalCount === 1 ? '' : 's'}
-          </p>
-        </Link>
+        </div>
       </div>
     </div>
   );

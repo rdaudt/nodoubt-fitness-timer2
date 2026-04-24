@@ -232,8 +232,12 @@ select {
 }
 
 .timer-card {
-  display: block;
-  padding: 0.9rem;
+  display: flex;
+  align-items: center;
+  gap: 0.85rem;
+  min-height: 78px;
+  padding: 0.9rem 1rem;
+  border-left: 3px solid var(--accent);
 }
 
 .timer-swipe-row {
@@ -268,16 +272,97 @@ select {
   touch-action: pan-y;
 }
 
-.timer-card-head {
+.timer-card-main {
+  display: block;
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.timer-card-copy {
+  display: grid;
+  gap: 0.35rem;
+  min-width: 0;
+}
+
+.timer-card-meta-row {
   display: flex;
-  justify-content: space-between;
-  align-items: baseline;
-  gap: 0.7rem;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.35rem 0.55rem;
+  color: var(--muted);
+  font-size: 0.78rem;
+  line-height: 1.25;
+}
+
+.timer-card-sets {
+  color: var(--text);
+  font-weight: 700;
+}
+
+.timer-type-total {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  white-space: nowrap;
+}
+
+.timer-type-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 2px;
+  display: inline-block;
+  flex: 0 0 8px;
+}
+
+.timer-card-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex: 0 0 auto;
+}
+
+.timer-card-total {
+  display: grid;
+  gap: 0.05rem;
+  text-align: right;
+  min-width: 58px;
+}
+
+.timer-card-total strong {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 1.25rem;
+  line-height: 1;
+}
+
+.timer-card-total span {
+  color: var(--muted);
+  font-size: 0.75rem;
+  font-weight: 700;
+  line-height: 1.1;
+}
+
+.timer-run-btn {
+  width: 44px;
+  height: 44px;
+  min-width: 44px;
+  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: #0a0a0a;
+  background: linear-gradient(135deg, var(--accent-deep), var(--accent-hi));
+  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.06);
+  font-size: 0.92rem;
+  font-weight: 800;
 }
 
 .timer-card h3,
 .timer-card p {
   margin: 0;
+}
+
+.timer-card h3 {
+  overflow-wrap: anywhere;
 }
 
 .timer-meta {

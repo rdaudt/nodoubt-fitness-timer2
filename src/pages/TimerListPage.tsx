@@ -1,11 +1,13 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { TimerCard } from '../components/TimerCard';
+import { useSettings } from '../services/settingsContext';
 import { TimerRepository } from '../services/storage';
 import type { Timer } from '../types';
 import strongmanCat3 from '../../media/strongman-cat-3.png';
 
 export const TimerListPage = () => {
+  const { settings } = useSettings();
   const [timers, setTimers] = useState<Timer[]>([]);
 
   useEffect(() => {
@@ -26,14 +28,21 @@ export const TimerListPage = () => {
       <div className="section-header">
         <h1 className="screen-title">Your HIIT Timers</h1>
         <Link to="/timer/new" className="primary-btn">
-          New Timer
+          + New Timer
         </Link>
       </div>
 
       <div className="stack">
         {timers.length === 0
           ? <p className="empty">No timers yet. Create your first interval plan.</p>
-          : timers.map((timer) => <TimerCard key={timer.id} timer={timer} onDelete={onDeleteTimer} />)}
+          : timers.map((timer) => (
+            <TimerCard
+              key={timer.id}
+              timer={timer}
+              intervalColors={settings.intervalColors}
+              onDelete={onDeleteTimer}
+            />
+          ))}
       </div>
 
       <a
