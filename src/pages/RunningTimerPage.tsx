@@ -33,7 +33,7 @@ export const RunningTimerPage = () => {
   const { id = '' } = useParams();
   const { settings } = useSettings();
   const [timer, setTimer] = useState<Timer | null>(null);
-  const [confirmAction, setConfirmAction] = useState<'pause' | 'stop' | null>(null);
+  const [confirmAction, setConfirmAction] = useState<'stop' | null>(null);
   const activeRef = useRef<HTMLDivElement | null>(null);
   const autoStartedRef = useRef(false);
 
@@ -120,9 +120,9 @@ export const RunningTimerPage = () => {
   })();
   const activeVisibleIndex = visibleIntervals.findIndex((x) => x.sequence === activeEntry?.sourceSequence);
 
-  const requestPause = () => {
+  const requestPause = async () => {
     if (runner.state.status === 'running') {
-      setConfirmAction('pause');
+      await runner.pause();
     }
   };
 
@@ -135,9 +135,6 @@ export const RunningTimerPage = () => {
   };
 
   const confirm = async () => {
-    if (confirmAction === 'pause') {
-      await runner.pause();
-    }
     if (confirmAction === 'stop') {
       await runner.stop();
     }
@@ -163,7 +160,7 @@ export const RunningTimerPage = () => {
 
       {confirmAction && (
         <div className="confirm-box">
-          <p className="confirm-text">{confirmAction === 'pause' ? 'Pause the timer?' : 'Stop the timer?'}</p>
+          <p className="confirm-text">Stop the timer?</p>
           <div className="actions-row">
             <button className="primary-btn" onClick={confirm}>Confirm</button>
             <button className="secondary-btn" onClick={() => setConfirmAction(null)}>Cancel</button>
