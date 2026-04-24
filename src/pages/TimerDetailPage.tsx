@@ -88,7 +88,7 @@ const SortableQuickInterval = ({
 
   const onPointerDown: PointerEventHandler<HTMLDivElement> = (e) => {
     const target = e.target as HTMLElement;
-    if (target.closest('input, button, select, textarea')) {
+    if (target.closest('button, select, textarea')) {
       return;
     }
 
