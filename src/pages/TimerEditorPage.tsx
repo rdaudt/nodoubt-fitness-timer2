@@ -98,7 +98,7 @@ export const TimerEditorPage = () => {
 
   const onSave = async () => {
     const checked = validateIntervals(draft.intervals);
-    if (!checked.valid || !draft.name.trim() || draft.sets < 1) {
+    if (!checked.valid || !draft.name.trim() || !Number.isFinite(draft.sets) || draft.sets < 1) {
       return;
     }
 
@@ -142,9 +142,17 @@ export const TimerEditorPage = () => {
         <input
           type="number"
           min={1}
-          value={draft.sets}
+          value={toDisplayNumber(draft.sets)}
           onWheel={lockNumberInput}
-          onChange={(e) => setDraft((prev) => ({ ...prev, sets: Number(e.target.value) || 1 }))}
+          onChange={(e) =>
+            setDraft((prev) => {
+              const raw = e.target.value;
+              if (raw === '') {
+                return { ...prev, sets: Number.NaN };
+              }
+              return { ...prev, sets: Math.max(0, Number(raw)) };
+            })
+          }
         />
       </label>
 
@@ -234,7 +242,7 @@ export const TimerEditorPage = () => {
         </ul>
       )}
 
-      <button className="primary-btn full" disabled={!validation.valid || !draft.name.trim() || draft.sets < 1} onClick={onSave}>
+      <button className="primary-btn full" disabled={!validation.valid || !draft.name.trim() || !Number.isFinite(draft.sets) || draft.sets < 1} onClick={onSave}>
         Save Timer
       </button>
       <button className="secondary-btn full" onClick={onCancel}>

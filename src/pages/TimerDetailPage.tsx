@@ -165,6 +165,7 @@ export const TimerDetailPage = () => {
   const { settings } = useSettings();
   const [timer, setTimer] = useState<Timer | null>(null);
   const [quickIntervals, setQuickIntervals] = useState<Interval[]>([]);
+  const [quickSets, setQuickSets] = useState<number>(1);
   const [quickError, setQuickError] = useState<string>('');
   const [mode, setMode] = useState<PageMode>(isEditPath(location.pathname) ? 'edit' : 'quick');
   const [draft, setDraft] = useState<DraftTimer | null>(null);
@@ -175,6 +176,7 @@ export const TimerDetailPage = () => {
       const loaded = value ?? null;
       setTimer(loaded);
       setQuickIntervals(loaded?.intervals ?? []);
+      setQuickSets(loaded?.sets ?? 1);
       setDraft(loaded ? { ...loaded, intervals: withUiIds(loaded.intervals) } : null);
     });
   }, [id]);
@@ -192,15 +194,17 @@ export const TimerDetailPage = () => {
     if (!timer) {
       return 0;
     }
+    const safeSets = Number.isFinite(quickSets) && quickSets >= 1 ? quickSets : timer.sets;
     const intervalSeconds = timer.intervals.reduce((sum, interval) => (
       sum + interval.durationMinutes * 60 + interval.durationSeconds
     ), 0);
-    return intervalSeconds * Math.max(1, timer.sets);
-  }, [timer]);
+    return intervalSeconds * Math.max(1, safeSets);
+  }, [quickSets, timer]);
 
   const syncTimerState = (next: Timer) => {
     setTimer(next);
     setQuickIntervals(next.intervals);
+    setQuickSets(next.sets);
     setDraft({ ...next, intervals: withUiIds(next.intervals) });
   };
 
@@ -252,6 +256,26 @@ export const TimerDetailPage = () => {
     const next = insertQuickInterval(quickIntervals, type);
     setQuickIntervals(next);
     await persistQuickIntervals(next);
+  };
+
+  const onQuickSetsBlur = async () => {
+    if (!timer) {
+      return;
+    }
+    if (!Number.isFinite(quickSets) || quickSets < 1) {
+      setQuickError('Sets must be at least 1.');
+      setQuickSets(timer.sets);
+      return;
+    }
+
+    const now = new Date().toISOString();
+    const next: Timer = {
+      ...timer,
+      sets: Math.max(1, Math.floor(quickSets)),
+      updatedAt: now,
+    };
+    setQuickError('');
+    await saveTimer(next);
   };
 
   const onDeleteTimer = async () => {
@@ -355,7 +379,7 @@ export const TimerDetailPage = () => {
     }
 
     const checked = validateIntervals(stripUiIds(draft.intervals));
-    if (!checked.valid || !draft.name.trim() || draft.sets < 1) {
+    if (!checked.valid || !draft.name.trim() || !Number.isFinite(draft.sets) || draft.sets < 1) {
       setQuickError(checked.errors[0] ?? 'Timer name and interval values must be valid.');
       return;
     }
@@ -394,6 +418,34 @@ export const TimerDetailPage = () => {
               <button className="danger-btn detail-top-icon-btn" aria-label="Delete timer" onClick={onDeleteTimer}>🗑</button>
               <Link to={`/timer/${timer.id}/run`} className="primary-btn detail-top-btn selected">▶ RUN</Link>
             </div>
+          </div>
+
+          <div className="detail-quick-sets">
+            <label className="field compact detail-quick-sets-row">
+              Sets
+              <input
+                type="number"
+                min={1}
+                value={toDisplayNumber(quickSets)}
+                onWheel={lockNumberInput}
+                onChange={(e) => {
+                  const raw = e.target.value;
+                  if (raw === '') {
+                    setQuickSets(Number.NaN);
+                    return;
+                  }
+                  setQuickSets(Math.max(0, Number(raw)));
+                }}
+                onBlur={onQuickSetsBlur}
+                aria-label="Number of sets"
+              />
+            </label>
+          </div>
+
+          <div className="detail-quick-list-head" aria-hidden="true">
+            <span>Min</span>
+            <span className="detail-quick-list-head-gap">:</span>
+            <span>Sec</span>
           </div>
 
           <div className="detail-quick-list">
@@ -470,9 +522,20 @@ export const TimerDetailPage = () => {
             <input
               type="number"
               min={1}
-              value={draft.sets}
+              value={toDisplayNumber(draft.sets)}
               onWheel={lockNumberInput}
-              onChange={(e) => setDraft((prev) => prev ? { ...prev, sets: Number(e.target.value) || 1 } : prev)}
+              onChange={(e) =>
+                setDraft((prev) => {
+                  if (!prev) {
+                    return prev;
+                  }
+                  const raw = e.target.value;
+                  if (raw === '') {
+                    return { ...prev, sets: Number.NaN };
+                  }
+                  return { ...prev, sets: Math.max(0, Number(raw)) };
+                })
+              }
             />
           </label>
 
