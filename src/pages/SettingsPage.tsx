@@ -3,7 +3,7 @@ import { DEFAULT_SETTINGS, TYPE_LABELS } from '../config';
 import { intervalColorsAreUnique } from '../lib/settingsRules';
 import { useSettings } from '../services/settingsContext';
 import type { AppSettings, IntervalType } from '../types';
-import strongmanCat from '../../media/strongman-cat-3.png';
+import victorianGym3 from '../../media/victorian-gym-3.png';
 
 const types: IntervalType[] = ['warmup', 'work', 'rest', 'cooldown'];
 
@@ -68,7 +68,7 @@ export const SettingsPage = () => {
         rel="noreferrer"
         aria-label="Kobe the Abby Instagram"
       >
-        <img className="settings-float-cat" src={strongmanCat} alt="" />
+        <img className="settings-float-cat" src={victorianGym3} alt="" />
       </a>
     </section>
   );
