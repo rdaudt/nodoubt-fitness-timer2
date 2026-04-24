@@ -4,7 +4,7 @@ import { BRAND } from '../config';
 import { TimerCard } from '../components/TimerCard';
 import { TimerRepository } from '../services/storage';
 import type { Timer } from '../types';
-import victorianGym3 from '../../media/victorian-gym-3.png';
+import strongmanCat3 from '../../media/strongman-cat-3.png';
 
 export const TimerListPage = () => {
   const [timers, setTimers] = useState<Timer[]>([]);
@@ -48,7 +48,7 @@ export const TimerListPage = () => {
         rel="noreferrer"
         aria-label="Kobe the Abby Instagram"
       >
-        <img className="home-victorian-image" src={victorianGym3} alt="" />
+        <img className="home-victorian-image" src={strongmanCat3} alt="" />
       </a>
     </section>
   );
