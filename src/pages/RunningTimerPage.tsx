@@ -188,15 +188,18 @@ export const RunningTimerPage = () => {
             <div
               key={`${entry.sequence}-${entry.type}`}
               ref={index === activeVisibleIndex ? activeRef : null}
-              className={`timeline-item ${state}`}
+              className={`timeline-item ${state} ${showRunningCat ? 'has-cat' : ''}`}
               style={{
                 backgroundColor: surfaceColor,
               }}
             >
-              <div>
-                <p className="interval-title">{entry.name}</p>
-                <p className="interval-sub">{entry.type}</p>
-                {showRunningCat && activeEntry && <img className="timeline-cat" src={runCatByEntryId[activeEntry.id]} alt="" aria-hidden="true" />}
+              {showRunningCat && activeEntry && (
+                <img className="timeline-cat-bg" src={runCatByEntryId[activeEntry.id]} alt="" aria-hidden="true" />
+              )}
+
+              <div className="timeline-content">
+                <p className="timeline-interval-title">{entry.name}</p>
+                <p className="timeline-interval-type">{entry.type}</p>
               </div>
               <p className={state === 'active' ? 'timeline-time live' : 'timeline-time'}>
                 {state === 'active'
