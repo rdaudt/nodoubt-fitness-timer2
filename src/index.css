@@ -730,6 +730,52 @@ select {
   color: #271f11;
 }
 
+.detail-quick-sets {
+  margin: 0 0 0.4rem;
+  max-width: 210px;
+}
+
+.detail-quick-sets-row {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  margin: 0;
+}
+
+.detail-quick-sets-row input {
+  width: 90px;
+}
+
+.detail-quick-sets input {
+  text-align: center;
+  font-weight: 700;
+  color: #ececec;
+  background: #1a1a1a;
+  border-color: #3c3630;
+}
+
+.detail-quick-list-head {
+  display: grid;
+  grid-template-columns: 3.1rem 0.8rem 3.1rem;
+  justify-content: end;
+  align-items: center;
+  padding: 0 0.58rem 0.14rem;
+  color: #a99f90;
+  font-family: 'Barlow Condensed', sans-serif;
+  letter-spacing: 0.07em;
+  font-size: 0.78rem;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.detail-quick-list-head span {
+  text-align: center;
+}
+
+.detail-quick-list-head-gap {
+  visibility: hidden;
+}
+
 .detail-quick-list {
   display: grid;
   gap: 0.45rem;
