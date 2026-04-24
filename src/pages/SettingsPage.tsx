@@ -3,6 +3,7 @@ import { DEFAULT_SETTINGS, TYPE_LABELS } from '../config';
 import { intervalColorsAreUnique } from '../lib/settingsRules';
 import { useSettings } from '../services/settingsContext';
 import type { AppSettings, IntervalType } from '../types';
+import catLookingUp from '../../media/cat-looking-up.png';
 
 const types: IntervalType[] = ['warmup', 'work', 'rest', 'cooldown'];
 
@@ -54,6 +55,10 @@ export const SettingsPage = () => {
       <div className="actions-row">
         <button className="primary-btn" onClick={onSave} disabled={!unique}>Save Colors</button>
         <button className="secondary-btn" onClick={() => setDraft(DEFAULT_SETTINGS)}>Reset Defaults</button>
+      </div>
+
+      <div className="settings-float-cat-wrap" aria-hidden="true">
+        <img className="settings-float-cat" src={catLookingUp} alt="" />
       </div>
     </section>
   );

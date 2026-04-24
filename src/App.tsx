@@ -1,10 +1,10 @@
 import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom';
 import { AppLayout } from './components/AppLayout';
 import { AboutPage } from './pages/AboutPage';
+import { NewTimerPage } from './pages/NewTimerPage';
 import { RunningTimerPage } from './pages/RunningTimerPage';
 import { SettingsPage } from './pages/SettingsPage';
 import { TimerDetailPage } from './pages/TimerDetailPage';
-import { TimerEditorPage } from './pages/TimerEditorPage';
 import { TimerListPage } from './pages/TimerListPage';
 import { SettingsProvider } from './services/settingsContext';
 
@@ -17,7 +17,7 @@ function App() {
             <Route path="/" element={<TimerListPage />} />
             <Route path="/about" element={<AboutPage />} />
             <Route path="/settings" element={<SettingsPage />} />
-            <Route path="/timer/new" element={<TimerEditorPage />} />
+            <Route path="/timer/new" element={<NewTimerPage />} />
             <Route path="/timer/:id" element={<TimerDetailPage />} />
             <Route path="/timer/:id/edit" element={<TimerDetailPage />} />
             <Route path="/timer/:id/run" element={<RunningTimerPage />} />
