@@ -306,7 +306,8 @@ select {
   margin-top: auto;
   align-self: flex-end;
   display: inline-block;
-  padding: 0.45rem 0 0.15rem;
+  padding: 0.45rem 0 0;
+  margin-bottom: -0.95rem;
 }
 
 .home-victorian-image {
