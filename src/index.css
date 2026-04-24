@@ -283,23 +283,35 @@ select {
 .home-qr-wrap {
   position: fixed;
   left: 0.9rem;
-  bottom: calc(4.35rem + env(safe-area-inset-bottom));
-  z-index: 8;
+  bottom: calc(4.9rem + env(safe-area-inset-bottom));
+  z-index: 9;
   pointer-events: auto;
   display: block;
   width: 92px;
-  border-radius: 12px;
-  background: rgba(13, 13, 13, 0.92);
-  border: 1px solid #2d2d2d;
-  padding: 0.42rem;
-  box-shadow: 0 10px 22px rgba(0, 0, 0, 0.45);
+  box-shadow: 0 10px 22px rgba(0, 0, 0, 0.35);
 }
 
 .home-qr-image {
   width: 100%;
   height: auto;
   display: block;
-  border-radius: 8px;
+  border-radius: 0;
+}
+
+.home-hidden-cat-wrap {
+  position: fixed;
+  left: calc(0.9rem + 92px - 26px);
+  bottom: calc(4.9rem + env(safe-area-inset-bottom) - 2px);
+  z-index: 7;
+  pointer-events: auto;
+  display: block;
+}
+
+.home-hidden-cat {
+  width: 78px;
+  height: auto;
+  object-fit: contain;
+  filter: drop-shadow(0 10px 18px rgba(0, 0, 0, 0.42));
 }
 
 .interval-row,
@@ -943,8 +955,17 @@ select {
 
   .home-qr-wrap {
     left: 1.2rem;
-    bottom: calc(4.55rem + env(safe-area-inset-bottom));
+    bottom: calc(5.2rem + env(safe-area-inset-bottom));
     width: 100px;
+  }
+
+  .home-hidden-cat-wrap {
+    left: calc(1.2rem + 100px - 28px);
+    bottom: calc(5.2rem + env(safe-area-inset-bottom) - 2px);
+  }
+
+  .home-hidden-cat {
+    width: 88px;
   }
 
   .settings-float-cat-wrap {
