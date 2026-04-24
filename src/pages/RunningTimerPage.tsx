@@ -105,6 +105,22 @@ export const RunningTimerPage = () => {
     return <p className="empty">Timer not found.</p>;
   }
 
+  const activeEntry = runner.timeline[runner.state.currentIndex];
+  const currentSet = activeEntry?.setNumber ?? (activeEntry?.type === 'cooldown' ? timer.sets : 1);
+  const visibleIntervals = (() => {
+    if (timer.sets <= 1) {
+      return timer.intervals;
+    }
+    if (currentSet <= 1) {
+      return timer.intervals.filter((x) => x.type !== 'cooldown');
+    }
+    if (currentSet >= timer.sets) {
+      return timer.intervals.filter((x) => x.type !== 'warmup');
+    }
+    return timer.intervals.filter((x) => x.type === 'work' || x.type === 'rest');
+  })();
+  const activeVisibleIndex = visibleIntervals.findIndex((x) => x.sequence === activeEntry?.sourceSequence);
+
   const requestPause = () => {
     if (runner.state.status === 'running') {
       setConfirmAction('pause');
@@ -133,6 +149,7 @@ export const RunningTimerPage = () => {
     <section>
       <header className="run-header">
         <p className="run-name">{timer.name}</p>
+        <p className="run-remaining">Set {Math.max(1, currentSet)} of {timer.sets}</p>
         <p className="run-remaining">Total remaining: {formatClock(runner.state.totalRemainingMs / 1000)}</p>
       </header>
 
@@ -156,15 +173,21 @@ export const RunningTimerPage = () => {
       )}
 
       <div className="stack timeline-list">
-        {runner.timeline.map((entry, index) => {
-          const state = index < runner.state.currentIndex ? 'done' : index === runner.state.currentIndex ? 'active' : 'upcoming';
+        {visibleIntervals.map((entry, index) => {
+          const state = runner.state.status === 'completed'
+            ? 'done'
+            : index < activeVisibleIndex
+              ? 'done'
+              : index === activeVisibleIndex
+                ? 'active'
+                : 'upcoming';
           const intervalColor = settings.intervalColors[entry.type];
           const surfaceColor = withAlpha(intervalColor, state === 'active' ? 0.85 : 0.68);
           const showRunningCat = state === 'active' && runner.state.status === 'running';
           return (
             <div
-              key={entry.id}
-              ref={index === runner.state.currentIndex ? activeRef : null}
+              key={`${entry.sequence}-${entry.type}`}
+              ref={index === activeVisibleIndex ? activeRef : null}
               className={`timeline-item ${state}`}
               style={{
                 backgroundColor: surfaceColor,
@@ -172,13 +195,13 @@ export const RunningTimerPage = () => {
             >
               <div>
                 <p className="interval-title">{entry.name}</p>
-                <p className="interval-sub">{entry.setNumber ? `Set ${entry.setNumber}` : entry.type}</p>
-                {showRunningCat && <img className="timeline-cat" src={runCatByEntryId[entry.id]} alt="" aria-hidden="true" />}
+                <p className="interval-sub">{entry.type}</p>
+                {showRunningCat && activeEntry && <img className="timeline-cat" src={runCatByEntryId[activeEntry.id]} alt="" aria-hidden="true" />}
               </div>
               <p className={state === 'active' ? 'timeline-time live' : 'timeline-time'}>
                 {state === 'active'
                   ? formatClock(runner.state.currentRemainingMs / 1000)
-                  : formatClock(entry.durationMs / 1000)}
+                  : formatClock((entry.durationMinutes * 60 + entry.durationSeconds))}
               </p>
             </div>
           );

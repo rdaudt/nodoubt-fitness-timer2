@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { DEFAULT_SETTINGS, TYPE_LABELS } from '../config';
 import { intervalColorsAreUnique } from '../lib/settingsRules';
 import { useSettings } from '../services/settingsContext';
@@ -10,6 +10,10 @@ const types: IntervalType[] = ['warmup', 'work', 'rest', 'cooldown'];
 export const SettingsPage = () => {
   const { settings, saveSettings } = useSettings();
   const [draft, setDraft] = useState<AppSettings>(settings);
+
+  useEffect(() => {
+    setDraft(settings);
+  }, [settings]);
 
   const unique = useMemo(() => intervalColorsAreUnique(draft), [draft]);
 
