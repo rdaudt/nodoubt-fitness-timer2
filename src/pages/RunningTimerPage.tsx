@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { Link, useParams } from 'react-router-dom';
+import { Link, useParams, useSearchParams } from 'react-router-dom';
 import { withAlpha } from '../lib/color';
 import { formatClock } from '../lib/time';
 import { useTimerRunner } from '../lib/useTimerRunner';
@@ -31,6 +31,7 @@ const shuffled = (items: string[]): string[] => {
 
 export const RunningTimerPage = () => {
   const { id = '' } = useParams();
+  const [searchParams] = useSearchParams();
   const { settings } = useSettings();
   const [timer, setTimer] = useState<Timer | null>(null);
   const [confirmAction, setConfirmAction] = useState<'stop' | null>(null);
@@ -105,6 +106,7 @@ export const RunningTimerPage = () => {
     return <p className="empty">Timer not found.</p>;
   }
 
+  const donePath = searchParams.get('from') === 'home' ? '/' : `/timer/${timer.id}`;
   const activeEntry = runner.timeline[runner.state.currentIndex];
   const currentSet = activeEntry?.setNumber ?? (activeEntry?.type === 'cooldown' ? timer.sets : 1);
   const visibleIntervals = (() => {
@@ -162,7 +164,7 @@ export const RunningTimerPage = () => {
         {(runner.state.status === 'running' || runner.state.status === 'paused') && (
           <button className="danger-btn" onClick={requestStop}>{isPausedBetweenSets ? 'Cancel' : 'Stop'}</button>
         )}
-        {runner.state.status === 'completed' && <Link className="primary-btn" to={`/timer/${timer.id}`}>Done</Link>}
+        {runner.state.status === 'completed' && <Link className="primary-btn" to={donePath}>Done</Link>}
       </div>
 
       {confirmAction && (
