@@ -232,12 +232,37 @@ select {
 }
 
 .timer-card {
+  position: relative;
   display: flex;
   align-items: center;
   gap: 0.85rem;
   min-height: 78px;
   padding: 0.9rem 1rem;
   border-left: 3px solid var(--accent);
+  overflow: hidden;
+}
+
+.timer-card-featured {
+  min-height: 136px;
+  align-items: flex-end;
+}
+
+.timer-card-feature-image {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  background-position: center 34%;
+  background-size: cover;
+  opacity: 0.88;
+}
+
+.timer-card-feature-image::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background:
+    linear-gradient(to bottom, rgba(20, 20, 20, 0.04) 0%, rgba(20, 20, 20, 0.56) 54%, var(--surface) 100%),
+    linear-gradient(to right, rgba(20, 20, 20, 0.46) 0%, rgba(20, 20, 20, 0.12) 52%, rgba(20, 20, 20, 0.58) 100%);
 }
 
 .timer-swipe-row {
@@ -273,6 +298,8 @@ select {
 }
 
 .timer-card-main {
+  position: relative;
+  z-index: 1;
   display: block;
   flex: 1 1 auto;
   min-width: 0;
@@ -315,6 +342,8 @@ select {
 }
 
 .timer-card-actions {
+  position: relative;
+  z-index: 1;
   display: flex;
   align-items: center;
   gap: 0.75rem;
@@ -386,22 +415,6 @@ select {
   min-height: calc(100vh - 170px);
   display: flex;
   flex-direction: column;
-}
-
-.home-victorian-wrap {
-  position: fixed;
-  right: 0.85rem;
-  bottom: calc(3.95rem + env(safe-area-inset-bottom));
-  z-index: 8;
-  pointer-events: auto;
-  display: block;
-}
-
-.home-victorian-image {
-  width: clamp(132px, 40vw, 176px);
-  height: auto;
-  object-fit: contain;
-  filter: drop-shadow(0 10px 20px rgba(0, 0, 0, 0.42));
 }
 
 .interval-row,
@@ -1261,15 +1274,6 @@ select {
   .detail-quick-add-floating {
     padding: 0 1.2rem;
     bottom: calc(4.2rem + env(safe-area-inset-bottom));
-  }
-
-  .home-victorian-wrap {
-    right: 1.2rem;
-    bottom: calc(4.2rem + env(safe-area-inset-bottom));
-  }
-
-  .home-victorian-image {
-    width: clamp(164px, 29vw, 210px);
   }
 
   .settings-float-cat-wrap {
