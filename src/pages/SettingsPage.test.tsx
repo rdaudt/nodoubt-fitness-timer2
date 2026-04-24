@@ -27,7 +27,7 @@ describe('SettingsPage', () => {
     fireEvent.change(screen.getByLabelText('Warmup Color'), { target: { value: '#111111' } });
     fireEvent.change(screen.getByLabelText('Work Color'), { target: { value: '#111111' } });
 
-    expect(screen.getByRole('button', { name: /save colors/i })).toBeDisabled();
+    expect(screen.getByRole('button', { name: /^save$/i })).toBeDisabled();
   });
 
   it('renders pause between sets toggle as enabled by default', () => {
