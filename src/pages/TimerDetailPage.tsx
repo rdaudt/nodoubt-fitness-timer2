@@ -390,26 +390,17 @@ export const TimerDetailPage = () => {
 
   return (
     <section className="timer-detail-page">
-      <label className="field compact detail-name-field">
-        Timer Name
-        <input
-          value={quickName}
-          onChange={(e) => setQuickName(e.target.value)}
-          onBlur={onQuickNameBlur}
-          aria-label="Timer name"
-        />
-      </label>
+      <input
+        className="detail-name-input-top"
+        value={quickName}
+        onChange={(e) => setQuickName(e.target.value)}
+        onBlur={onQuickNameBlur}
+        aria-label="Timer name"
+        placeholder="Timer name"
+      />
 
       <div className="detail-toolbar">
-        <p className="detail-total-label">TOTAL: {formatClock(totalSeconds)}</p>
-        <div className="detail-toolbar-actions">
-          <button className="danger-btn detail-top-icon-btn" aria-label="Delete timer" onClick={onDeleteTimer}>Delete</button>
-          <Link to={`/timer/${timer.id}/run`} className="primary-btn detail-top-btn selected">RUN</Link>
-        </div>
-      </div>
-
-      <div className="detail-quick-sets">
-        <label className="field compact detail-quick-sets-row">
+        <label className="field compact detail-quick-sets-row detail-inline-sets">
           Sets
           <input
             type="number"
@@ -428,6 +419,15 @@ export const TimerDetailPage = () => {
             aria-label="Number of sets"
           />
         </label>
+
+        <p className="detail-total-label">TOTAL: {formatClock(totalSeconds)}</p>
+        <div className="detail-toolbar-actions">
+          <button className="danger-btn detail-top-icon-btn" aria-label="Delete timer" onClick={onDeleteTimer}>🗑</button>
+          <Link to={`/timer/${timer.id}/run`} className="primary-btn detail-top-btn selected">
+            <span className="detail-run-icon" aria-hidden="true">▶️</span>
+            <span>RUN</span>
+          </Link>
+        </div>
       </div>
 
       <div className="detail-quick-list-head" aria-hidden="true">
