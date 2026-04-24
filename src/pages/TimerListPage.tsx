@@ -4,7 +4,6 @@ import { BRAND } from '../config';
 import { TimerCard } from '../components/TimerCard';
 import { TimerRepository } from '../services/storage';
 import type { Timer } from '../types';
-import hiddenCat from '../../media/hidden-cat-2.png';
 
 export const TimerListPage = () => {
   const [timers, setTimers] = useState<Timer[]>([]);
@@ -41,13 +40,13 @@ export const TimerListPage = () => {
       </a>
 
       <a
-        className="home-hidden-cat-wrap"
+        className="home-sleepy-cat-wrap"
         href="https://www.instagram.com/kobetheabby/"
         target="_blank"
         rel="noreferrer"
         aria-label="Kobe the Abby Instagram"
       >
-        <img className="home-hidden-cat" src={hiddenCat} alt="" />
+        <img className="home-sleepy-cat" src="/assets/sleepy-cat-transparent.png" alt="" />
       </a>
     </section>
   );
