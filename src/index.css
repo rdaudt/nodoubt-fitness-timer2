@@ -681,6 +681,13 @@ select {
   font-weight: 500;
 }
 
+.about-kobe-ai-image {
+  width: min(280px, 82%);
+  height: auto;
+  display: block;
+  margin: 1.1rem auto 0;
+}
+
 .run-header {
   margin-bottom: 0.7rem;
 }
