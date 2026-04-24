@@ -1,6 +1,5 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { BRAND } from '../config';
 import { TimerCard } from '../components/TimerCard';
 import { TimerRepository } from '../services/storage';
 import type { Timer } from '../types';
@@ -36,10 +35,6 @@ export const TimerListPage = () => {
           ? <p className="empty">No timers yet. Create your first interval plan.</p>
           : timers.map((timer) => <TimerCard key={timer.id} timer={timer} onDelete={onDeleteTimer} />)}
       </div>
-
-      <a href={BRAND.instagramUrl} target="_blank" rel="noreferrer" className="cta-banner">
-        {BRAND.ctaLabel}
-      </a>
 
       <a
         className="home-victorian-wrap"
