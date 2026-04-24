@@ -50,6 +50,7 @@ export const RunningTimerPage = () => {
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
     },
+    { pauseBetweenSets: settings.pauseBetweenSets },
   );
 
   const runCatByEntryId = useMemo(() => {
@@ -140,6 +141,7 @@ export const RunningTimerPage = () => {
     }
     setConfirmAction(null);
   };
+  const isPausedBetweenSets = runner.state.status === 'paused' && runner.state.pauseReason === 'betweenSets';
 
   return (
     <section>
@@ -147,13 +149,18 @@ export const RunningTimerPage = () => {
         <p className="run-name">{timer.name}</p>
         <p className="run-remaining">Set {Math.max(1, currentSet)} of {timer.sets}</p>
         <p className="run-remaining">Total remaining: {formatClock(runner.state.totalRemainingMs / 1000)}</p>
+        {isPausedBetweenSets && <p className="run-paused-flag pulse">Paused</p>}
       </header>
 
       <div className="actions-row wrap">
         {runner.state.status === 'running' && <button className="secondary-btn" onClick={requestPause}>Pause</button>}
-        {runner.state.status === 'paused' && <button className="primary-btn" onClick={runner.resume}>Resume</button>}
+        {runner.state.status === 'paused' && (
+          <button className="primary-btn" onClick={runner.resume}>
+            {isPausedBetweenSets ? 'Start Next Set' : 'Resume'}
+          </button>
+        )}
         {(runner.state.status === 'running' || runner.state.status === 'paused') && (
-          <button className="danger-btn" onClick={requestStop}>Stop</button>
+          <button className="danger-btn" onClick={requestStop}>{isPausedBetweenSets ? 'Cancel' : 'Stop'}</button>
         )}
         {runner.state.status === 'completed' && <Link className="primary-btn" to={`/timer/${timer.id}`}>Done</Link>}
       </div>

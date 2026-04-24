@@ -29,7 +29,23 @@ export const SettingsPage = () => {
       <h1 className="screen-title">Settings</h1>
       <p className="timer-meta">Set one unique color for each interval type.</p>
 
-      <div className="stack">
+      <label className="field settings-toggle-row">
+        <span>Pause between sets</span>
+        <input
+          className="settings-toggle-input"
+          type="checkbox"
+          checked={draft.pauseBetweenSets}
+          onChange={(e) =>
+            setDraft((prev) => ({
+              ...prev,
+              pauseBetweenSets: e.target.checked,
+            }))
+          }
+          aria-label="Pause between sets"
+        />
+      </label>
+
+      <div className="stack settings-stack">
         {types.map((type) => (
           <label key={type} className="field settings-row">
             <span className="settings-color-label">
@@ -43,6 +59,7 @@ export const SettingsPage = () => {
               value={draft.intervalColors[type]}
               onChange={(e) =>
                 setDraft((prev) => ({
+                  ...prev,
                   intervalColors: {
                     ...prev.intervalColors,
                     [type]: e.target.value,
