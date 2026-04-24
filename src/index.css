@@ -454,7 +454,7 @@ select {
 }
 
 .settings-float-cat {
-  width: 110px;
+  width: 172px;
   height: auto;
   object-fit: contain;
   filter: drop-shadow(0 10px 20px rgba(0, 0, 0, 0.42));
@@ -1004,7 +1004,7 @@ select {
   }
 
   .settings-float-cat {
-    width: 124px;
+    width: 194px;
   }
 
   .coach-wrap {

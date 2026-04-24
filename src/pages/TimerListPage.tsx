@@ -41,9 +41,15 @@ export const TimerListPage = () => {
         {BRAND.ctaLabel}
       </a>
 
-      <div className="home-victorian-wrap" aria-hidden="true">
+      <a
+        className="home-victorian-wrap"
+        href="https://www.instagram.com/kobetheabby/"
+        target="_blank"
+        rel="noreferrer"
+        aria-label="Kobe the Abby Instagram"
+      >
         <img className="home-victorian-image" src={victorianGym3} alt="" />
-      </div>
+      </a>
     </section>
   );
 };
