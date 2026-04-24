@@ -303,18 +303,19 @@ select {
 }
 
 .home-victorian-wrap {
-  margin-top: auto;
-  align-self: flex-end;
-  display: inline-block;
-  padding: 0.45rem 0 0;
-  margin-bottom: -0.95rem;
+  position: fixed;
+  right: 0.85rem;
+  bottom: calc(3.95rem + env(safe-area-inset-bottom));
+  z-index: 8;
+  pointer-events: auto;
+  display: block;
 }
 
 .home-victorian-image {
-  width: min(180px, 48vw);
+  width: clamp(132px, 40vw, 176px);
   height: auto;
   object-fit: contain;
-  filter: drop-shadow(0 14px 24px rgba(0, 0, 0, 0.45));
+  filter: drop-shadow(0 10px 20px rgba(0, 0, 0, 0.42));
 }
 
 .interval-row,
@@ -1057,8 +1058,13 @@ select {
     margin-right: -1.2rem;
   }
 
+  .home-victorian-wrap {
+    right: 1.2rem;
+    bottom: calc(4.2rem + env(safe-area-inset-bottom));
+  }
+
   .home-victorian-image {
-    width: min(210px, 34vw);
+    width: clamp(164px, 29vw, 210px);
   }
 
   .settings-float-cat-wrap {
