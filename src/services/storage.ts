@@ -57,7 +57,17 @@ export const SettingsRepository = {
   async get(): Promise<AppSettings> {
     const db = await dbPromise;
     const row = await db.get('settings', 'app');
-    return row?.value ?? DEFAULT_SETTINGS;
+    if (!row?.value) {
+      return DEFAULT_SETTINGS;
+    }
+    return {
+      ...DEFAULT_SETTINGS,
+      ...row.value,
+      intervalColors: {
+        ...DEFAULT_SETTINGS.intervalColors,
+        ...row.value.intervalColors,
+      },
+    };
   },
   async save(settings: AppSettings): Promise<void> {
     const db = await dbPromise;

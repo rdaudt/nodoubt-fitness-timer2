@@ -15,6 +15,7 @@ vi.mock('../services/settingsContext', () => ({
         rest: '#2ecc71',
         cooldown: '#3b82f6',
       },
+      pauseBetweenSets: true,
     },
   }),
 }));
@@ -27,5 +28,10 @@ describe('SettingsPage', () => {
     fireEvent.change(screen.getByLabelText('Work Color'), { target: { value: '#111111' } });
 
     expect(screen.getByRole('button', { name: /save colors/i })).toBeDisabled();
+  });
+
+  it('renders pause between sets toggle as enabled by default', () => {
+    render(<SettingsPage />);
+    expect(screen.getByLabelText(/pause between sets/i)).toBeChecked();
   });
 });

@@ -425,6 +425,25 @@ select {
   align-items: center;
   justify-content: space-between;
   gap: 0.75rem;
+  margin-bottom: 0;
+}
+
+.settings-stack {
+  gap: 0.35rem;
+}
+
+.settings-toggle-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  margin: 0 0 0.2rem;
+}
+
+.settings-toggle-input {
+  width: 20px;
+  height: 20px;
+  accent-color: var(--accent);
 }
 
 .settings-color-swatch {
@@ -556,6 +575,15 @@ select {
 
 .run-remaining {
   color: var(--muted);
+}
+
+.run-paused-flag {
+  margin: 0;
+  color: #ffd976;
+  font-family: 'Barlow Condensed', sans-serif;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  font-size: 1.05rem;
 }
 
 .chrono {
