@@ -4,7 +4,7 @@ import { BRAND } from '../config';
 import { TimerCard } from '../components/TimerCard';
 import { TimerRepository } from '../services/storage';
 import type { Timer } from '../types';
-import victorianGym2 from '../../media/victorian-gym-2.png';
+import victorianGym3 from '../../media/victorian-gym-3.png';
 
 export const TimerListPage = () => {
   const [timers, setTimers] = useState<Timer[]>([]);
@@ -42,7 +42,7 @@ export const TimerListPage = () => {
       </a>
 
       <div className="home-victorian-wrap" aria-hidden="true">
-        <img className="home-victorian-image" src={victorianGym2} alt="" />
+        <img className="home-victorian-image" src={victorianGym3} alt="" />
       </div>
     </section>
   );
