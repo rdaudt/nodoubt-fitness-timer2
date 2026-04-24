@@ -19,7 +19,7 @@ function App() {
             <Route path="/settings" element={<SettingsPage />} />
             <Route path="/timer/new" element={<TimerEditorPage />} />
             <Route path="/timer/:id" element={<TimerDetailPage />} />
-            <Route path="/timer/:id/edit" element={<TimerEditorPage />} />
+            <Route path="/timer/:id/edit" element={<TimerDetailPage />} />
             <Route path="/timer/:id/run" element={<RunningTimerPage />} />
             <Route path="*" element={<Navigate to="/" replace />} />
           </Route>
