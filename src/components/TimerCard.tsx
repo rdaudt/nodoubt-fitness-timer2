@@ -13,10 +13,12 @@ const clamp = (value: number, min: number, max: number): number =>
 export const TimerCard = ({
   timer,
   intervalColors,
+  featureImage,
   onDelete,
 }: {
   timer: Timer;
   intervalColors: AppSettings['intervalColors'];
+  featureImage?: string;
   onDelete: (id: string) => void;
 }) => {
   const totalSeconds = Math.floor(estimateTimerDurationMs(timer) / 1000);
@@ -92,7 +94,14 @@ export const TimerCard = ({
         onPointerUp={onPointerUp}
         onPointerCancel={close}
       >
-        <div className="timer-card">
+        <div className={featureImage ? 'timer-card timer-card-featured' : 'timer-card'}>
+          {featureImage && (
+            <div
+              className="timer-card-feature-image"
+              style={{ backgroundImage: `url(${featureImage})` }}
+              aria-hidden="true"
+            />
+          )}
           <Link className="timer-card-main" to={`/timer/${timer.id}`} onClick={onCardLinkClick}>
             <div className="timer-card-copy">
               <h3>{timer.name}</h3>

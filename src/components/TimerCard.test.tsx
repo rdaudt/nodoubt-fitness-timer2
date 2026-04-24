@@ -19,9 +19,9 @@ const demoTimer: Timer = {
   ],
 };
 
-const renderCard = (timer: Timer = demoTimer) => render(
+const renderCard = (timer: Timer = demoTimer, featureImage?: string) => render(
   <MemoryRouter>
-    <TimerCard timer={timer} intervalColors={DEFAULT_SETTINGS.intervalColors} onDelete={vi.fn()} />
+    <TimerCard timer={timer} intervalColors={DEFAULT_SETTINGS.intervalColors} featureImage={featureImage} onDelete={vi.fn()} />
   </MemoryRouter>,
 );
 
@@ -57,5 +57,13 @@ describe('TimerCard', () => {
     expect(screen.queryByText(/Warmup/)).not.toBeInTheDocument();
     expect(screen.queryByText(/Rest/)).not.toBeInTheDocument();
     expect(screen.queryByText(/Cooldown/)).not.toBeInTheDocument();
+  });
+
+  it('renders an optional featured image layer', () => {
+    const { container } = renderCard(demoTimer, '/assets/feature.png');
+
+    expect(container.querySelector('.timer-card-feature-image')).toHaveStyle({
+      backgroundImage: 'url(/assets/feature.png)',
+    });
   });
 });
