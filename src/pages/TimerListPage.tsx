@@ -30,6 +30,16 @@ export const TimerListPage = () => {
       </a>
 
       <a
+        className="home-qr-wrap"
+        href="https://hiit-timer-green.vercel.app/"
+        target="_blank"
+        rel="noreferrer"
+        aria-label="Open app URL"
+      >
+        <img className="home-qr-image" src="/assets/home-app-qr.png" alt="QR code to open HIIT Timer app" />
+      </a>
+
+      <a
         className="home-float-cat-wrap"
         href="https://www.instagram.com/kobetheabby/"
         target="_blank"
