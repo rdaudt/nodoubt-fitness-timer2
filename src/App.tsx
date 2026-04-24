@@ -1,4 +1,4 @@
-import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom';
+import { BrowserRouter, Navigate, Route, Routes, useParams } from 'react-router-dom';
 import { AppLayout } from './components/AppLayout';
 import { AboutPage } from './pages/AboutPage';
 import { NewTimerPage } from './pages/NewTimerPage';
@@ -7,6 +7,11 @@ import { SettingsPage } from './pages/SettingsPage';
 import { TimerDetailPage } from './pages/TimerDetailPage';
 import { TimerListPage } from './pages/TimerListPage';
 import { SettingsProvider } from './services/settingsContext';
+
+const TimerEditRedirect = () => {
+  const { id = '' } = useParams();
+  return <Navigate to={`/timer/${id}`} replace />;
+};
 
 function App() {
   return (
@@ -19,7 +24,7 @@ function App() {
             <Route path="/settings" element={<SettingsPage />} />
             <Route path="/timer/new" element={<NewTimerPage />} />
             <Route path="/timer/:id" element={<TimerDetailPage />} />
-            <Route path="/timer/:id/edit" element={<TimerDetailPage />} />
+            <Route path="/timer/:id/edit" element={<TimerEditRedirect />} />
             <Route path="/timer/:id/run" element={<RunningTimerPage />} />
             <Route path="*" element={<Navigate to="/" replace />} />
           </Route>

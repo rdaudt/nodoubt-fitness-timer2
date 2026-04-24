@@ -670,6 +670,11 @@ select {
 .timer-detail-page {
   display: grid;
   gap: 0.75rem;
+  padding-bottom: calc(8.4rem + env(safe-area-inset-bottom));
+}
+
+.detail-name-field {
+  margin-bottom: 0.15rem;
 }
 
 .detail-actions {
@@ -787,6 +792,31 @@ select {
   gap: 0.45rem;
 }
 
+.detail-quick-swipe-row {
+  position: relative;
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.detail-quick-swipe-action {
+  position: absolute;
+  inset: 0 0 0 auto;
+  width: 96px;
+  display: flex;
+  align-items: stretch;
+  justify-content: stretch;
+}
+
+.detail-quick-swipe-delete {
+  width: 100%;
+  border: none;
+  border-radius: 0;
+  background: #7c1414;
+  color: #fff;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+}
+
 .detail-quick-row {
   display: flex;
   align-items: stretch;
@@ -794,11 +824,24 @@ select {
   background: #111;
 }
 
+.detail-quick-swipe-surface {
+  position: relative;
+  z-index: 1;
+  transition: transform 160ms ease;
+  touch-action: pan-y;
+}
+
 .detail-color-rail {
   width: 5px;
   border-radius: 12px;
   margin: 0.42rem 0 0.42rem 0.42rem;
   flex: 0 0 auto;
+}
+
+.detail-quick-drag-handle {
+  min-width: 28px;
+  align-self: center;
+  margin-left: 0.25rem;
 }
 
 .detail-quick-body {
@@ -838,7 +881,6 @@ select {
 }
 
 .detail-quick-add-row {
-  margin-top: 0.35rem;
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 0.5rem;
@@ -847,6 +889,26 @@ select {
 .detail-quick-add-row .secondary-btn {
   letter-spacing: 0.05em;
   font-weight: 700;
+}
+
+.detail-quick-add-floating {
+  position: fixed;
+  left: 50%;
+  transform: translateX(-50%);
+  bottom: calc(3.95rem + env(safe-area-inset-bottom));
+  width: min(860px, 100%);
+  padding: 0 1rem;
+  z-index: 9;
+  pointer-events: none;
+}
+
+.detail-quick-add-floating .detail-quick-add-row {
+  pointer-events: auto;
+  margin-top: 0;
+  background: rgba(10, 10, 10, 0.95);
+  border: 1px solid #2b2b2b;
+  border-radius: 12px;
+  padding: 0.55rem;
 }
 
 .detail-edit-top {
@@ -1034,6 +1096,11 @@ select {
 @media (min-width: 700px) {
   .screen {
     padding: 1.2rem 1.2rem 6.2rem;
+  }
+
+  .detail-quick-add-floating {
+    padding: 0 1.2rem;
+    bottom: calc(4.2rem + env(safe-area-inset-bottom));
   }
 
   .home-victorian-wrap {
