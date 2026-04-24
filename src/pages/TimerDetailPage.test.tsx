@@ -18,6 +18,7 @@ vi.mock('../services/settingsContext', () => ({
         rest: '#2ecc71',
         cooldown: '#3b82f6',
       },
+      pauseBetweenSets: true,
     },
   }),
 }));

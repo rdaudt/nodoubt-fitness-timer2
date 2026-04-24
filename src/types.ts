@@ -19,6 +19,7 @@ export interface Timer {
 
 export interface AppSettings {
   intervalColors: Record<IntervalType, string>;
+  pauseBetweenSets: boolean;
 }
 
 export interface TimelineEntry {
