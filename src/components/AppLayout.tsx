@@ -1,4 +1,4 @@
-import { Link, NavLink, Outlet, useLocation } from 'react-router-dom';
+import { NavLink, Outlet, useLocation } from 'react-router-dom';
 import { APP_NAME, BRAND } from '../config';
 
 const TimersIcon = () => (
@@ -38,25 +38,24 @@ export const AppLayout = () => {
   const location = useLocation();
   const isRunningView = /\/timer\/[^/]+\/run$/.test(location.pathname);
   const isAboutPage = /^\/about\/?$/.test(location.pathname);
+  const brandUrl = 'https://www.instagram.com/nodoubt.fitness/';
 
   return (
     <div className="app-shell">
       <header className={isRunningView ? 'topbar topbar-compact' : 'topbar'}>
         <div className="topbar-inner">
-          <Link to="/" className="brand-logo-link" aria-label={APP_NAME}>
+          <a href={brandUrl} target="_blank" rel="noreferrer" className="brand-logo-link" aria-label={APP_NAME}>
             <img src="/assets/nodoubt-fitness-logo-transparent-white-cropped.png" alt="NoDoubt Fitness logo" className="brand-logo" />
-          </Link>
-          <Link to="/" className="brand-text-wrap" aria-label={APP_NAME}>
+          </a>
+          <a href={brandUrl} target="_blank" rel="noreferrer" className="brand-text-wrap" aria-label={APP_NAME}>
             <p className="brand-name">{BRAND.businessName}</p>
             <p className="brand-tagline">{BRAND.tagline}</p>
-          </Link>
+          </a>
           {!isAboutPage && (
-            <div className="coach-wrap" aria-label="Coach Gabe">
-              <a href="https://www.instagram.com/nodoubt.fitness/" target="_blank" rel="noreferrer" aria-label="NoDoubt Fitness Instagram">
-                <img src="/assets/coach-gabe-transparent-cropped.png" alt="Coach Gabe" className="coach-photo" />
-              </a>
+            <a href={brandUrl} target="_blank" rel="noreferrer" className="coach-wrap" aria-label="Coach Gabe">
+              <img src="/assets/coach-gabe-transparent-cropped.png" alt="Coach Gabe" className="coach-photo" />
               <p className="coach-name">Coach Gabe</p>
-            </div>
+            </a>
           )}
         </div>
       </header>

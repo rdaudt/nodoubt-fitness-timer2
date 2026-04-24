@@ -280,6 +280,28 @@ select {
   filter: drop-shadow(0 10px 20px rgba(0, 0, 0, 0.4));
 }
 
+.home-qr-wrap {
+  position: fixed;
+  left: 0.9rem;
+  bottom: calc(4.35rem + env(safe-area-inset-bottom));
+  z-index: 8;
+  pointer-events: auto;
+  display: block;
+  width: 92px;
+  border-radius: 12px;
+  background: rgba(13, 13, 13, 0.92);
+  border: 1px solid #2d2d2d;
+  padding: 0.42rem;
+  box-shadow: 0 10px 22px rgba(0, 0, 0, 0.45);
+}
+
+.home-qr-image {
+  width: 100%;
+  height: auto;
+  display: block;
+  border-radius: 8px;
+}
+
 .interval-row,
 .timeline-item {
   display: flex;
@@ -917,6 +939,12 @@ select {
 
   .home-float-cat {
     width: 122px;
+  }
+
+  .home-qr-wrap {
+    left: 1.2rem;
+    bottom: calc(4.55rem + env(safe-area-inset-bottom));
+    width: 100px;
   }
 
   .settings-float-cat-wrap {
