@@ -179,7 +179,8 @@ export const RunningTimerPage = () => {
                 : 'upcoming';
           const intervalColor = settings.intervalColors[entry.type];
           const surfaceColor = withAlpha(intervalColor, state === 'active' ? 0.85 : 0.68);
-          const showRunningCat = state === 'active' && runner.state.status === 'running';
+          const showRunningCat = state === 'active'
+            && (runner.state.status === 'running' || runner.state.status === 'paused');
           return (
             <div
               key={`${entry.sequence}-${entry.type}`}
