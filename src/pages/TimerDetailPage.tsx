@@ -387,12 +387,13 @@ export const TimerDetailPage = () => {
       {mode === 'quick' && (
         <>
           <h1 className="screen-title">{timer.name}</h1>
-          <p className="timer-meta">Total: {formatClock(totalSeconds)}</p>
-
-          <div className="actions-row detail-actions">
-            <button className="secondary-btn" onClick={openEdit}>Edit</button>
-            <button className="danger-btn" onClick={onDeleteTimer}>Delete</button>
-            <Link to={`/timer/${timer.id}/run`} className="primary-btn selected">Run</Link>
+          <div className="detail-toolbar">
+            <p className="detail-total-label">TOTAL: {formatClock(totalSeconds)}</p>
+            <div className="detail-toolbar-actions">
+              <button className="secondary-btn detail-top-btn" onClick={openEdit}>✎ EDIT</button>
+              <button className="danger-btn detail-top-icon-btn" aria-label="Delete timer" onClick={onDeleteTimer}>🗑</button>
+              <Link to={`/timer/${timer.id}/run`} className="primary-btn detail-top-btn selected">▶ RUN</Link>
+            </div>
           </div>
 
           <div className="detail-quick-list">

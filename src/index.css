@@ -583,6 +583,62 @@ select {
   box-shadow: 0 0 0 1px rgba(240, 201, 58, 0.45);
 }
 
+.detail-toolbar {
+  margin-top: 0.2rem;
+  margin-bottom: 0.35rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.6rem;
+}
+
+.detail-total-label {
+  margin: 0;
+  color: #9f9281;
+  font-family: 'Barlow Condensed', sans-serif;
+  letter-spacing: 0.08em;
+  font-size: 1.05rem;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.detail-toolbar-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.detail-top-btn {
+  min-height: 42px;
+  border-radius: 7px;
+  padding: 0.56rem 0.88rem;
+  letter-spacing: 0.08em;
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 1.03rem;
+}
+
+.detail-top-icon-btn {
+  min-height: 42px;
+  min-width: 58px;
+  border-radius: 7px;
+  padding: 0.56rem 0.7rem;
+  background: #2f2825;
+  border: 1px solid #423531;
+  color: #ffb5a6;
+  font-size: 1.02rem;
+}
+
+.detail-toolbar .secondary-btn.detail-top-btn {
+  background: #2f2825;
+  border-color: #48403b;
+  color: #ddd2c5;
+}
+
+.detail-toolbar .primary-btn.detail-top-btn {
+  background: #e9bf35;
+  color: #271f11;
+}
+
 .detail-quick-list {
   display: grid;
   gap: 0.45rem;
