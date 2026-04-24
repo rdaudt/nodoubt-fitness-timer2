@@ -438,6 +438,10 @@ select {
   margin: 0 0 0.2rem;
 }
 
+.settings-actions-row {
+  margin-top: 1.4rem;
+}
+
 .settings-toggle-row {
   display: flex;
   align-items: center;

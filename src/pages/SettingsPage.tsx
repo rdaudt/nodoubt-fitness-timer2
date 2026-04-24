@@ -70,7 +70,7 @@ export const SettingsPage = () => {
 
       {!unique && <p className="error-inline">Each interval type must use a unique color.</p>}
 
-      <div className="actions-row">
+      <div className="actions-row settings-actions-row">
         <button className="primary-btn" onClick={onSave} disabled={!unique}>Save</button>
         <button className="secondary-btn" onClick={() => setDraft(DEFAULT_SETTINGS)}>Reset Defaults</button>
       </div>
