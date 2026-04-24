@@ -583,6 +583,12 @@ select {
   padding-right: 0.15rem;
 }
 
+.timeline-item {
+  position: relative;
+  overflow: hidden;
+  min-height: 170px;
+}
+
 .timeline-item.done {
   opacity: 0.5;
 }
@@ -592,6 +598,8 @@ select {
 }
 
 .timeline-time {
+  position: relative;
+  z-index: 2;
   margin: 0;
   font-family: 'Barlow Condensed', sans-serif;
   font-size: 1.5rem;
@@ -604,12 +612,46 @@ select {
   color: var(--text);
 }
 
-.timeline-cat {
-  display: block;
-  width: 92px;
-  height: auto;
-  margin-top: 0.35rem;
+.timeline-content {
+  position: relative;
+  z-index: 2;
+  align-self: stretch;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  min-height: 100%;
+  padding: 0.1rem 0;
+}
+
+.timeline-interval-title {
+  margin: 0;
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 1.5rem;
+  line-height: 1;
+  font-weight: 700;
+  color: #ffffff;
+}
+
+.timeline-interval-type {
+  margin: 0;
+  color: #ffffff;
+  font-size: 0.8rem;
+  text-transform: capitalize;
+}
+
+.timeline-cat-bg {
+  position: absolute;
+  left: 50%;
+  top: 0;
+  bottom: 0;
+  transform: translateX(-50%);
+  height: 100%;
+  width: auto;
   object-fit: contain;
+  object-position: center;
+  opacity: 1;
+  z-index: 1;
+  pointer-events: none;
 }
 
 .confirm-box {
