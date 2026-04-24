@@ -26,8 +26,7 @@ export const SettingsPage = () => {
 
   return (
     <section>
-      <h1 className="screen-title">Settings</h1>
-      <p className="timer-meta">Set one unique color for each interval type.</p>
+      <h1 className="screen-title settings-page-title">Settings</h1>
 
       <label className="field settings-toggle-row">
         <span>Pause between sets</span>
@@ -45,15 +44,12 @@ export const SettingsPage = () => {
         />
       </label>
 
-      <div className="stack settings-stack">
+      <div className="stack settings-stack settings-color-section">
+        <p className="timer-meta settings-section-note">Set unique colors for each interval type.</p>
         {types.map((type) => (
           <label key={type} className="field settings-row">
-            <span className="settings-color-label">
-              <span className="settings-color-swatch" style={{ backgroundColor: draft.intervalColors[type] }} aria-hidden="true" />
-              {TYPE_LABELS[type]} Color
-            </span>
             <input
-              className="settings-color-input"
+              className="settings-color-swatch"
               aria-label={`${TYPE_LABELS[type]} Color`}
               type="color"
               value={draft.intervalColors[type]}
@@ -67,6 +63,7 @@ export const SettingsPage = () => {
                 }))
               }
             />
+            <span>{TYPE_LABELS[type]} Color</span>
           </label>
         ))}
       </div>
@@ -74,7 +71,7 @@ export const SettingsPage = () => {
       {!unique && <p className="error-inline">Each interval type must use a unique color.</p>}
 
       <div className="actions-row">
-        <button className="primary-btn" onClick={onSave} disabled={!unique}>Save Colors</button>
+        <button className="primary-btn" onClick={onSave} disabled={!unique}>Save</button>
         <button className="secondary-btn" onClick={() => setDraft(DEFAULT_SETTINGS)}>Reset Defaults</button>
       </div>
 
