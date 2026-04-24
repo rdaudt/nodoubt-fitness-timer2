@@ -3,7 +3,7 @@ import { DEFAULT_SETTINGS, TYPE_LABELS } from '../config';
 import { intervalColorsAreUnique } from '../lib/settingsRules';
 import { useSettings } from '../services/settingsContext';
 import type { AppSettings, IntervalType } from '../types';
-import catLookingUp from '../../media/cat-looking-up.png';
+import vintageSportCat from '../../media/vintage-sport-cat.png';
 
 const types: IntervalType[] = ['warmup', 'work', 'rest', 'cooldown'];
 
@@ -68,7 +68,7 @@ export const SettingsPage = () => {
         rel="noreferrer"
         aria-label="Kobe the Abby Instagram"
       >
-        <img className="settings-float-cat" src={catLookingUp} alt="" />
+        <img className="settings-float-cat" src={vintageSportCat} alt="" />
       </a>
     </section>
   );

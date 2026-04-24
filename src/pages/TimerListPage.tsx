@@ -4,6 +4,7 @@ import { BRAND } from '../config';
 import { TimerCard } from '../components/TimerCard';
 import { TimerRepository } from '../services/storage';
 import type { Timer } from '../types';
+import victorianGym2 from '../../media/victorian-gym-2.png';
 
 export const TimerListPage = () => {
   const [timers, setTimers] = useState<Timer[]>([]);
@@ -40,26 +41,8 @@ export const TimerListPage = () => {
         {BRAND.ctaLabel}
       </a>
 
-      <div className="home-bottom-media">
-        <a
-          className="home-sleepy-cat-wrap"
-          href="https://www.instagram.com/kobetheabby/"
-          target="_blank"
-          rel="noreferrer"
-          aria-label="Kobe the Abby Instagram"
-        >
-          <img className="home-sleepy-cat" src="/assets/sleepy-cat-transparent.png" alt="" />
-        </a>
-
-        <a
-          className="home-qr-wrap"
-          href="https://hiit-timer-green.vercel.app/"
-          target="_blank"
-          rel="noreferrer"
-          aria-label="Open app URL"
-        >
-          <img className="home-qr-image" src="/assets/home-app-qr.png" alt="QR code to open HIIT Timer app" />
-        </a>
+      <div className="home-victorian-wrap" aria-hidden="true">
+        <img className="home-victorian-image" src={victorianGym2} alt="" />
       </div>
     </section>
   );

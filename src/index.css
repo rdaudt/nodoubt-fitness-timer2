@@ -302,56 +302,20 @@ select {
   flex-direction: column;
 }
 
-.home-float-cat-wrap {
-  position: fixed;
-  right: 0.9rem;
-  bottom: calc(3.95rem + env(safe-area-inset-bottom));
-  z-index: 8;
-  pointer-events: auto;
-  display: block;
-}
-
-.home-float-cat {
-  width: 104px;
-  height: auto;
-  object-fit: contain;
-  filter: drop-shadow(0 10px 20px rgba(0, 0, 0, 0.4));
-}
-
-.home-bottom-media {
+.home-victorian-wrap {
   flex: 1;
-  margin-top: 0.6rem;
+  min-height: 160px;
   display: grid;
   align-content: center;
   justify-items: center;
-  gap: 0.15rem;
-  padding-bottom: 0.25rem;
+  padding: 0.45rem 0 0.25rem;
 }
 
-.home-qr-wrap {
-  pointer-events: auto;
-  display: block;
-  width: 92px;
-  box-shadow: 0 10px 22px rgba(0, 0, 0, 0.35);
-}
-
-.home-qr-image {
-  width: 100%;
-  height: auto;
-  display: block;
-  border-radius: 0;
-}
-
-.home-sleepy-cat-wrap {
-  pointer-events: auto;
-  display: block;
-}
-
-.home-sleepy-cat {
-  width: 84px;
+.home-victorian-image {
+  width: min(200px, 58vw);
   height: auto;
   object-fit: contain;
-  filter: drop-shadow(0 10px 18px rgba(0, 0, 0, 0.42));
+  filter: drop-shadow(0 14px 24px rgba(0, 0, 0, 0.45));
 }
 
 .interval-row,
@@ -1030,25 +994,8 @@ select {
     padding: 1.2rem 1.2rem 6.2rem;
   }
 
-  .home-float-cat-wrap {
-    right: 1.2rem;
-    bottom: calc(4.2rem + env(safe-area-inset-bottom));
-  }
-
-  .home-float-cat {
-    width: 122px;
-  }
-
-  .home-bottom-media {
-    margin-top: 0.72rem;
-  }
-
-  .home-qr-wrap {
-    width: 100px;
-  }
-
-  .home-sleepy-cat {
-    width: 92px;
+  .home-victorian-image {
+    width: min(280px, 46vw);
   }
 
   .settings-float-cat-wrap {
