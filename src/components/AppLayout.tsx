@@ -52,7 +52,9 @@ export const AppLayout = () => {
           </Link>
           {!isAboutPage && (
             <div className="coach-wrap" aria-label="Coach Gabe">
-              <img src="/assets/coach-gabe-transparent-cropped.png" alt="Coach Gabe" className="coach-photo" />
+              <a href="https://www.instagram.com/nodoubt.fitness/" target="_blank" rel="noreferrer" aria-label="NoDoubt Fitness Instagram">
+                <img src="/assets/coach-gabe-transparent-cropped.png" alt="Coach Gabe" className="coach-photo" />
+              </a>
               <p className="coach-name">Coach Gabe</p>
             </div>
           )}
