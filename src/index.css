@@ -269,7 +269,8 @@ select {
   right: 0.9rem;
   bottom: calc(3.95rem + env(safe-area-inset-bottom));
   z-index: 8;
-  pointer-events: none;
+  pointer-events: auto;
+  display: block;
 }
 
 .home-float-cat {
@@ -410,7 +411,8 @@ select {
   right: 0.85rem;
   bottom: calc(3.95rem + env(safe-area-inset-bottom));
   z-index: 8;
-  pointer-events: none;
+  pointer-events: auto;
+  display: block;
 }
 
 .settings-float-cat {

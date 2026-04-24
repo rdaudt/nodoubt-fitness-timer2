@@ -57,9 +57,15 @@ export const SettingsPage = () => {
         <button className="secondary-btn" onClick={() => setDraft(DEFAULT_SETTINGS)}>Reset Defaults</button>
       </div>
 
-      <div className="settings-float-cat-wrap" aria-hidden="true">
+      <a
+        className="settings-float-cat-wrap"
+        href="https://www.instagram.com/kobetheabby/"
+        target="_blank"
+        rel="noreferrer"
+        aria-label="Kobe the Abby Instagram"
+      >
         <img className="settings-float-cat" src={catLookingUp} alt="" />
-      </div>
+      </a>
     </section>
   );
 };
