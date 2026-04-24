@@ -235,6 +235,38 @@ select {
   padding: 0.9rem;
 }
 
+.timer-swipe-row {
+  position: relative;
+  border-radius: 16px;
+  overflow: hidden;
+}
+
+.timer-swipe-action {
+  position: absolute;
+  inset: 0 0 0 auto;
+  width: 96px;
+  display: flex;
+  align-items: stretch;
+  justify-content: stretch;
+}
+
+.timer-swipe-delete {
+  width: 100%;
+  border: none;
+  border-radius: 0;
+  background: #7c1414;
+  color: #fff;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+}
+
+.timer-swipe-surface {
+  position: relative;
+  z-index: 1;
+  transition: transform 160ms ease;
+  touch-action: pan-y;
+}
+
 .timer-card-head {
   display: flex;
   justify-content: space-between;

@@ -12,6 +12,15 @@ export const TimerListPage = () => {
     TimerRepository.list().then(setTimers);
   }, []);
 
+  const onDeleteTimer = async (id: string) => {
+    const ok = window.confirm('Delete this timer?');
+    if (!ok) {
+      return;
+    }
+    await TimerRepository.remove(id);
+    setTimers((prev) => prev.filter((timer) => timer.id !== id));
+  };
+
   return (
     <section className="home-page">
       <div className="section-header">
@@ -22,7 +31,9 @@ export const TimerListPage = () => {
       </div>
 
       <div className="stack">
-        {timers.length === 0 ? <p className="empty">No timers yet. Create your first interval plan.</p> : timers.map((timer) => <TimerCard key={timer.id} timer={timer} />)}
+        {timers.length === 0
+          ? <p className="empty">No timers yet. Create your first interval plan.</p>
+          : timers.map((timer) => <TimerCard key={timer.id} timer={timer} onDelete={onDeleteTimer} />)}
       </div>
 
       <a href={BRAND.instagramUrl} target="_blank" rel="noreferrer" className="cta-banner">
