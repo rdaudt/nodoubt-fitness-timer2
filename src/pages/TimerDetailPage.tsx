@@ -61,12 +61,16 @@ const SortableQuickInterval = ({
   onChange,
   onBlur,
   onDelete,
+  separatedFromPrevious = false,
+  separatedFromNext = false,
 }: {
   interval: QuickInterval;
   intervalColor: string;
   onChange: (update: Partial<Interval>) => void;
   onBlur: () => void;
   onDelete: () => void;
+  separatedFromPrevious?: boolean;
+  separatedFromNext?: boolean;
 }) => {
   const {
     attributes,
@@ -134,7 +138,11 @@ const SortableQuickInterval = ({
   };
 
   return (
-    <div ref={setNodeRef} style={style} className="detail-quick-swipe-row">
+    <div
+      ref={setNodeRef}
+      style={style}
+      className={`detail-quick-swipe-row${separatedFromPrevious ? ' separated-from-previous' : ''}${separatedFromNext ? ' separated-from-next' : ''}`}
+    >
       <div className="detail-quick-swipe-action">
         <button
           className="detail-quick-swipe-delete"
@@ -447,6 +455,8 @@ export const TimerDetailPage = () => {
                 onChange={(update) => updateQuickInterval(index, update)}
                 onBlur={onQuickIntervalsBlur}
                 onDelete={() => onQuickDeleteInterval(index)}
+                separatedFromPrevious={interval.type === 'cooldown' && index > 0}
+                separatedFromNext={interval.type === 'warmup' && index < quickIntervals.length - 1}
               />
             ))}
           </div>

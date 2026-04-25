@@ -3,14 +3,17 @@ import { normalizeIntervals, validateIntervals } from './timerRules';
 import type { Interval } from '../types';
 
 describe('timerRules', () => {
-  it('auto inserts rest after work when missing', () => {
+  it('allows a final work interval without auto-inserting rest', () => {
     const source: Interval[] = [
       { sequence: 1, name: 'Work', type: 'work', durationMinutes: 0, durationSeconds: 30 },
     ];
 
     const normalized = normalizeIntervals(source);
-    expect(normalized).toHaveLength(2);
-    expect(normalized[1].type).toBe('rest');
+    expect(normalized).toHaveLength(1);
+    expect(normalized[0].type).toBe('work');
+
+    const validation = validateIntervals(source);
+    expect(validation.valid).toBe(true);
   });
 
   it('rejects zero-duration intervals', () => {
@@ -46,5 +49,26 @@ describe('timerRules', () => {
 
     const validation = validateIntervals(normalized);
     expect(validation.valid).toBe(true);
+  });
+
+  it('rejects consecutive work intervals', () => {
+    const result = validateIntervals([
+      { sequence: 1, name: 'Work 1', type: 'work', durationMinutes: 0, durationSeconds: 20 },
+      { sequence: 2, name: 'Work 2', type: 'work', durationMinutes: 0, durationSeconds: 20 },
+    ]);
+
+    expect(result.valid).toBe(false);
+    expect(result.errors.some((x) => x.includes('cannot be followed by another work interval'))).toBe(true);
+  });
+
+  it('rejects consecutive rest intervals', () => {
+    const result = validateIntervals([
+      { sequence: 1, name: 'Work', type: 'work', durationMinutes: 0, durationSeconds: 20 },
+      { sequence: 2, name: 'Rest 1', type: 'rest', durationMinutes: 0, durationSeconds: 10 },
+      { sequence: 3, name: 'Rest 2', type: 'rest', durationMinutes: 0, durationSeconds: 10 },
+    ]);
+
+    expect(result.valid).toBe(false);
+    expect(result.errors.some((x) => x.includes('cannot be followed by another rest interval'))).toBe(true);
   });
 });

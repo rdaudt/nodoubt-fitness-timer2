@@ -12,6 +12,11 @@ export const createInterval = (type: IntervalType): Interval => ({
 export const resequence = (intervals: Interval[]): Interval[] =>
   intervals.map((interval, idx) => ({ ...interval, sequence: idx + 1 }));
 
+const hasConsecutiveCoreTypeAt = (intervals: Interval[], index: number, type: IntervalType): boolean => (
+  (type === 'work' || type === 'rest')
+  && (intervals[index - 1]?.type === type || intervals[index + 1]?.type === type)
+);
+
 export const insertQuickInterval = (intervals: Interval[], type: IntervalType): Interval[] => {
   if (type === 'warmup') {
     const warmup = createInterval('warmup');
@@ -27,12 +32,12 @@ export const insertQuickInterval = (intervals: Interval[], type: IntervalType): 
 
   const next = [...intervals];
   const cooldownIndex = next.findIndex((interval) => interval.type === 'cooldown');
+  const insertionIndex = cooldownIndex === -1 ? next.length : cooldownIndex;
 
-  if (cooldownIndex === -1) {
-    next.push(createInterval(type));
+  if (hasConsecutiveCoreTypeAt(next, insertionIndex, type)) {
     return resequence(next);
   }
 
-  next.splice(cooldownIndex, 0, createInterval(type));
+  next.splice(insertionIndex, 0, createInterval(type));
   return resequence(next);
 };
