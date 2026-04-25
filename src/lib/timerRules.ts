@@ -1,13 +1,5 @@
 import type { Interval, ValidationResult } from '../types';
 
-const defaultRest = (sequence: number): Interval => ({
-  sequence,
-  name: 'Rest',
-  type: 'rest',
-  durationMinutes: 0,
-  durationSeconds: 30,
-});
-
 const normalizedCopy = (interval: Interval, sequence: number): Interval => ({
   ...interval,
   sequence,
@@ -21,25 +13,15 @@ export const normalizeIntervals = (input: Interval[]): Interval[] => {
   const warmups = cleaned.filter((x) => x.type === 'warmup');
   const cooldowns = cleaned.filter((x) => x.type === 'cooldown');
   const core = cleaned.filter((x) => x.type === 'work' || x.type === 'rest');
-  const hasCooldown = cooldowns.length > 0;
 
   const rebuilt: Interval[] = [];
   if (warmups.length > 0) {
     rebuilt.push({ ...warmups[0], sequence: rebuilt.length + 1 });
   }
 
-  for (let i = 0; i < core.length; i += 1) {
-    const item = core[i];
+  core.forEach((item) => {
     rebuilt.push({ ...item, sequence: rebuilt.length + 1 });
-
-    if (item.type === 'work') {
-      const next = core[i + 1];
-      const canSkipTrailingRestForCooldown = hasCooldown && i === core.length - 1;
-      if ((!next || next.type !== 'rest') && !canSkipTrailingRestForCooldown) {
-        rebuilt.push(defaultRest(rebuilt.length + 1));
-      }
-    }
-  }
+  });
 
   if (cooldowns.length > 0) {
     rebuilt.push({ ...cooldowns[0], sequence: rebuilt.length + 1 });
@@ -62,11 +44,10 @@ export const validateIntervals = (input: Interval[]): ValidationResult => {
       errors.push(`Interval #${idx + 1} has an invalid zero duration.`);
     }
 
-    if (item.type === 'work') {
+    if (item.type === 'work' || item.type === 'rest') {
       const next = normalized[idx + 1];
-      const validFollower = next && (next.type === 'rest' || next.type === 'cooldown');
-      if (!validFollower) {
-        errors.push(`Work interval #${idx + 1} must be followed by rest (or cooldown when final).`);
+      if (next?.type === item.type) {
+        errors.push(`${item.type === 'work' ? 'Work' : 'Rest'} interval #${idx + 1} cannot be followed by another ${item.type} interval.`);
       }
     }
   });

@@ -190,6 +190,7 @@ export const RunningTimerPage = () => {
           const surfaceColor = withAlpha(intervalColor, state === 'active' ? 0.85 : 0.68);
           const showRunningCat = state === 'active'
             && (runner.state.status === 'running' || runner.state.status === 'paused');
+          const showIntervalType = entry.name.trim().toLowerCase() !== entry.type.toLowerCase();
           return (
             <div
               key={`${entry.sequence}-${entry.type}`}
@@ -205,7 +206,7 @@ export const RunningTimerPage = () => {
 
               <div className="timeline-content">
                 <p className="timeline-interval-title">{entry.name}</p>
-                <p className="timeline-interval-type">{entry.type}</p>
+                {showIntervalType && <p className="timeline-interval-type">{entry.type}</p>}
               </div>
               <p className={state === 'active' ? 'timeline-time live' : 'timeline-time'}>
                 {state === 'active'
