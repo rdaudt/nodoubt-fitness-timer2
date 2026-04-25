@@ -19,7 +19,7 @@ import {
 import { CSS } from '@dnd-kit/utilities';
 import { insertQuickInterval } from '../lib/intervalEditor';
 import { validateIntervals } from '../lib/timerRules';
-import { formatClock } from '../lib/time';
+import { estimateTimerDurationMs, formatClock } from '../lib/time';
 import { useSettings } from '../services/settingsContext';
 import { TimerRepository } from '../services/storage';
 import type { Interval, IntervalType, Timer } from '../types';
@@ -236,6 +236,7 @@ export const TimerDetailPage = () => {
   const [quickName, setQuickName] = useState('');
   const [quickIntervals, setQuickIntervals] = useState<QuickInterval[]>([]);
   const [quickSets, setQuickSets] = useState<number>(1);
+  const [quickRepeatSetsUntilStopped, setQuickRepeatSetsUntilStopped] = useState(false);
   const [quickError, setQuickError] = useState<string>('');
 
   useEffect(() => {
@@ -244,6 +245,7 @@ export const TimerDetailPage = () => {
       setTimer(loaded);
       setQuickName(loaded?.name ?? '');
       setQuickSets(loaded?.sets ?? 1);
+      setQuickRepeatSetsUntilStopped(loaded?.repeatSetsUntilStopped ?? false);
       setQuickIntervals((loaded?.intervals ?? []).map((interval) => ({ ...interval, uiId: createUiId() })));
     });
   }, [id]);
@@ -254,21 +256,29 @@ export const TimerDetailPage = () => {
   );
 
   const totalSeconds = useMemo(() => {
-    const safeSets = Number.isFinite(quickSets) && quickSets >= 1 ? quickSets : (timer?.sets ?? 1);
-    const intervalSeconds = stripUiIds(quickIntervals).reduce((sum, interval) => (
-      sum + interval.durationMinutes * 60 + interval.durationSeconds
-    ), 0);
-    return intervalSeconds * Math.max(1, safeSets);
-  }, [quickIntervals, quickSets, timer?.sets]);
+    if (quickRepeatSetsUntilStopped) {
+      return 0;
+    }
+    if (!timer) {
+      return 0;
+    }
+    return Math.floor(estimateTimerDurationMs({
+      ...timer,
+      sets: Number.isFinite(quickSets) && quickSets >= 1 ? Math.floor(quickSets) : (timer.sets ?? 1),
+      repeatSetsUntilStopped: false,
+      intervals: stripUiIds(quickIntervals),
+    }) / 1000);
+  }, [quickIntervals, quickRepeatSetsUntilStopped, quickSets, timer]);
 
   const syncTimerState = (next: Timer, sourceIntervals: QuickInterval[]) => {
     setTimer(next);
     setQuickName(next.name);
     setQuickSets(next.sets);
+    setQuickRepeatSetsUntilStopped(next.repeatSetsUntilStopped);
     setQuickIntervals(withStableUiIds(next.intervals, sourceIntervals));
   };
 
-  const persistQuickState = async (name: string, sets: number, intervals: QuickInterval[]): Promise<boolean> => {
+  const persistQuickState = async (name: string, sets: number, intervals: QuickInterval[], repeatSetsUntilStopped: boolean): Promise<boolean> => {
     if (!timer) {
       return false;
     }
@@ -278,7 +288,7 @@ export const TimerDetailPage = () => {
       return false;
     }
 
-    if (!Number.isFinite(sets) || sets < 1) {
+    if (!repeatSetsUntilStopped && (!Number.isFinite(sets) || sets < 1)) {
       setQuickError('Sets must be at least 1.');
       return false;
     }
@@ -293,7 +303,8 @@ export const TimerDetailPage = () => {
     const next: Timer = {
       ...timer,
       name: name.trim(),
-      sets: Math.max(1, Math.floor(sets)),
+      sets: repeatSetsUntilStopped ? 1 : Math.max(1, Math.floor(sets)),
+      repeatSetsUntilStopped,
       intervals: checked.normalized,
       updatedAt: now,
     };
@@ -305,16 +316,30 @@ export const TimerDetailPage = () => {
   };
 
   const onQuickNameBlur = async () => {
-    const ok = await persistQuickState(quickName, quickSets, quickIntervals);
+    const ok = await persistQuickState(quickName, quickSets, quickIntervals, quickRepeatSetsUntilStopped);
     if (!ok && timer) {
       setQuickName(timer.name);
     }
   };
 
   const onQuickSetsBlur = async () => {
-    const ok = await persistQuickState(quickName, quickSets, quickIntervals);
+    const ok = await persistQuickState(quickName, quickSets, quickIntervals, quickRepeatSetsUntilStopped);
     if (!ok && timer) {
       setQuickSets(timer.sets);
+    }
+  };
+
+  const onQuickRepeatChange = async (checked: boolean) => {
+    const previousRepeat = quickRepeatSetsUntilStopped;
+    const previousSets = quickSets;
+    const nextSets = 1;
+
+    setQuickRepeatSetsUntilStopped(checked);
+    setQuickSets(nextSets);
+    const ok = await persistQuickState(quickName, nextSets, quickIntervals, checked);
+    if (!ok) {
+      setQuickRepeatSetsUntilStopped(previousRepeat);
+      setQuickSets(previousSets);
     }
   };
 
@@ -327,7 +352,7 @@ export const TimerDetailPage = () => {
   };
 
   const onQuickIntervalsBlur = async () => {
-    const ok = await persistQuickState(quickName, quickSets, quickIntervals);
+    const ok = await persistQuickState(quickName, quickSets, quickIntervals, quickRepeatSetsUntilStopped);
     if (!ok && timer) {
       setQuickIntervals((timer.intervals ?? []).map((interval) => ({ ...interval, uiId: createUiId() })));
     }
@@ -339,7 +364,7 @@ export const TimerDetailPage = () => {
     const previous = quickIntervals;
 
     setQuickIntervals(nextIntervals);
-    const ok = await persistQuickState(quickName, quickSets, nextIntervals);
+    const ok = await persistQuickState(quickName, quickSets, nextIntervals, quickRepeatSetsUntilStopped);
     if (!ok) {
       setQuickIntervals(previous);
     }
@@ -351,7 +376,7 @@ export const TimerDetailPage = () => {
     const previous = quickIntervals;
 
     setQuickIntervals(nextIntervals);
-    const ok = await persistQuickState(quickName, quickSets, nextIntervals);
+    const ok = await persistQuickState(quickName, quickSets, nextIntervals, quickRepeatSetsUntilStopped);
     if (!ok) {
       setQuickIntervals(previous);
     }
@@ -386,7 +411,7 @@ export const TimerDetailPage = () => {
     const previous = quickIntervals;
 
     setQuickIntervals(nextIntervals);
-    const ok = await persistQuickState(quickName, quickSets, nextIntervals);
+    const ok = await persistQuickState(quickName, quickSets, nextIntervals, quickRepeatSetsUntilStopped);
     if (!ok) {
       setQuickIntervals(previous);
     }
@@ -407,13 +432,14 @@ export const TimerDetailPage = () => {
         placeholder="Timer name"
       />
 
-      <div className="detail-toolbar">
+      <div className={`detail-toolbar${quickRepeatSetsUntilStopped ? ' repeat-mode' : ''}`}>
         <label className="field compact detail-quick-sets-row detail-inline-sets">
           Sets
           <input
             type="number"
             min={1}
-            value={toDisplayNumber(quickSets)}
+            value={quickRepeatSetsUntilStopped ? '' : toDisplayNumber(quickSets)}
+            disabled={quickRepeatSetsUntilStopped}
             onWheel={lockNumberInput}
             onChange={(e) => {
               const raw = e.target.value;
@@ -428,7 +454,7 @@ export const TimerDetailPage = () => {
           />
         </label>
 
-        <p className="detail-total-label">TOTAL: {formatClock(totalSeconds)}</p>
+        <p className="detail-total-label">TOTAL: {quickRepeatSetsUntilStopped ? 'Until stopped' : formatClock(totalSeconds)}</p>
         <div className="detail-toolbar-actions">
           <button className="danger-btn detail-top-icon-btn" aria-label="Delete timer" onClick={onDeleteTimer}>🗑</button>
           <Link to={`/timer/${timer.id}/run`} className="primary-btn detail-top-btn selected">
@@ -437,6 +463,17 @@ export const TimerDetailPage = () => {
           </Link>
         </div>
       </div>
+
+      <label className="field detail-repeat-toggle-row">
+        <span>Repeat sets until manually stopped</span>
+        <input
+          className="settings-toggle-input"
+          type="checkbox"
+          checked={quickRepeatSetsUntilStopped}
+          onChange={(e) => onQuickRepeatChange(e.target.checked)}
+          aria-label="Repeat sets until manually stopped"
+        />
+      </label>
 
       <div className="detail-quick-list-head" aria-hidden="true">
         <span>Min</span>
