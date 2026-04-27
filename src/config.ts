@@ -19,7 +19,6 @@ export const DEFAULT_SETTINGS: AppSettings = {
     rest: '#2ECC71',
     cooldown: '#3B82F6',
   },
-  pauseBetweenSets: true,
 };
 
 export const TYPE_LABELS = {

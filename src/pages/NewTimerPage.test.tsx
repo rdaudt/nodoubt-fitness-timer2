@@ -26,6 +26,7 @@ describe('NewTimerPage', () => {
       id: 'timer-1',
       name: 'Pain Party',
       sets: 1,
+      repeatSetsUntilStopped: false,
       intervals: [],
       createdAt: '2026-01-01T00:00:00.000Z',
       updatedAt: '2026-01-01T00:00:00.000Z',

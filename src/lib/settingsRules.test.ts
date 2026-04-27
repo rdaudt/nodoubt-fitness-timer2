@@ -16,7 +16,6 @@ describe('settingsRules', () => {
           rest: '#222222',
           cooldown: '#333333',
         },
-        pauseBetweenSets: true,
       }),
     ).toBe(false);
   });

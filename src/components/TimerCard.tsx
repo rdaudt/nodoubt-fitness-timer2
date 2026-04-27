@@ -2,7 +2,7 @@ import { useRef, useState, type MouseEventHandler, type PointerEventHandler } fr
 import { Link } from 'react-router-dom';
 import { TYPE_LABELS } from '../config';
 import type { AppSettings, Timer } from '../types';
-import { estimateTimerDurationMs, formatClock, formatCompactDuration, getTimerIntervalTypeTotals } from '../lib/time';
+import { formatCompactDuration, formatTimerTotal, getTimerIntervalTypeTotals } from '../lib/time';
 
 const ACTION_WIDTH = 96;
 const OPEN_THRESHOLD = 44;
@@ -21,7 +21,6 @@ export const TimerCard = ({
   featureImage?: string;
   onDelete: (id: string) => void;
 }) => {
-  const totalSeconds = Math.floor(estimateTimerDurationMs(timer) / 1000);
   const intervalTotals = getTimerIntervalTypeTotals(timer);
   const [translateX, setTranslateX] = useState(0);
   const [open, setOpen] = useState(false);
@@ -107,7 +106,7 @@ export const TimerCard = ({
               <h3>{timer.name}</h3>
               <div className="timer-card-meta-row">
                 <span className="timer-card-sets">
-                  {timer.sets} Set{timer.sets === 1 ? '' : 's'}
+                  {timer.repeatSetsUntilStopped ? 'Until stopped' : `${timer.sets} Set${timer.sets === 1 ? '' : 's'}`}
                 </span>
                 {intervalTotals.map((item) => (
                   <span className="timer-type-total" key={item.type}>
@@ -125,7 +124,7 @@ export const TimerCard = ({
 
           <div className="timer-card-actions">
             <div className="timer-card-total">
-              <strong>{formatClock(totalSeconds)}</strong>
+              <strong>{formatTimerTotal(timer)}</strong>
               <span>Total Time</span>
             </div>
             <Link className="timer-run-btn" to={`/timer/${timer.id}/run?from=home`} aria-label={`Run ${timer.name}`} onClick={onCardLinkClick}>

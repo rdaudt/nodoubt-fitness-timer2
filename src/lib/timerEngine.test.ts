@@ -6,6 +6,7 @@ const baseTimer = (): Timer => ({
   id: '1',
   name: 'Demo',
   sets: 2,
+  repeatSetsUntilStopped: false,
   createdAt: new Date().toISOString(),
   updatedAt: new Date().toISOString(),
   intervals: [],
@@ -50,5 +51,20 @@ describe('timerEngine', () => {
     expect(timeline[timeline.length - 1].type).toBe('cooldown');
     expect(timeline[0].setNumber).toBeNull();
     expect(timeline[timeline.length - 1].setNumber).toBeNull();
+  });
+
+  it('builds one core set and skips cooldown for repeat timers', () => {
+    const timeline = buildTimeline({
+      ...baseTimer(),
+      repeatSetsUntilStopped: true,
+      intervals: [
+        { sequence: 1, name: 'Warmup', type: 'warmup', durationMinutes: 0, durationSeconds: 5 },
+        { sequence: 2, name: 'Work', type: 'work', durationMinutes: 0, durationSeconds: 20 },
+        { sequence: 3, name: 'Rest', type: 'rest', durationMinutes: 0, durationSeconds: 10 },
+        { sequence: 4, name: 'Cooldown', type: 'cooldown', durationMinutes: 0, durationSeconds: 5 },
+      ],
+    });
+
+    expect(timeline.map((x) => x.type)).toEqual(['warmup', 'work', 'rest']);
   });
 });

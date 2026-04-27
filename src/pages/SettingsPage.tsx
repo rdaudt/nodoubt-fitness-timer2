@@ -28,22 +28,6 @@ export const SettingsPage = () => {
     <section>
       <h1 className="screen-title settings-page-title">Settings</h1>
 
-      <label className="field settings-toggle-row">
-        <span>Pause between sets</span>
-        <input
-          className="settings-toggle-input"
-          type="checkbox"
-          checked={draft.pauseBetweenSets}
-          onChange={(e) =>
-            setDraft((prev) => ({
-              ...prev,
-              pauseBetweenSets: e.target.checked,
-            }))
-          }
-          aria-label="Pause between sets"
-        />
-      </label>
-
       <div className="stack settings-stack settings-color-section">
         <p className="timer-meta settings-section-note">Set unique colors for each interval type.</p>
         {types.map((type) => (

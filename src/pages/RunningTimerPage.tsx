@@ -47,11 +47,11 @@ export const RunningTimerPage = () => {
       id: 'empty',
       name: 'Missing Timer',
       sets: 1,
+      repeatSetsUntilStopped: false,
       intervals: [],
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
     },
-    { pauseBetweenSets: settings.pauseBetweenSets },
   );
 
   const runCatByEntryId = useMemo(() => {
@@ -108,8 +108,14 @@ export const RunningTimerPage = () => {
 
   const donePath = searchParams.get('from') === 'home' ? '/' : `/timer/${timer.id}`;
   const activeEntry = runner.timeline[runner.state.currentIndex];
-  const currentSet = activeEntry?.setNumber ?? (activeEntry?.type === 'cooldown' ? timer.sets : 1);
+  const currentSet = runner.state.currentSetNumber;
   const visibleIntervals = (() => {
+    if (timer.repeatSetsUntilStopped) {
+      if (activeEntry?.type === 'warmup') {
+        return timer.intervals.filter((x) => x.type !== 'cooldown');
+      }
+      return timer.intervals.filter((x) => x.type === 'work' || x.type === 'rest');
+    }
     if (timer.sets <= 1) {
       return timer.intervals;
     }
@@ -144,25 +150,38 @@ export const RunningTimerPage = () => {
     setConfirmAction(null);
   };
   const isPausedBetweenSets = runner.state.status === 'paused' && runner.state.pauseReason === 'betweenSets';
+  const isPausedAfterWarmup = runner.state.status === 'paused' && runner.state.pauseReason === 'afterWarmup';
+  const isSetStartPause = isPausedAfterWarmup || isPausedBetweenSets;
+  const isSetTransitionCountdown = runner.state.status === 'running' && runner.state.phase === 'setTransition';
+  const pauseMessage = isPausedAfterWarmup
+    ? 'Prepare to start first set'
+    : isPausedBetweenSets
+      ? 'Prepare for the next set'
+      : '';
 
   return (
     <section>
       <header className="run-header">
         <p className="run-name">{timer.name}</p>
-        <p className="run-remaining">Set {Math.max(1, currentSet)} of {timer.sets}</p>
-        <p className="run-remaining">Total remaining: {formatClock(runner.state.totalRemainingMs / 1000)}</p>
-        {isPausedBetweenSets && <p className="run-paused-flag pulse">Paused</p>}
+        <p className="run-remaining">
+          {timer.repeatSetsUntilStopped ? `Set ${Math.max(1, currentSet)}` : `Set ${Math.max(1, currentSet)} of ${timer.sets}`}
+        </p>
+        <p className="run-remaining">
+          Total remaining: {timer.repeatSetsUntilStopped ? 'Until stopped' : formatClock(runner.state.totalRemainingMs / 1000)}
+        </p>
+        {isSetTransitionCountdown && <p className="run-paused-flag pulse">Set transition</p>}
+        {isSetStartPause && <p className="run-paused-flag run-set-start-flag pulse">{pauseMessage}</p>}
       </header>
 
       <div className="actions-row wrap">
-        {runner.state.status === 'running' && <button className="secondary-btn" onClick={requestPause}>Pause</button>}
+        {runner.state.status === 'running' && !isSetTransitionCountdown && <button className="secondary-btn" onClick={requestPause}>Pause</button>}
         {runner.state.status === 'paused' && (
           <button className="primary-btn" onClick={runner.resume}>
-            {isPausedBetweenSets ? 'Start Next Set' : 'Resume'}
+            {isSetStartPause ? 'Start' : 'Resume'}
           </button>
         )}
         {(runner.state.status === 'running' || runner.state.status === 'paused') && (
-          <button className="danger-btn" onClick={requestStop}>{isPausedBetweenSets ? 'Cancel' : 'Stop'}</button>
+          <button className="danger-btn" onClick={requestStop}>{isSetStartPause ? 'Cancel' : 'Stop'}</button>
         )}
         {runner.state.status === 'completed' && <Link className="primary-btn" to={donePath}>Done</Link>}
       </div>
@@ -187,15 +206,27 @@ export const RunningTimerPage = () => {
                 ? 'active'
                 : 'upcoming';
           const intervalColor = settings.intervalColors[entry.type];
-          const surfaceColor = withAlpha(intervalColor, state === 'active' ? 0.85 : 0.68);
+          const isActiveSetTransition = isSetTransitionCountdown && state === 'active';
+          const surfaceColor = isActiveSetTransition
+            ? '#ffffff'
+            : withAlpha(intervalColor, state === 'active' ? 0.85 : 0.68);
           const showRunningCat = state === 'active'
+            && !isActiveSetTransition
             && (runner.state.status === 'running' || runner.state.status === 'paused');
-          const showIntervalType = entry.name.trim().toLowerCase() !== entry.type.toLowerCase();
+          const showIntervalType = isSetTransitionCountdown
+            ? state === 'active'
+            : entry.name.trim().toLowerCase() !== entry.type.toLowerCase();
+          const intervalTitle = isSetTransitionCountdown && state === 'active'
+            ? 'Set Transition'
+            : entry.name;
+          const intervalTypeLabel = isSetTransitionCountdown && state === 'active'
+            ? `Next: ${entry.name}`
+            : entry.type;
           return (
             <div
               key={`${entry.sequence}-${entry.type}`}
               ref={index === activeVisibleIndex ? activeRef : null}
-              className={`timeline-item ${state} ${showRunningCat ? 'has-cat' : ''}`}
+              className={`timeline-item ${state}${showRunningCat ? ' has-cat' : ''}${isActiveSetTransition ? ' set-transition-card' : ''}`}
               style={{
                 backgroundColor: surfaceColor,
               }}
@@ -205,8 +236,8 @@ export const RunningTimerPage = () => {
               )}
 
               <div className="timeline-content">
-                <p className="timeline-interval-title">{entry.name}</p>
-                {showIntervalType && <p className="timeline-interval-type">{entry.type}</p>}
+                <p className="timeline-interval-title">{intervalTitle}</p>
+                {showIntervalType && <p className="timeline-interval-type">{intervalTypeLabel}</p>}
               </div>
               <p className={state === 'active' ? 'timeline-time live' : 'timeline-time'}>
                 {state === 'active'

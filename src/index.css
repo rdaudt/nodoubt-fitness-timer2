@@ -715,6 +715,46 @@ select {
   line-height: 1;
 }
 
+.set-transition-inline {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto auto;
+  align-items: center;
+  gap: 0.55rem;
+  margin: 0.1rem 0 0.45rem;
+}
+
+.set-transition-inline-label {
+  color: inherit;
+  font-family: inherit;
+  font-size: inherit;
+  font-weight: 500;
+  letter-spacing: 0;
+  line-height: 1.2;
+  text-transform: none;
+}
+
+.set-transition-inline-field {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.set-transition-inline-field span {
+  color: #a99f90;
+  font-family: 'Barlow Condensed', sans-serif;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  font-size: 0.78rem;
+}
+
+.set-transition-inline-field input {
+  width: 56px;
+  min-width: 56px;
+  min-height: 38px;
+  padding: 0.3rem 0.35rem;
+  text-align: center;
+}
+
 .chrono {
   border: 2px solid var(--accent);
   border-radius: 20px;
@@ -832,6 +872,63 @@ select {
   opacity: 0.68;
 }
 
+.timeline-item.set-transition-card {
+  color: #111111;
+  border-color: #ffffff;
+}
+
+.timeline-item.set-transition-card.active .timeline-time {
+  top: 50%;
+  right: 1rem;
+  width: 112px;
+  height: 112px;
+  border: 7px solid #111111;
+  border-radius: 999px;
+  display: grid;
+  place-items: center;
+  transform: translateY(-50%);
+}
+
+.timeline-item.set-transition-card.active .timeline-time::before {
+  content: '';
+  position: absolute;
+  top: -15px;
+  left: 50%;
+  width: 34px;
+  height: 13px;
+  border: 5px solid #111111;
+  border-bottom: 0;
+  border-radius: 12px 12px 0 0;
+  transform: translateX(-50%);
+}
+
+.timeline-item.set-transition-card.active .timeline-time::after {
+  content: '';
+  position: absolute;
+  inset: 13px;
+  border-radius: 999px;
+  border: 2px solid rgba(17, 17, 17, 0.16);
+}
+
+.timeline-item.set-transition-card .timeline-time.live {
+  color: #111111;
+  font-size: 2.6rem;
+  text-shadow: none;
+}
+
+.timeline-item.set-transition-card.active .timeline-content {
+  left: 1rem;
+  right: auto;
+  align-items: flex-start;
+  text-align: left;
+  max-width: calc(100% - 9rem);
+}
+
+.timeline-item.set-transition-card .timeline-interval-title,
+.timeline-item.set-transition-card .timeline-interval-type {
+  color: #111111;
+}
+
 .timeline-cat-bg {
   position: absolute;
   left: 0.85rem;
@@ -914,17 +1011,15 @@ select {
 }
 
 .detail-toolbar.repeat-mode .detail-total-label {
-  min-height: 30px;
-  font-size: 0.74rem;
-  letter-spacing: 0.03em;
-  line-height: 1.05;
-  white-space: normal;
-  overflow: visible;
-  text-overflow: clip;
+  visibility: hidden;
 }
 
 .detail-toolbar.repeat-mode .detail-inline-sets {
   font-size: 0.82rem;
+}
+
+.detail-toolbar.repeat-mode .detail-inline-sets span {
+  visibility: hidden;
 }
 
 .detail-toolbar.repeat-mode .detail-inline-sets input {
@@ -932,31 +1027,6 @@ select {
   min-width: 44px;
   min-height: 36px;
   padding: 0.32rem 0.2rem;
-}
-
-.detail-toolbar.repeat-mode .detail-toolbar-actions {
-  gap: 0.24rem;
-}
-
-.detail-toolbar.repeat-mode .detail-top-btn {
-  min-height: 38px;
-  border-radius: 11px;
-  padding: 0.28rem 0.46rem;
-  font-size: 1.04rem;
-  letter-spacing: 0.05em;
-  gap: 0.18rem;
-}
-
-.detail-toolbar.repeat-mode .detail-top-icon-btn {
-  min-height: 38px;
-  min-width: 40px;
-  border-radius: 11px;
-  padding: 0.28rem 0.34rem;
-  font-size: 0.95rem;
-}
-
-.detail-toolbar.repeat-mode .detail-run-icon {
-  font-size: 0.8rem;
 }
 
 .detail-top-btn {
@@ -1421,32 +1491,7 @@ select {
   }
 
   .detail-toolbar.repeat-mode .detail-total-label {
-    font-size: 0.68rem;
-    letter-spacing: 0.02em;
-  }
-
-  .detail-toolbar.repeat-mode .detail-toolbar-actions {
-    gap: 0.18rem;
-  }
-
-  .detail-toolbar.repeat-mode .detail-top-icon-btn {
-    min-height: 34px;
-    min-width: 34px;
-    border-radius: 10px;
-    padding: 0.2rem 0.28rem;
-    font-size: 0.85rem;
-  }
-
-  .detail-toolbar.repeat-mode .detail-top-btn {
-    min-height: 34px;
-    border-radius: 10px;
-    padding: 0.2rem 0.38rem;
-    font-size: 0.92rem;
-    letter-spacing: 0.04em;
-  }
-
-  .detail-toolbar.repeat-mode .detail-run-icon {
-    font-size: 0.7rem;
+    visibility: hidden;
   }
 }
 

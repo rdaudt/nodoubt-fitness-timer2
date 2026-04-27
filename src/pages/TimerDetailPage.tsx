@@ -237,6 +237,8 @@ export const TimerDetailPage = () => {
   const [quickIntervals, setQuickIntervals] = useState<QuickInterval[]>([]);
   const [quickSets, setQuickSets] = useState<number>(1);
   const [quickRepeatSetsUntilStopped, setQuickRepeatSetsUntilStopped] = useState(false);
+  const [quickSetTransitionMinutes, setQuickSetTransitionMinutes] = useState<number>(0);
+  const [quickSetTransitionSeconds, setQuickSetTransitionSeconds] = useState<number>(30);
   const [quickError, setQuickError] = useState<string>('');
 
   useEffect(() => {
@@ -246,6 +248,8 @@ export const TimerDetailPage = () => {
       setQuickName(loaded?.name ?? '');
       setQuickSets(loaded?.sets ?? 1);
       setQuickRepeatSetsUntilStopped(loaded?.repeatSetsUntilStopped ?? false);
+      setQuickSetTransitionMinutes(loaded?.setTransitionMinutes ?? 0);
+      setQuickSetTransitionSeconds(loaded?.setTransitionSeconds ?? 30);
       setQuickIntervals((loaded?.intervals ?? []).map((interval) => ({ ...interval, uiId: createUiId() })));
     });
   }, [id]);
@@ -266,19 +270,34 @@ export const TimerDetailPage = () => {
       ...timer,
       sets: Number.isFinite(quickSets) && quickSets >= 1 ? Math.floor(quickSets) : (timer.sets ?? 1),
       repeatSetsUntilStopped: false,
+      setTransitionMinutes: Number.isFinite(quickSetTransitionMinutes) && quickSetTransitionMinutes >= 0
+        ? Math.floor(quickSetTransitionMinutes)
+        : (timer.setTransitionMinutes ?? 0),
+      setTransitionSeconds: Number.isFinite(quickSetTransitionSeconds) && quickSetTransitionSeconds >= 0
+        ? Math.max(0, Math.min(59, Math.floor(quickSetTransitionSeconds)))
+        : (timer.setTransitionSeconds ?? 30),
       intervals: stripUiIds(quickIntervals),
     }) / 1000);
-  }, [quickIntervals, quickRepeatSetsUntilStopped, quickSets, timer]);
+  }, [quickIntervals, quickRepeatSetsUntilStopped, quickSetTransitionMinutes, quickSetTransitionSeconds, quickSets, timer]);
 
   const syncTimerState = (next: Timer, sourceIntervals: QuickInterval[]) => {
     setTimer(next);
     setQuickName(next.name);
     setQuickSets(next.sets);
     setQuickRepeatSetsUntilStopped(next.repeatSetsUntilStopped);
+    setQuickSetTransitionMinutes(next.setTransitionMinutes ?? 0);
+    setQuickSetTransitionSeconds(next.setTransitionSeconds ?? 30);
     setQuickIntervals(withStableUiIds(next.intervals, sourceIntervals));
   };
 
-  const persistQuickState = async (name: string, sets: number, intervals: QuickInterval[], repeatSetsUntilStopped: boolean): Promise<boolean> => {
+  const persistQuickState = async (
+    name: string,
+    sets: number,
+    intervals: QuickInterval[],
+    repeatSetsUntilStopped: boolean,
+    setTransitionMinutes: number,
+    setTransitionSeconds: number,
+  ): Promise<boolean> => {
     if (!timer) {
       return false;
     }
@@ -305,6 +324,8 @@ export const TimerDetailPage = () => {
       name: name.trim(),
       sets: repeatSetsUntilStopped ? 1 : Math.max(1, Math.floor(sets)),
       repeatSetsUntilStopped,
+      setTransitionMinutes: Number.isFinite(setTransitionMinutes) ? Math.max(0, Math.floor(setTransitionMinutes)) : 0,
+      setTransitionSeconds: Number.isFinite(setTransitionSeconds) ? Math.max(0, Math.min(59, Math.floor(setTransitionSeconds))) : 30,
       intervals: checked.normalized,
       updatedAt: now,
     };
@@ -316,14 +337,28 @@ export const TimerDetailPage = () => {
   };
 
   const onQuickNameBlur = async () => {
-    const ok = await persistQuickState(quickName, quickSets, quickIntervals, quickRepeatSetsUntilStopped);
+    const ok = await persistQuickState(
+      quickName,
+      quickSets,
+      quickIntervals,
+      quickRepeatSetsUntilStopped,
+      quickSetTransitionMinutes,
+      quickSetTransitionSeconds,
+    );
     if (!ok && timer) {
       setQuickName(timer.name);
     }
   };
 
   const onQuickSetsBlur = async () => {
-    const ok = await persistQuickState(quickName, quickSets, quickIntervals, quickRepeatSetsUntilStopped);
+    const ok = await persistQuickState(
+      quickName,
+      quickSets,
+      quickIntervals,
+      quickRepeatSetsUntilStopped,
+      quickSetTransitionMinutes,
+      quickSetTransitionSeconds,
+    );
     if (!ok && timer) {
       setQuickSets(timer.sets);
     }
@@ -336,10 +371,32 @@ export const TimerDetailPage = () => {
 
     setQuickRepeatSetsUntilStopped(checked);
     setQuickSets(nextSets);
-    const ok = await persistQuickState(quickName, nextSets, quickIntervals, checked);
+    const ok = await persistQuickState(
+      quickName,
+      nextSets,
+      quickIntervals,
+      checked,
+      quickSetTransitionMinutes,
+      quickSetTransitionSeconds,
+    );
     if (!ok) {
       setQuickRepeatSetsUntilStopped(previousRepeat);
       setQuickSets(previousSets);
+    }
+  };
+
+  const onQuickSetTransitionBlur = async () => {
+    const ok = await persistQuickState(
+      quickName,
+      quickSets,
+      quickIntervals,
+      quickRepeatSetsUntilStopped,
+      quickSetTransitionMinutes,
+      quickSetTransitionSeconds,
+    );
+    if (!ok && timer) {
+      setQuickSetTransitionMinutes(timer.setTransitionMinutes ?? 0);
+      setQuickSetTransitionSeconds(timer.setTransitionSeconds ?? 30);
     }
   };
 
@@ -352,7 +409,14 @@ export const TimerDetailPage = () => {
   };
 
   const onQuickIntervalsBlur = async () => {
-    const ok = await persistQuickState(quickName, quickSets, quickIntervals, quickRepeatSetsUntilStopped);
+    const ok = await persistQuickState(
+      quickName,
+      quickSets,
+      quickIntervals,
+      quickRepeatSetsUntilStopped,
+      quickSetTransitionMinutes,
+      quickSetTransitionSeconds,
+    );
     if (!ok && timer) {
       setQuickIntervals((timer.intervals ?? []).map((interval) => ({ ...interval, uiId: createUiId() })));
     }
@@ -364,7 +428,14 @@ export const TimerDetailPage = () => {
     const previous = quickIntervals;
 
     setQuickIntervals(nextIntervals);
-    const ok = await persistQuickState(quickName, quickSets, nextIntervals, quickRepeatSetsUntilStopped);
+    const ok = await persistQuickState(
+      quickName,
+      quickSets,
+      nextIntervals,
+      quickRepeatSetsUntilStopped,
+      quickSetTransitionMinutes,
+      quickSetTransitionSeconds,
+    );
     if (!ok) {
       setQuickIntervals(previous);
     }
@@ -376,7 +447,14 @@ export const TimerDetailPage = () => {
     const previous = quickIntervals;
 
     setQuickIntervals(nextIntervals);
-    const ok = await persistQuickState(quickName, quickSets, nextIntervals, quickRepeatSetsUntilStopped);
+    const ok = await persistQuickState(
+      quickName,
+      quickSets,
+      nextIntervals,
+      quickRepeatSetsUntilStopped,
+      quickSetTransitionMinutes,
+      quickSetTransitionSeconds,
+    );
     if (!ok) {
       setQuickIntervals(previous);
     }
@@ -411,7 +489,14 @@ export const TimerDetailPage = () => {
     const previous = quickIntervals;
 
     setQuickIntervals(nextIntervals);
-    const ok = await persistQuickState(quickName, quickSets, nextIntervals, quickRepeatSetsUntilStopped);
+    const ok = await persistQuickState(
+      quickName,
+      quickSets,
+      nextIntervals,
+      quickRepeatSetsUntilStopped,
+      quickSetTransitionMinutes,
+      quickSetTransitionSeconds,
+    );
     if (!ok) {
       setQuickIntervals(previous);
     }
@@ -434,7 +519,7 @@ export const TimerDetailPage = () => {
 
       <div className={`detail-toolbar${quickRepeatSetsUntilStopped ? ' repeat-mode' : ''}`}>
         <label className="field compact detail-quick-sets-row detail-inline-sets">
-          Sets
+          <span>Sets</span>
           <input
             type="number"
             min={1}
@@ -465,7 +550,7 @@ export const TimerDetailPage = () => {
       </div>
 
       <label className="field detail-repeat-toggle-row">
-        <span>Repeat sets until manually stopped</span>
+        <span>Coach Mode</span>
         <input
           className="settings-toggle-input"
           type="checkbox"
@@ -474,6 +559,49 @@ export const TimerDetailPage = () => {
           aria-label="Repeat sets until manually stopped"
         />
       </label>
+
+      <div className="set-transition-inline">
+        <span className="set-transition-inline-label">Set Transition Time</span>
+        <label className="set-transition-inline-field">
+          <span>Min</span>
+          <input
+            type="number"
+            min={0}
+            onWheel={lockNumberInput}
+            value={toDisplayNumber(quickSetTransitionMinutes)}
+            aria-label="Set transition minutes"
+            onChange={(e) => {
+              const raw = e.target.value;
+              if (raw === '') {
+                setQuickSetTransitionMinutes(Number.NaN);
+                return;
+              }
+              setQuickSetTransitionMinutes(Math.max(0, Number(raw)));
+            }}
+            onBlur={onQuickSetTransitionBlur}
+          />
+        </label>
+        <label className="set-transition-inline-field">
+          <span>Sec</span>
+          <input
+            type="number"
+            min={0}
+            max={59}
+            onWheel={lockNumberInput}
+            value={toDisplayNumber(quickSetTransitionSeconds)}
+            aria-label="Set transition seconds"
+            onChange={(e) => {
+              const raw = e.target.value;
+              if (raw === '') {
+                setQuickSetTransitionSeconds(Number.NaN);
+                return;
+              }
+              setQuickSetTransitionSeconds(Math.max(0, Math.min(59, Number(raw))));
+            }}
+            onBlur={onQuickSetTransitionBlur}
+          />
+        </label>
+      </div>
 
       <div className="detail-quick-list-head" aria-hidden="true">
         <span>Min</span>

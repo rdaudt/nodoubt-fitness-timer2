@@ -19,7 +19,9 @@ export const buildTimeline = (timer: Timer): TimelineEntry[] => {
     });
   });
 
-  for (let set = 1; set <= timer.sets; set += 1) {
+  const setCount = timer.repeatSetsUntilStopped ? 1 : timer.sets;
+
+  for (let set = 1; set <= setCount; set += 1) {
     block.forEach((segment) => {
       timeline.push({
         id: `set-${set}-${segment.sequence}`,
@@ -32,16 +34,18 @@ export const buildTimeline = (timer: Timer): TimelineEntry[] => {
     });
   }
 
-  cooldown.forEach((segment) => {
-    timeline.push({
-      id: `cooldown-${segment.sequence}`,
-      sourceSequence: segment.sequence,
-      name: segment.name,
-      type: segment.type,
-      durationMs: toDurationMs(segment),
-      setNumber: null,
+  if (!timer.repeatSetsUntilStopped) {
+    cooldown.forEach((segment) => {
+      timeline.push({
+        id: `cooldown-${segment.sequence}`,
+        sourceSequence: segment.sequence,
+        name: segment.name,
+        type: segment.type,
+        durationMs: toDurationMs(segment),
+        setNumber: null,
+      });
     });
-  });
+  }
 
   return timeline;
 };
