@@ -4,7 +4,7 @@ import { formatClock } from '../lib/time';
 import { useTimerRunner } from '../lib/useTimerRunner';
 import { useSettings } from '../services/settingsContext';
 import { TimerRepository } from '../services/storage';
-import type { CountdownType, Timer, TimelineEntry } from '../types';
+import type { AppSettings, CountdownType, Timer, TimelineEntry } from '../types';
 
 const currentImageByType: Partial<Record<CountdownType, string>> = {
   warmup: '/assets/cat-in-pajama-transparent-v3.png',
@@ -12,6 +12,13 @@ const currentImageByType: Partial<Record<CountdownType, string>> = {
   rest: '/assets/resting-cat.png',
   cooldown: '/assets/tired-cat-transparent-v1.png',
 };
+
+const workImages = [
+  '/assets/jab-throwing-cat.png',
+  '/assets/vintage-apparel-pushup.png',
+  '/assets/vintage-apparel-crunches.png',
+  '/assets/pullup-cat.png',
+];
 
 const emptyTimer = (): Timer => ({
   id: 'empty',
@@ -40,7 +47,7 @@ const entryTitle = (entry: TimelineEntry | undefined, coachMode: boolean): strin
     return 'Done';
   }
   if (entry.type === 'stationTransition') {
-    return `${coachMode ? 'Transition to Station' : 'Transition to Set'} ${entry.stationNumber}`;
+    return `${coachMode ? 'Station Transition' : 'Set Transition'} ${entry.stationNumber}`;
   }
   if (entry.type === 'work') {
     return 'Work';
@@ -60,12 +67,27 @@ const entryContext = (entry: TimelineEntry | undefined, coachMode: boolean): str
   }
   const stationLabel = coachMode ? 'Station' : 'Set';
   if (entry.type === 'work') {
-    return `${stationLabel} ${entry.stationNumber} · Round ${entry.roundNumber}`;
+    return `${stationLabel} ${entry.stationNumber} - Round ${entry.roundNumber}`;
   }
   if (entry.type === 'rest') {
-    return `${stationLabel} ${entry.stationNumber} · Next round ${(entry.roundNumber ?? 0) + 1}`;
+    return `${stationLabel} ${entry.stationNumber} - Round ${entry.roundNumber}`;
   }
   return '';
+};
+const entryCardStyle = (
+  entry: TimelineEntry | undefined,
+  intervalColors: AppSettings['intervalColors'],
+) => {
+  if (!entry) {
+    return {};
+  }
+  if (entry.type === 'stationTransition') {
+    return { backgroundColor: '#ffffff', color: '#111111' };
+  }
+  if (entry.type in intervalColors) {
+    return { backgroundColor: intervalColors[entry.type as keyof typeof intervalColors], color: '#ffffff' };
+  }
+  return {};
 };
 
 export const RunningTimerPage = () => {
@@ -94,19 +116,37 @@ export const RunningTimerPage = () => {
   const activeEntry = runner.timeline[runner.state.currentIndex];
   const nextEntry = runner.timeline[runner.state.currentIndex + 1];
   const isStationStartPause = runner.state.status === 'paused' && runner.state.pauseReason === 'stationStart';
-  const currentImage = activeEntry ? currentImageByType[activeEntry.type] : undefined;
-  const currentStyle = useMemo(() => {
+  const workImageByEntryId = useMemo(() => {
+    const imageByEntryId: Record<string, string> = {};
+    let workIndex = 0;
+
+    runner.timeline.forEach((entry) => {
+      if (entry.type !== 'work') {
+        return;
+      }
+      imageByEntryId[entry.id] = workImages[workIndex % workImages.length];
+      workIndex += 1;
+    });
+
+    return imageByEntryId;
+  }, [runner.timeline]);
+  const currentImage = useMemo(() => {
     if (!activeEntry) {
-      return {};
+      return undefined;
     }
-    if (activeEntry.type === 'stationTransition') {
-      return { backgroundColor: '#ffffff', color: '#111111' };
+    if (activeEntry.type === 'work') {
+      return workImageByEntryId[activeEntry.id] ?? currentImageByType.work;
     }
-    if (activeEntry.type in settings.intervalColors) {
-      return { backgroundColor: settings.intervalColors[activeEntry.type as keyof typeof settings.intervalColors] };
-    }
-    return {};
-  }, [activeEntry, settings.intervalColors]);
+    return currentImageByType[activeEntry.type];
+  }, [activeEntry, workImageByEntryId]);
+  const currentStyle = useMemo(
+    () => entryCardStyle(activeEntry, settings.intervalColors),
+    [activeEntry, settings.intervalColors],
+  );
+  const nextStyle = useMemo(
+    () => entryCardStyle(nextEntry, settings.intervalColors),
+    [nextEntry, settings.intervalColors],
+  );
 
   const requestPause = async () => {
     if (runner.state.status === 'running') {
@@ -153,7 +193,7 @@ export const RunningTimerPage = () => {
         </div>
       </article>
 
-      <article className="run-next-card">
+      <article className="run-next-card" style={nextStyle}>
         <span>next</span>
         <strong>{entryTitle(nextEntry, settings.coachMode)}</strong>
         {nextEntry && <p>{entryContext(nextEntry, settings.coachMode)} ({formatClock(nextEntry.durationMs / 1000)})</p>}
@@ -184,3 +224,5 @@ export const RunningTimerPage = () => {
     </section>
   );
 };
+
+
