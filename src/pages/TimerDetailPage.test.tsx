@@ -102,4 +102,23 @@ describe('TimerDetailPage', () => {
     await waitFor(() => expect(upsertMock).toHaveBeenCalledTimes(1));
     expect(upsertMock.mock.calls[0][0].name).toBe('Sprint Lab');
   });
+
+  it('allows clearing count input while editing and clamps on blur', async () => {
+    render(
+      <MemoryRouter initialEntries={['/timer/timer-1']}>
+        <Routes>
+          <Route path="/timer/:id" element={<TimerDetailPage />} />
+        </Routes>
+      </MemoryRouter>,
+    );
+
+    const stationsInput = await screen.findByDisplayValue('10');
+    fireEvent.change(stationsInput, { target: { value: '' } });
+    expect(stationsInput).toHaveValue(null);
+
+    fireEvent.blur(stationsInput);
+
+    await waitFor(() => expect(upsertMock).toHaveBeenCalledTimes(1));
+    expect(upsertMock.mock.calls[0][0].stationCount).toBe(1);
+  });
 });

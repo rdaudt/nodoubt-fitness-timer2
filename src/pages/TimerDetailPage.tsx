@@ -41,22 +41,48 @@ const CountEditor = ({
   label: string;
   value: number;
   onDraftChange: (next: number) => void;
-  onPersist: () => void;
-}) => (
-  <article className="timer-count-card">
-    <p>{label}</p>
-    <div className="timer-count-controls">
-      <input
-        type="number"
-        min={1}
-        onWheel={lockNumberInput}
-        value={String(value)}
-        onChange={(e) => onDraftChange(toNumber(e.target.value, 1))}
-        onBlur={onPersist}
-      />
-    </div>
-  </article>
-);
+  onPersist: (next: number) => void;
+}) => {
+  const [draft, setDraft] = useState(String(value));
+
+  useEffect(() => {
+    setDraft(String(value));
+  }, [value]);
+
+  const onChange = (nextValue: string) => {
+    setDraft(nextValue);
+
+    // Keep the field editable while empty; only push numeric drafts.
+    if (nextValue.trim() === '') {
+      return;
+    }
+
+    const parsed = toNumber(nextValue, 1);
+    onDraftChange(parsed);
+  };
+
+  const onBlur = () => {
+    const parsed = toNumber(draft, 1);
+    onDraftChange(parsed);
+    onPersist(parsed);
+  };
+
+  return (
+    <article className="timer-count-card">
+      <p>{label}</p>
+      <div className="timer-count-controls">
+        <input
+          type="number"
+          min={1}
+          onWheel={lockNumberInput}
+          value={draft}
+          onChange={(e) => onChange(e.target.value)}
+          onBlur={onBlur}
+        />
+      </div>
+    </article>
+  );
+};
 
 const TimeMatrixBlock = ({
   label,
@@ -234,13 +260,13 @@ export const TimerDetailPage = () => {
           label={stationLabel}
           value={timer.stationCount}
           onDraftChange={(stationCount) => setTimer((prev) => (prev ? { ...prev, stationCount } : prev))}
-          onPersist={() => applyPatch({ stationCount: timer.stationCount })}
+          onPersist={(stationCount) => applyPatch({ stationCount })}
         />
         <CountEditor
           label="Rounds/Station"
           value={timer.roundsPerStation}
           onDraftChange={(roundsPerStation) => setTimer((prev) => (prev ? { ...prev, roundsPerStation } : prev))}
-          onPersist={() => applyPatch({ roundsPerStation: timer.roundsPerStation })}
+          onPersist={(roundsPerStation) => applyPatch({ roundsPerStation })}
         />
       </div>
 
