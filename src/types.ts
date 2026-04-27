@@ -1,40 +1,44 @@
 export type IntervalType = 'warmup' | 'work' | 'rest' | 'cooldown';
-
-export interface Interval {
-  sequence: number;
-  name: string;
-  type: IntervalType;
-  durationMinutes: number;
-  durationSeconds: number;
-}
+export type CountdownType = IntervalType | 'stationTransition';
 
 export interface Timer {
   id: string;
   name: string;
-  sets: number;
-  repeatSetsUntilStopped: boolean;
-  setTransitionMinutes?: number;
-  setTransitionSeconds?: number;
-  intervals: Interval[];
+  stationCount: number;
+  roundsPerStation: number;
+  workMinutes: number;
+  workSeconds: number;
+  restMinutes: number;
+  restSeconds: number;
+  stationTransitionMinutes: number;
+  stationTransitionSeconds: number;
+  startStationWorkManually: boolean;
+  warmupEnabled: boolean;
+  warmupMinutes: number;
+  warmupSeconds: number;
+  cooldownEnabled: boolean;
+  cooldownMinutes: number;
+  cooldownSeconds: number;
   createdAt: string;
   updatedAt: string;
 }
 
 export interface AppSettings {
+  coachMode: boolean;
   intervalColors: Record<IntervalType, string>;
 }
 
 export interface TimelineEntry {
   id: string;
-  sourceSequence: number;
+  type: CountdownType;
   name: string;
-  type: IntervalType;
   durationMs: number;
-  setNumber: number | null;
+  stationNumber: number | null;
+  roundNumber: number | null;
 }
 
-export interface ValidationResult {
+export interface TimerValidationResult {
   valid: boolean;
   errors: string[];
-  normalized: Interval[];
+  normalized: Timer;
 }

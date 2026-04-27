@@ -1,33 +1,10 @@
-import { useEffect, useMemo, useRef, useState, type PointerEventHandler, type WheelEvent } from 'react';
+import { useEffect, useMemo, useState, type WheelEvent } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
-import {
-  closestCenter,
-  DndContext,
-  KeyboardSensor,
-  PointerSensor,
-  useSensor,
-  useSensors,
-  type DragEndEvent,
-} from '@dnd-kit/core';
-import {
-  arrayMove,
-  SortableContext,
-  sortableKeyboardCoordinates,
-  useSortable,
-  verticalListSortingStrategy,
-} from '@dnd-kit/sortable';
-import { CSS } from '@dnd-kit/utilities';
-import { insertQuickInterval } from '../lib/intervalEditor';
-import { validateIntervals } from '../lib/timerRules';
 import { estimateTimerDurationMs, formatClock } from '../lib/time';
+import { normalizeTimerFields, validateTimer } from '../lib/timerRules';
 import { useSettings } from '../services/settingsContext';
 import { TimerRepository } from '../services/storage';
-import type { Interval, IntervalType, Timer } from '../types';
-
-const ACTION_WIDTH = 96;
-const OPEN_THRESHOLD = 44;
-
-type QuickInterval = Interval & { uiId: string };
+import type { Timer } from '../types';
 
 const toDisplayNumber = (value: number): string =>
   Number.isNaN(value) ? '' : String(value);
@@ -36,196 +13,60 @@ const lockNumberInput = (e: WheelEvent<HTMLInputElement>) => {
   e.currentTarget.blur();
 };
 
-const clamp = (value: number, min: number, max: number): number =>
-  Math.min(max, Math.max(min, value));
+const numberFromInput = (value: string): number =>
+  value === '' ? Number.NaN : Math.max(0, Number(value));
 
-const createUiId = () => {
-  if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
-    return crypto.randomUUID();
-  }
-  return `ui-${Math.random().toString(36).slice(2, 11)}`;
-};
+const countFromInput = (value: string): number =>
+  value === '' ? Number.NaN : Math.max(1, Number(value));
 
-const stripUiIds = (intervals: QuickInterval[]): Interval[] =>
-  intervals.map(({ uiId, ...interval }) => interval);
-
-const withStableUiIds = (intervals: Interval[], source: QuickInterval[]): QuickInterval[] =>
-  intervals.map((interval, idx) => ({ ...interval, uiId: source[idx]?.uiId ?? createUiId() }));
-
-const resequenceQuick = (intervals: QuickInterval[]): QuickInterval[] =>
-  intervals.map((interval, idx) => ({ ...interval, sequence: idx + 1 }));
-
-const SortableQuickInterval = ({
-  interval,
-  intervalColor,
-  onChange,
+const DurationFields = ({
+  label,
+  minutes,
+  seconds,
+  disabled = false,
+  onMinutes,
+  onSeconds,
   onBlur,
-  onDelete,
-  separatedFromPrevious = false,
-  separatedFromNext = false,
 }: {
-  interval: QuickInterval;
-  intervalColor: string;
-  onChange: (update: Partial<Interval>) => void;
+  label: string;
+  minutes: number;
+  seconds: number;
+  disabled?: boolean;
+  onMinutes: (value: number) => void;
+  onSeconds: (value: number) => void;
   onBlur: () => void;
-  onDelete: () => void;
-  separatedFromPrevious?: boolean;
-  separatedFromNext?: boolean;
-}) => {
-  const {
-    attributes,
-    listeners,
-    setNodeRef,
-    transform,
-    transition,
-  } = useSortable({ id: interval.uiId });
-
-  const [translateX, setTranslateX] = useState(0);
-  const pointerIdRef = useRef<number | null>(null);
-  const startXRef = useRef(0);
-  const startOffsetRef = useRef(0);
-  const movedRef = useRef(false);
-
-  const close = () => {
-    setTranslateX(0);
-  };
-
-  const onPointerDown: PointerEventHandler<HTMLDivElement> = (e) => {
-    const target = e.target as HTMLElement;
-    if (target.closest('button, select, textarea')) {
-      return;
-    }
-
-    pointerIdRef.current = e.pointerId;
-    startXRef.current = e.clientX;
-    startOffsetRef.current = translateX;
-    movedRef.current = false;
-    e.currentTarget.setPointerCapture(e.pointerId);
-  };
-
-  const onPointerMove: PointerEventHandler<HTMLDivElement> = (e) => {
-    if (pointerIdRef.current !== e.pointerId) {
-      return;
-    }
-    const delta = e.clientX - startXRef.current;
-    if (Math.abs(delta) > 4) {
-      movedRef.current = true;
-    }
-    const next = clamp(startOffsetRef.current + delta, -ACTION_WIDTH, 0);
-    setTranslateX(next);
-  };
-
-  const onPointerUp: PointerEventHandler<HTMLDivElement> = (e) => {
-    if (pointerIdRef.current !== e.pointerId) {
-      return;
-    }
-    pointerIdRef.current = null;
-
-    if (!movedRef.current) {
-      return;
-    }
-
-    if (translateX <= -OPEN_THRESHOLD) {
-      setTranslateX(-ACTION_WIDTH);
-      return;
-    }
-    close();
-  };
-
-  const style = {
-    transform: CSS.Transform.toString(transform),
-    transition,
-  };
-
-  return (
-    <div
-      ref={setNodeRef}
-      style={style}
-      className={`detail-quick-swipe-row${separatedFromPrevious ? ' separated-from-previous' : ''}${separatedFromNext ? ' separated-from-next' : ''}`}
-    >
-      <div className="detail-quick-swipe-action">
-        <button
-          className="detail-quick-swipe-delete"
-          type="button"
-          onClick={() => {
-            const ok = window.confirm('Delete this interval?');
-            if (!ok) {
-              close();
-              return;
-            }
-            close();
-            onDelete();
-          }}
-        >
-          Delete
-        </button>
-      </div>
-
-      <article
-        className="detail-quick-row detail-quick-swipe-surface"
-        style={{ transform: `translateX(${translateX}px)` }}
-        onPointerDown={onPointerDown}
-        onPointerMove={onPointerMove}
-        onPointerUp={onPointerUp}
-        onPointerCancel={close}
-      >
-        <span className="detail-color-rail" style={{ backgroundColor: intervalColor }} />
-        <button
-          className="drag-handle detail-quick-drag-handle"
-          aria-label={`Drag ${interval.name}`}
-          type="button"
-          {...attributes}
-          {...listeners}
-        >
-          =
-        </button>
-
-        <div className="detail-quick-body">
-          <input
-            className="detail-name-input"
-            value={interval.name}
-            onChange={(e) => onChange({ name: e.target.value })}
-            onBlur={onBlur}
-          />
-          <div className="detail-time-group">
-            <input
-              type="number"
-              min={0}
-              onWheel={lockNumberInput}
-              value={toDisplayNumber(interval.durationMinutes)}
-              onChange={(e) => {
-                const raw = e.target.value;
-                if (raw === '') {
-                  onChange({ durationMinutes: Number.NaN });
-                  return;
-                }
-                onChange({ durationMinutes: Math.max(0, Number(raw)) });
-              }}
-              onBlur={onBlur}
-            />
-            <span>:</span>
-            <input
-              type="number"
-              min={0}
-              max={59}
-              onWheel={lockNumberInput}
-              value={toDisplayNumber(interval.durationSeconds)}
-              onChange={(e) => {
-                const raw = e.target.value;
-                if (raw === '') {
-                  onChange({ durationSeconds: Number.NaN });
-                  return;
-                }
-                onChange({ durationSeconds: Math.max(0, Math.min(59, Number(raw))) });
-              }}
-              onBlur={onBlur}
-            />
-          </div>
-        </div>
-      </article>
-    </div>
-  );
-};
+}) => (
+  <div className="set-transition-inline timer-attribute-duration">
+    <span className="set-transition-inline-label">{label}</span>
+    <label className="set-transition-inline-field">
+      <span>Min</span>
+      <input
+        type="number"
+        min={0}
+        disabled={disabled}
+        onWheel={lockNumberInput}
+        value={toDisplayNumber(minutes)}
+        aria-label={`${label} minutes`}
+        onChange={(e) => onMinutes(numberFromInput(e.target.value))}
+        onBlur={onBlur}
+      />
+    </label>
+    <label className="set-transition-inline-field">
+      <span>Sec</span>
+      <input
+        type="number"
+        min={0}
+        max={59}
+        disabled={disabled}
+        onWheel={lockNumberInput}
+        value={toDisplayNumber(seconds)}
+        aria-label={`${label} seconds`}
+        onChange={(e) => onSeconds(numberFromInput(e.target.value))}
+        onBlur={onBlur}
+      />
+    </label>
+  </div>
+);
 
 export const TimerDetailPage = () => {
   const { id = '' } = useParams();
@@ -233,230 +74,62 @@ export const TimerDetailPage = () => {
   const { settings } = useSettings();
 
   const [timer, setTimer] = useState<Timer | null>(null);
-  const [quickName, setQuickName] = useState('');
-  const [quickIntervals, setQuickIntervals] = useState<QuickInterval[]>([]);
-  const [quickSets, setQuickSets] = useState<number>(1);
-  const [quickRepeatSetsUntilStopped, setQuickRepeatSetsUntilStopped] = useState(false);
-  const [quickSetTransitionMinutes, setQuickSetTransitionMinutes] = useState<number>(0);
-  const [quickSetTransitionSeconds, setQuickSetTransitionSeconds] = useState<number>(30);
-  const [quickError, setQuickError] = useState<string>('');
+  const [allTimers, setAllTimers] = useState<Timer[]>([]);
+  const [error, setError] = useState('');
 
   useEffect(() => {
-    TimerRepository.get(id).then((value) => {
-      const loaded = value ?? null;
-      setTimer(loaded);
-      setQuickName(loaded?.name ?? '');
-      setQuickSets(loaded?.sets ?? 1);
-      setQuickRepeatSetsUntilStopped(loaded?.repeatSetsUntilStopped ?? false);
-      setQuickSetTransitionMinutes(loaded?.setTransitionMinutes ?? 0);
-      setQuickSetTransitionSeconds(loaded?.setTransitionSeconds ?? 30);
-      setQuickIntervals((loaded?.intervals ?? []).map((interval) => ({ ...interval, uiId: createUiId() })));
+    Promise.all([TimerRepository.get(id), TimerRepository.list()]).then(([loaded, list]) => {
+      setTimer(loaded ?? null);
+      setAllTimers(list);
     });
   }, [id]);
 
-  const sensors = useSensors(
-    useSensor(PointerSensor, { activationConstraint: { distance: 6 } }),
-    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
-  );
-
   const totalSeconds = useMemo(() => {
-    if (quickRepeatSetsUntilStopped) {
-      return 0;
-    }
     if (!timer) {
       return 0;
     }
-    return Math.floor(estimateTimerDurationMs({
-      ...timer,
-      sets: Number.isFinite(quickSets) && quickSets >= 1 ? Math.floor(quickSets) : (timer.sets ?? 1),
-      repeatSetsUntilStopped: false,
-      setTransitionMinutes: Number.isFinite(quickSetTransitionMinutes) && quickSetTransitionMinutes >= 0
-        ? Math.floor(quickSetTransitionMinutes)
-        : (timer.setTransitionMinutes ?? 0),
-      setTransitionSeconds: Number.isFinite(quickSetTransitionSeconds) && quickSetTransitionSeconds >= 0
-        ? Math.max(0, Math.min(59, Math.floor(quickSetTransitionSeconds)))
-        : (timer.setTransitionSeconds ?? 30),
-      intervals: stripUiIds(quickIntervals),
-    }) / 1000);
-  }, [quickIntervals, quickRepeatSetsUntilStopped, quickSetTransitionMinutes, quickSetTransitionSeconds, quickSets, timer]);
+    return Math.floor(estimateTimerDurationMs(normalizeTimerFields(timer)) / 1000);
+  }, [timer]);
 
-  const syncTimerState = (next: Timer, sourceIntervals: QuickInterval[]) => {
-    setTimer(next);
-    setQuickName(next.name);
-    setQuickSets(next.sets);
-    setQuickRepeatSetsUntilStopped(next.repeatSetsUntilStopped);
-    setQuickSetTransitionMinutes(next.setTransitionMinutes ?? 0);
-    setQuickSetTransitionSeconds(next.setTransitionSeconds ?? 30);
-    setQuickIntervals(withStableUiIds(next.intervals, sourceIntervals));
+  const updateDraft = (update: Partial<Timer>) => {
+    setTimer((prev) => (prev ? { ...prev, ...update } : prev));
   };
 
-  const persistQuickState = async (
-    name: string,
-    sets: number,
-    intervals: QuickInterval[],
-    repeatSetsUntilStopped: boolean,
-    setTransitionMinutes: number,
-    setTransitionSeconds: number,
-  ): Promise<boolean> => {
-    if (!timer) {
+  const persist = async (candidate = timer) => {
+    if (!candidate) {
+      return false;
+    }
+    const result = validateTimer(candidate, allTimers);
+    if (!result.valid) {
+      setError(result.errors[0] ?? 'Invalid timer.');
       return false;
     }
 
-    if (!name.trim()) {
-      setQuickError('Timer name is required.');
-      return false;
-    }
-
-    if (!repeatSetsUntilStopped && (!Number.isFinite(sets) || sets < 1)) {
-      setQuickError('Sets must be at least 1.');
-      return false;
-    }
-
-    const checked = validateIntervals(stripUiIds(intervals));
-    if (!checked.valid) {
-      setQuickError(checked.errors[0] ?? 'Invalid interval configuration.');
-      return false;
-    }
-
-    const now = new Date().toISOString();
-    const next: Timer = {
-      ...timer,
-      name: name.trim(),
-      sets: repeatSetsUntilStopped ? 1 : Math.max(1, Math.floor(sets)),
-      repeatSetsUntilStopped,
-      setTransitionMinutes: Number.isFinite(setTransitionMinutes) ? Math.max(0, Math.floor(setTransitionMinutes)) : 0,
-      setTransitionSeconds: Number.isFinite(setTransitionSeconds) ? Math.max(0, Math.min(59, Math.floor(setTransitionSeconds))) : 30,
-      intervals: checked.normalized,
-      updatedAt: now,
+    const next = {
+      ...result.normalized,
+      updatedAt: new Date().toISOString(),
     };
-
     await TimerRepository.upsert(next);
-    setQuickError('');
-    syncTimerState(next, intervals);
+    setTimer(next);
+    setAllTimers((prev) => [next, ...prev.filter((item) => item.id !== next.id)]);
+    setError('');
     return true;
   };
 
-  const onQuickNameBlur = async () => {
-    const ok = await persistQuickState(
-      quickName,
-      quickSets,
-      quickIntervals,
-      quickRepeatSetsUntilStopped,
-      quickSetTransitionMinutes,
-      quickSetTransitionSeconds,
-    );
-    if (!ok && timer) {
-      setQuickName(timer.name);
+  const persistPatch = async (update: Partial<Timer>) => {
+    if (!timer) {
+      return;
     }
+    const candidate = { ...timer, ...update };
+    setTimer(candidate);
+    await persist(candidate);
   };
 
-  const onQuickSetsBlur = async () => {
-    const ok = await persistQuickState(
-      quickName,
-      quickSets,
-      quickIntervals,
-      quickRepeatSetsUntilStopped,
-      quickSetTransitionMinutes,
-      quickSetTransitionSeconds,
-    );
-    if (!ok && timer) {
-      setQuickSets(timer.sets);
-    }
-  };
-
-  const onQuickRepeatChange = async (checked: boolean) => {
-    const previousRepeat = quickRepeatSetsUntilStopped;
-    const previousSets = quickSets;
-    const nextSets = 1;
-
-    setQuickRepeatSetsUntilStopped(checked);
-    setQuickSets(nextSets);
-    const ok = await persistQuickState(
-      quickName,
-      nextSets,
-      quickIntervals,
-      checked,
-      quickSetTransitionMinutes,
-      quickSetTransitionSeconds,
-    );
+  const onBlur = async () => {
+    const ok = await persist();
     if (!ok) {
-      setQuickRepeatSetsUntilStopped(previousRepeat);
-      setQuickSets(previousSets);
-    }
-  };
-
-  const onQuickSetTransitionBlur = async () => {
-    const ok = await persistQuickState(
-      quickName,
-      quickSets,
-      quickIntervals,
-      quickRepeatSetsUntilStopped,
-      quickSetTransitionMinutes,
-      quickSetTransitionSeconds,
-    );
-    if (!ok && timer) {
-      setQuickSetTransitionMinutes(timer.setTransitionMinutes ?? 0);
-      setQuickSetTransitionSeconds(timer.setTransitionSeconds ?? 30);
-    }
-  };
-
-  const updateQuickInterval = (index: number, update: Partial<Interval>) => {
-    setQuickIntervals((prev) => {
-      const copy = [...prev];
-      copy[index] = { ...copy[index], ...update };
-      return resequenceQuick(copy);
-    });
-  };
-
-  const onQuickIntervalsBlur = async () => {
-    const ok = await persistQuickState(
-      quickName,
-      quickSets,
-      quickIntervals,
-      quickRepeatSetsUntilStopped,
-      quickSetTransitionMinutes,
-      quickSetTransitionSeconds,
-    );
-    if (!ok && timer) {
-      setQuickIntervals((timer.intervals ?? []).map((interval) => ({ ...interval, uiId: createUiId() })));
-    }
-  };
-
-  const onQuickAdd = async (type: IntervalType) => {
-    const inserted = insertQuickInterval(stripUiIds(quickIntervals), type);
-    const nextIntervals = withStableUiIds(inserted, quickIntervals);
-    const previous = quickIntervals;
-
-    setQuickIntervals(nextIntervals);
-    const ok = await persistQuickState(
-      quickName,
-      quickSets,
-      nextIntervals,
-      quickRepeatSetsUntilStopped,
-      quickSetTransitionMinutes,
-      quickSetTransitionSeconds,
-    );
-    if (!ok) {
-      setQuickIntervals(previous);
-    }
-  };
-
-  const onQuickDeleteInterval = async (index: number) => {
-    const filtered = quickIntervals.filter((_, idx) => idx !== index);
-    const nextIntervals = resequenceQuick(filtered);
-    const previous = quickIntervals;
-
-    setQuickIntervals(nextIntervals);
-    const ok = await persistQuickState(
-      quickName,
-      quickSets,
-      nextIntervals,
-      quickRepeatSetsUntilStopped,
-      quickSetTransitionMinutes,
-      quickSetTransitionSeconds,
-    );
-    if (!ok) {
-      setQuickIntervals(previous);
+      const reloaded = await TimerRepository.get(id);
+      setTimer(reloaded ?? null);
     }
   };
 
@@ -472,172 +145,156 @@ export const TimerDetailPage = () => {
     navigate('/');
   };
 
-  const onDragEnd = async (event: DragEndEvent) => {
-    const { active, over } = event;
-    if (!over || active.id === over.id) {
-      return;
-    }
-
-    const oldIndex = quickIntervals.findIndex((interval) => interval.uiId === active.id);
-    const newIndex = quickIntervals.findIndex((interval) => interval.uiId === over.id);
-    if (oldIndex < 0 || newIndex < 0) {
-      return;
-    }
-
-    const moved = arrayMove(quickIntervals, oldIndex, newIndex);
-    const nextIntervals = resequenceQuick(moved);
-    const previous = quickIntervals;
-
-    setQuickIntervals(nextIntervals);
-    const ok = await persistQuickState(
-      quickName,
-      quickSets,
-      nextIntervals,
-      quickRepeatSetsUntilStopped,
-      quickSetTransitionMinutes,
-      quickSetTransitionSeconds,
-    );
-    if (!ok) {
-      setQuickIntervals(previous);
-    }
-  };
-
   if (!timer) {
     return <p className="empty">Timer not found.</p>;
   }
+
+  const stationLabel = settings.coachMode ? 'Number of Stations' : 'Number of Sets';
+  const transitionLabel = settings.coachMode ? 'Station Transition Time' : 'Set Transition Time';
 
   return (
     <section className="timer-detail-page">
       <input
         className="detail-name-input-top"
-        value={quickName}
-        onChange={(e) => setQuickName(e.target.value)}
-        onBlur={onQuickNameBlur}
+        value={timer.name}
+        maxLength={25}
+        onChange={(e) => updateDraft({ name: e.target.value })}
+        onBlur={onBlur}
         aria-label="Timer name"
         placeholder="Timer name"
       />
 
-      <div className={`detail-toolbar${quickRepeatSetsUntilStopped ? ' repeat-mode' : ''}`}>
-        <label className="field compact detail-quick-sets-row detail-inline-sets">
-          <span>Sets</span>
-          <input
-            type="number"
-            min={1}
-            value={quickRepeatSetsUntilStopped ? '' : toDisplayNumber(quickSets)}
-            disabled={quickRepeatSetsUntilStopped}
-            onWheel={lockNumberInput}
-            onChange={(e) => {
-              const raw = e.target.value;
-              if (raw === '') {
-                setQuickSets(Number.NaN);
-                return;
-              }
-              setQuickSets(Math.max(0, Number(raw)));
-            }}
-            onBlur={onQuickSetsBlur}
-            aria-label="Number of sets"
-          />
-        </label>
-
-        <p className="detail-total-label">TOTAL: {quickRepeatSetsUntilStopped ? 'Until stopped' : formatClock(totalSeconds)}</p>
+      <div className="detail-toolbar">
+        <p className="detail-total-label">TOTAL: {formatClock(totalSeconds)}</p>
+        <div />
         <div className="detail-toolbar-actions">
-          <button className="danger-btn detail-top-icon-btn" aria-label="Delete timer" onClick={onDeleteTimer}>🗑</button>
+          <button className="danger-btn detail-top-icon-btn" aria-label="Delete timer" onClick={onDeleteTimer}>Delete</button>
           <Link to={`/timer/${timer.id}/run`} className="primary-btn detail-top-btn selected">
-            <span className="detail-run-icon" aria-hidden="true">▶️</span>
+            <span className="detail-run-icon" aria-hidden="true">▶</span>
             <span>RUN</span>
           </Link>
         </div>
       </div>
 
-      <label className="field detail-repeat-toggle-row">
-        <span>Coach Mode</span>
+      <label className="field">
+        {stationLabel}
         <input
-          className="settings-toggle-input"
-          type="checkbox"
-          checked={quickRepeatSetsUntilStopped}
-          onChange={(e) => onQuickRepeatChange(e.target.checked)}
-          aria-label="Repeat sets until manually stopped"
+          type="number"
+          min={1}
+          value={toDisplayNumber(timer.stationCount)}
+          onWheel={lockNumberInput}
+          onChange={(e) => updateDraft({ stationCount: countFromInput(e.target.value) })}
+          onBlur={onBlur}
         />
       </label>
 
-      <div className="set-transition-inline">
-        <span className="set-transition-inline-label">Set Transition Time</span>
-        <label className="set-transition-inline-field">
-          <span>Min</span>
+      <label className="field">
+        Number of Rounds per Station
+        <input
+          type="number"
+          min={1}
+          value={toDisplayNumber(timer.roundsPerStation)}
+          onWheel={lockNumberInput}
+          onChange={(e) => {
+            const roundsPerStation = countFromInput(e.target.value);
+            updateDraft({ roundsPerStation });
+          }}
+          onBlur={onBlur}
+        />
+      </label>
+
+      <DurationFields
+        label="Work Time"
+        minutes={timer.workMinutes}
+        seconds={timer.workSeconds}
+        onMinutes={(workMinutes) => updateDraft({ workMinutes })}
+        onSeconds={(workSeconds) => updateDraft({ workSeconds })}
+        onBlur={onBlur}
+      />
+
+      <DurationFields
+        label="Rest Time"
+        minutes={timer.restMinutes}
+        seconds={timer.restSeconds}
+        disabled={timer.roundsPerStation <= 1}
+        onMinutes={(restMinutes) => updateDraft({ restMinutes })}
+        onSeconds={(restSeconds) => updateDraft({ restSeconds })}
+        onBlur={onBlur}
+      />
+
+      <DurationFields
+        label={transitionLabel}
+        minutes={timer.stationTransitionMinutes}
+        seconds={timer.stationTransitionSeconds}
+        onMinutes={(stationTransitionMinutes) => updateDraft({ stationTransitionMinutes })}
+        onSeconds={(stationTransitionSeconds) => updateDraft({ stationTransitionSeconds })}
+        onBlur={onBlur}
+      />
+
+      {settings.coachMode && (
+        <label className="field detail-repeat-toggle-row">
+          <span>Start Station Work Manually</span>
           <input
-            type="number"
-            min={0}
-            onWheel={lockNumberInput}
-            value={toDisplayNumber(quickSetTransitionMinutes)}
-            aria-label="Set transition minutes"
-            onChange={(e) => {
-              const raw = e.target.value;
-              if (raw === '') {
-                setQuickSetTransitionMinutes(Number.NaN);
-                return;
-              }
-              setQuickSetTransitionMinutes(Math.max(0, Number(raw)));
-            }}
-            onBlur={onQuickSetTransitionBlur}
+            className="settings-toggle-input"
+            type="checkbox"
+            checked={timer.startStationWorkManually}
+            onChange={(e) => persistPatch({ startStationWorkManually: e.target.checked })}
+            aria-label="Start Station Work Manually"
           />
         </label>
-        <label className="set-transition-inline-field">
-          <span>Sec</span>
-          <input
-            type="number"
-            min={0}
-            max={59}
-            onWheel={lockNumberInput}
-            value={toDisplayNumber(quickSetTransitionSeconds)}
-            aria-label="Set transition seconds"
-            onChange={(e) => {
-              const raw = e.target.value;
-              if (raw === '') {
-                setQuickSetTransitionSeconds(Number.NaN);
-                return;
-              }
-              setQuickSetTransitionSeconds(Math.max(0, Math.min(59, Number(raw))));
-            }}
-            onBlur={onQuickSetTransitionBlur}
-          />
-        </label>
-      </div>
+      )}
 
-      <div className="detail-quick-list-head" aria-hidden="true">
-        <span>Min</span>
-        <span className="detail-quick-list-head-gap">:</span>
-        <span>Sec</span>
-      </div>
+      <label className="field detail-repeat-toggle-row">
+        <span>Warmup</span>
+        <input
+          className="settings-toggle-input"
+          type="checkbox"
+          checked={timer.warmupEnabled}
+          onChange={(e) => persistPatch({
+            warmupEnabled: e.target.checked,
+            warmupMinutes: e.target.checked ? timer.warmupMinutes || 5 : 0,
+            warmupSeconds: e.target.checked ? timer.warmupSeconds : 0,
+          })}
+          aria-label="Warmup"
+        />
+      </label>
 
-      <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={onDragEnd}>
-        <SortableContext items={quickIntervals.map((interval) => interval.uiId)} strategy={verticalListSortingStrategy}>
-          <div className="detail-quick-list">
-            {quickIntervals.map((interval, index) => (
-              <SortableQuickInterval
-                key={interval.uiId}
-                interval={interval}
-                intervalColor={settings.intervalColors[interval.type]}
-                onChange={(update) => updateQuickInterval(index, update)}
-                onBlur={onQuickIntervalsBlur}
-                onDelete={() => onQuickDeleteInterval(index)}
-                separatedFromPrevious={interval.type === 'cooldown' && index > 0}
-                separatedFromNext={interval.type === 'warmup' && index < quickIntervals.length - 1}
-              />
-            ))}
-          </div>
-        </SortableContext>
-      </DndContext>
+      <DurationFields
+        label="Warmup Time"
+        minutes={timer.warmupMinutes}
+        seconds={timer.warmupSeconds}
+        disabled={!timer.warmupEnabled}
+        onMinutes={(warmupMinutes) => updateDraft({ warmupMinutes })}
+        onSeconds={(warmupSeconds) => updateDraft({ warmupSeconds })}
+        onBlur={onBlur}
+      />
 
-      {quickError && <p className="error-inline">{quickError}</p>}
+      <label className="field detail-repeat-toggle-row">
+        <span>Cooldown</span>
+        <input
+          className="settings-toggle-input"
+          type="checkbox"
+          checked={timer.cooldownEnabled}
+          onChange={(e) => persistPatch({
+            cooldownEnabled: e.target.checked,
+            cooldownMinutes: e.target.checked ? timer.cooldownMinutes || 5 : 0,
+            cooldownSeconds: e.target.checked ? timer.cooldownSeconds : 0,
+          })}
+          aria-label="Cooldown"
+        />
+      </label>
 
-      <div className="detail-quick-add-floating">
-        <div className="detail-quick-add-row">
-          <button className="secondary-btn" onClick={() => onQuickAdd('warmup')} style={{ color: settings.intervalColors.warmup }}>+ WARMUP</button>
-          <button className="secondary-btn" onClick={() => onQuickAdd('work')} style={{ color: settings.intervalColors.work }}>+ WORK</button>
-          <button className="secondary-btn" onClick={() => onQuickAdd('rest')} style={{ color: settings.intervalColors.rest }}>+ REST</button>
-          <button className="secondary-btn" onClick={() => onQuickAdd('cooldown')} style={{ color: settings.intervalColors.cooldown }}>+ COOLDOWN</button>
-        </div>
-      </div>
+      <DurationFields
+        label="Cooldown Time"
+        minutes={timer.cooldownMinutes}
+        seconds={timer.cooldownSeconds}
+        disabled={!timer.cooldownEnabled}
+        onMinutes={(cooldownMinutes) => updateDraft({ cooldownMinutes })}
+        onSeconds={(cooldownSeconds) => updateDraft({ cooldownSeconds })}
+        onBlur={onBlur}
+      />
+
+      {error && <p className="error-inline">{error}</p>}
     </section>
   );
 };

@@ -1,65 +1,75 @@
-import type { Interval, ValidationResult } from '../types';
+import type { Timer, TimerValidationResult } from '../types';
+import { durationMs } from './time';
 
-const normalizedCopy = (interval: Interval, sequence: number): Interval => ({
-  ...interval,
-  sequence,
-  name: interval.name.trim() || `${interval.type[0].toUpperCase()}${interval.type.slice(1)}`,
-  durationMinutes: Math.max(0, Math.floor(interval.durationMinutes || 0)),
-  durationSeconds: Math.min(59, Math.max(0, Math.floor(interval.durationSeconds || 0))),
-});
+const cleanCount = (value: number, fallback: number): number =>
+  Math.max(1, Math.floor(Number.isFinite(value) ? value : fallback));
 
-export const normalizeIntervals = (input: Interval[]): Interval[] => {
-  const cleaned = input.map((item, idx) => normalizedCopy(item, idx + 1));
-  const warmups = cleaned.filter((x) => x.type === 'warmup');
-  const cooldowns = cleaned.filter((x) => x.type === 'cooldown');
-  const core = cleaned.filter((x) => x.type === 'work' || x.type === 'rest');
+const cleanMinutes = (value: number, fallback = 0): number =>
+  Math.max(0, Math.floor(Number.isFinite(value) ? value : fallback));
 
-  const rebuilt: Interval[] = [];
-  if (warmups.length > 0) {
-    rebuilt.push({ ...warmups[0], sequence: rebuilt.length + 1 });
-  }
+const cleanSeconds = (value: number, fallback = 0): number =>
+  Math.max(0, Math.min(59, Math.floor(Number.isFinite(value) ? value : fallback)));
 
-  core.forEach((item) => {
-    rebuilt.push({ ...item, sequence: rebuilt.length + 1 });
-  });
+export const normalizeTimerFields = (timer: Timer): Timer => {
+  const warmupEnabled = Boolean(timer.warmupEnabled);
+  const cooldownEnabled = Boolean(timer.cooldownEnabled);
 
-  if (cooldowns.length > 0) {
-    rebuilt.push({ ...cooldowns[0], sequence: rebuilt.length + 1 });
-  }
-
-  return rebuilt;
+  return {
+    ...timer,
+    name: timer.name.trim(),
+    stationCount: cleanCount(timer.stationCount, 10),
+    roundsPerStation: cleanCount(timer.roundsPerStation, 3),
+    workMinutes: cleanMinutes(timer.workMinutes),
+    workSeconds: cleanSeconds(timer.workSeconds, 30),
+    restMinutes: cleanMinutes(timer.restMinutes),
+    restSeconds: cleanSeconds(timer.restSeconds, 15),
+    stationTransitionMinutes: cleanMinutes(timer.stationTransitionMinutes),
+    stationTransitionSeconds: cleanSeconds(timer.stationTransitionSeconds, 30),
+    startStationWorkManually: Boolean(timer.startStationWorkManually),
+    warmupEnabled,
+    warmupMinutes: warmupEnabled ? cleanMinutes(timer.warmupMinutes, 5) : 0,
+    warmupSeconds: warmupEnabled ? cleanSeconds(timer.warmupSeconds) : 0,
+    cooldownEnabled,
+    cooldownMinutes: cooldownEnabled ? cleanMinutes(timer.cooldownMinutes, 5) : 0,
+    cooldownSeconds: cooldownEnabled ? cleanSeconds(timer.cooldownSeconds) : 0,
+  };
 };
 
-export const validateIntervals = (input: Interval[]): ValidationResult => {
-  const normalized = normalizeIntervals(input);
+export const validateTimer = (timer: Timer, existingTimers: Timer[] = []): TimerValidationResult => {
+  const normalized = normalizeTimerFields(timer);
   const errors: string[] = [];
+  const name = normalized.name;
 
-  const works = normalized.filter((x) => x.type === 'work');
-  if (works.length === 0) {
-    errors.push('At least one work interval is required.');
+  if (!name) {
+    errors.push('Timer name is required.');
   }
 
-  normalized.forEach((item, idx) => {
-    if (item.durationMinutes === 0 && item.durationSeconds === 0) {
-      errors.push(`Interval #${idx + 1} has an invalid zero duration.`);
-    }
-
-    if (item.type === 'work' || item.type === 'rest') {
-      const next = normalized[idx + 1];
-      if (next?.type === item.type) {
-        errors.push(`${item.type === 'work' ? 'Work' : 'Rest'} interval #${idx + 1} cannot be followed by another ${item.type} interval.`);
-      }
-    }
-  });
-
-  const warmupIndex = normalized.findIndex((x) => x.type === 'warmup');
-  if (warmupIndex > 0) {
-    errors.push('Warmup must be first when present.');
+  if (name.length > 25) {
+    errors.push('Timer name must be 25 characters or fewer.');
   }
 
-  const cooldownIndex = normalized.findIndex((x) => x.type === 'cooldown');
-  if (cooldownIndex !== -1 && cooldownIndex !== normalized.length - 1) {
-    errors.push('Cooldown must be last when present.');
+  if (existingTimers.some((item) => item.id !== normalized.id && item.name.trim().toLowerCase() === name.toLowerCase())) {
+    errors.push('Timer name must be unique.');
+  }
+
+  if (durationMs(normalized.workMinutes, normalized.workSeconds) < 1000) {
+    errors.push('Work time must be at least 1 second.');
+  }
+
+  if (normalized.roundsPerStation > 1 && durationMs(normalized.restMinutes, normalized.restSeconds) < 1000) {
+    errors.push('Rest time must be at least 1 second when rounds are greater than 1.');
+  }
+
+  if (durationMs(normalized.stationTransitionMinutes, normalized.stationTransitionSeconds) < 1000) {
+    errors.push('Station transition time must be at least 1 second.');
+  }
+
+  if (normalized.warmupEnabled && durationMs(normalized.warmupMinutes, normalized.warmupSeconds) < 1000) {
+    errors.push('Warmup time must be at least 1 second when warmup is enabled.');
+  }
+
+  if (normalized.cooldownEnabled && durationMs(normalized.cooldownMinutes, normalized.cooldownSeconds) < 1000) {
+    errors.push('Cooldown time must be at least 1 second when cooldown is enabled.');
   }
 
   return {

@@ -1,8 +1,7 @@
 import { useRef, useState, type MouseEventHandler, type PointerEventHandler } from 'react';
 import { Link } from 'react-router-dom';
-import { TYPE_LABELS } from '../config';
 import type { AppSettings, Timer } from '../types';
-import { formatCompactDuration, formatTimerTotal, getTimerIntervalTypeTotals } from '../lib/time';
+import { formatTimerTotal, getTimerSummaryItems } from '../lib/time';
 
 const ACTION_WIDTH = 96;
 const OPEN_THRESHOLD = 44;
@@ -13,15 +12,17 @@ const clamp = (value: number, min: number, max: number): number =>
 export const TimerCard = ({
   timer,
   intervalColors,
+  coachMode,
   featureImage,
   onDelete,
 }: {
   timer: Timer;
   intervalColors: AppSettings['intervalColors'];
+  coachMode: boolean;
   featureImage?: string;
   onDelete: (id: string) => void;
 }) => {
-  const intervalTotals = getTimerIntervalTypeTotals(timer);
+  const summaryItems = getTimerSummaryItems(timer, coachMode);
   const [translateX, setTranslateX] = useState(0);
   const [open, setOpen] = useState(false);
   const pointerIdRef = useRef<number | null>(null);
@@ -105,17 +106,18 @@ export const TimerCard = ({
             <div className="timer-card-copy">
               <h3>{timer.name}</h3>
               <div className="timer-card-meta-row">
-                <span className="timer-card-sets">
-                  {timer.repeatSetsUntilStopped ? 'Until stopped' : `${timer.sets} Set${timer.sets === 1 ? '' : 's'}`}
-                </span>
-                {intervalTotals.map((item) => (
-                  <span className="timer-type-total" key={item.type}>
-                    <span
-                      className="timer-type-dot"
-                      style={{ backgroundColor: intervalColors[item.type] }}
-                      aria-hidden="true"
-                    />
-                    {TYPE_LABELS[item.type]} {formatCompactDuration(item.durationMs / 1000)}
+                {summaryItems.map((item) => (
+                  <span className="timer-type-total" key={`${item.type}-${item.label}`}>
+                    {item.type === 'warmup' || item.type === 'work' || item.type === 'rest' || item.type === 'cooldown'
+                      ? (
+                          <span
+                            className="timer-type-dot"
+                            style={{ backgroundColor: intervalColors[item.type] }}
+                            aria-hidden="true"
+                          />
+                        )
+                      : null}
+                    {item.label} {item.value}
                   </span>
                 ))}
               </div>

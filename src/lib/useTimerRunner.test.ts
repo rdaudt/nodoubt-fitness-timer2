@@ -1,18 +1,31 @@
 import { describe, expect, it } from 'vitest';
-import { isSetBoundaryTransition } from './useTimerRunner';
+import { buildTimeline } from './timerEngine';
+import type { Timer } from '../types';
 
-describe('isSetBoundaryTransition', () => {
-  it('returns true only when moving to a higher set number', () => {
-    expect(isSetBoundaryTransition(
-      { id: 'a', sourceSequence: 1, name: 'Work', type: 'work', durationMs: 1000, setNumber: 1 },
-      { id: 'b', sourceSequence: 1, name: 'Work', type: 'work', durationMs: 1000, setNumber: 2 },
-    )).toBe(true);
-  });
+const timer: Timer = {
+  id: 'timer-1',
+  name: 'Demo',
+  stationCount: 1,
+  roundsPerStation: 2,
+  workMinutes: 0,
+  workSeconds: 30,
+  restMinutes: 0,
+  restSeconds: 15,
+  stationTransitionMinutes: 0,
+  stationTransitionSeconds: 30,
+  startStationWorkManually: true,
+  warmupEnabled: true,
+  warmupMinutes: 0,
+  warmupSeconds: 10,
+  cooldownEnabled: false,
+  cooldownMinutes: 0,
+  cooldownSeconds: 0,
+  createdAt: '2026-01-01T00:00:00.000Z',
+  updatedAt: '2026-01-01T00:00:00.000Z',
+};
 
-  it('returns false for non-set transitions', () => {
-    expect(isSetBoundaryTransition(
-      { id: 'a', sourceSequence: 1, name: 'Warmup', type: 'warmup', durationMs: 1000, setNumber: null },
-      { id: 'b', sourceSequence: 2, name: 'Work', type: 'work', durationMs: 1000, setNumber: 1 },
-    )).toBe(false);
+describe('useTimerRunner dependencies', () => {
+  it('uses timeline entries that can support manual station starts', () => {
+    expect(buildTimeline(timer).map((entry) => entry.type)).toEqual(['warmup', 'work', 'rest', 'work']);
   });
 });
