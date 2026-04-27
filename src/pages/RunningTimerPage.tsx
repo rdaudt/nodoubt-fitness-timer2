@@ -20,6 +20,23 @@ const workImages = [
   '/assets/pullup-cat.png',
 ];
 
+type SessionCircleType = 'warmup' | 'work' | 'rest' | 'cooldown';
+
+interface SessionCircle {
+  id: string;
+  type: SessionCircleType;
+  active: boolean;
+}
+
+interface SessionMapModel {
+  showWarmup: boolean;
+  warmupActive: boolean;
+  stationRows: SessionCircle[][];
+  transitionTargetRow: number | null;
+  showCooldown: boolean;
+  cooldownActive: boolean;
+}
+
 const emptyTimer = (): Timer => ({
   id: 'empty',
   name: 'Missing Timer',
@@ -90,11 +107,37 @@ const entryCardStyle = (
   return {};
 };
 
+const hasConfiguredWarmup = (timer: Timer | null): boolean => Boolean(
+  timer
+  && timer.warmupEnabled
+  && (timer.warmupMinutes > 0 || timer.warmupSeconds > 0),
+);
+
+const hasConfiguredCooldown = (timer: Timer | null): boolean => Boolean(
+  timer
+  && timer.cooldownEnabled
+  && (timer.cooldownMinutes > 0 || timer.cooldownSeconds > 0),
+);
+
+const toCircleIndex = (entry: TimelineEntry | undefined): number | null => {
+  if (!entry || !entry.roundNumber) {
+    return null;
+  }
+  if (entry.type === 'work') {
+    return (entry.roundNumber - 1) * 2;
+  }
+  if (entry.type === 'rest') {
+    return (entry.roundNumber - 1) * 2 + 1;
+  }
+  return null;
+};
+
 export const RunningTimerPage = () => {
   const { id = '' } = useParams();
   const [searchParams] = useSearchParams();
   const { settings } = useSettings();
   const [timer, setTimer] = useState<Timer | null>(null);
+  const [showSessionMap, setShowSessionMap] = useState(true);
   const [confirmAction, setConfirmAction] = useState<'stop' | null>(null);
   const autoStartedRef = useRef(false);
 
@@ -150,6 +193,40 @@ export const RunningTimerPage = () => {
     () => entryCardStyle(nextEntry, settings.intervalColors),
     [nextEntry, settings.intervalColors],
   );
+  const sessionMap = useMemo<SessionMapModel>(() => {
+    const stationCount = timer?.stationCount ?? 0;
+    const roundsPerStation = Math.max(1, timer?.roundsPerStation ?? 1);
+    const circlesPerStation = roundsPerStation * 2 - 1;
+
+    const activeStation = activeEntry?.stationNumber ?? null;
+    const activeCircleIndex = toCircleIndex(activeEntry);
+    const transitionTargetRow = activeEntry?.type === 'stationTransition' && activeEntry.stationNumber
+      ? activeEntry.stationNumber - 1
+      : null;
+
+    const stationRows: SessionCircle[][] = Array.from({ length: stationCount }, (_, rowIndex) =>
+      Array.from({ length: circlesPerStation }, (_, circleIndex) => {
+        const type: SessionCircleType = circleIndex % 2 === 0 ? 'work' : 'rest';
+        const stationNumber = rowIndex + 1;
+        const active = activeEntry?.type === type
+          && activeStation === stationNumber
+          && activeCircleIndex === circleIndex;
+        return {
+          id: `station-${stationNumber}-circle-${circleIndex}`,
+          type,
+          active,
+        };
+      }));
+
+    return {
+      showWarmup: hasConfiguredWarmup(timer),
+      warmupActive: activeEntry?.type === 'warmup',
+      stationRows,
+      transitionTargetRow,
+      showCooldown: hasConfiguredCooldown(timer),
+      cooldownActive: activeEntry?.type === 'cooldown',
+    };
+  }, [activeEntry, timer]);
 
   const requestPause = async () => {
     if (runner.state.status === 'running') {
@@ -178,52 +255,108 @@ export const RunningTimerPage = () => {
 
   return (
     <section className="run-page">
-      <header className="run-header">
-        <p className="run-name">{timer.name}</p>
-        <p className="run-remaining">Total remaining: {formatClock(runner.state.totalRemainingMs / 1000)}</p>
-        {isStationStartPause && <p className="run-paused-flag run-set-start-flag pulse">Prepare to start</p>}
-      </header>
+      <div className={`run-layout${showSessionMap ? ' has-session-map' : ''}`}>
+        <div className="run-main-column">
+          <header className="run-header">
+            <p className="run-name">{timer.name}</p>
+            <p className="run-remaining">Total remaining: {formatClock(runner.state.totalRemainingMs / 1000)}</p>
+            {isStationStartPause && <p className="run-paused-flag run-set-start-flag pulse">Prepare to start</p>}
+            <label className="run-map-toggle-row">
+              <span>Session Map</span>
+              <input
+                className="settings-toggle-input"
+                type="checkbox"
+                checked={showSessionMap}
+                onChange={(e) => setShowSessionMap(e.target.checked)}
+                aria-label="Show session map"
+              />
+            </label>
+          </header>
 
-      <article
-        className={`run-current-card ${activeEntry?.type === 'stationTransition' ? 'station-transition' : ''}`}
-        style={currentStyle}
-      >
-        {currentImage && <img className="run-current-image" src={currentImage} alt="" aria-hidden="true" />}
-        <div className="run-current-copy">
-          <p className="run-current-context">{entryContext(activeEntry, settings.coachMode)}</p>
-          <h1>{entryTitle(activeEntry, settings.coachMode)}</h1>
-          <p className="run-current-time">{formatClock(runner.state.currentRemainingMs / 1000)}</p>
-        </div>
-      </article>
+          <article
+            className={`run-current-card ${activeEntry?.type === 'stationTransition' ? 'station-transition' : ''}`}
+            style={currentStyle}
+          >
+            {currentImage && <img className="run-current-image" src={currentImage} alt="" aria-hidden="true" />}
+            <div className="run-current-copy">
+              <p className="run-current-context">{entryContext(activeEntry, settings.coachMode)}</p>
+              <h1>{entryTitle(activeEntry, settings.coachMode)}</h1>
+              <p className="run-current-time">{formatClock(runner.state.currentRemainingMs / 1000)}</p>
+            </div>
+          </article>
 
-      <article className="run-next-card" style={nextStyle}>
-        <span>next</span>
-        <strong>{entryTitle(nextEntry, settings.coachMode)}</strong>
-        {nextEntry && <p>{entryContext(nextEntry, settings.coachMode)} ({formatClock(nextEntry.durationMs / 1000)})</p>}
-      </article>
+          <article className="run-next-card" style={nextStyle}>
+            <span>next</span>
+            <strong>{entryTitle(nextEntry, settings.coachMode)}</strong>
+            {nextEntry && <p>{entryContext(nextEntry, settings.coachMode)} ({formatClock(nextEntry.durationMs / 1000)})</p>}
+          </article>
 
-      <div className="actions-row wrap run-actions">
-        {runner.state.status === 'running' && <button className="secondary-btn" onClick={requestPause}>Pause Timer</button>}
-        {runner.state.status === 'paused' && (
-          <button className="primary-btn" onClick={runner.resume}>
-            {isStationStartPause ? 'Start' : 'Resume'}
-          </button>
-        )}
-        {(runner.state.status === 'running' || runner.state.status === 'paused') && (
-          <button className="danger-btn" onClick={requestStop}>{isStationStartPause ? 'Cancel' : 'Stop Timer'}</button>
-        )}
-        {runner.state.status === 'completed' && <Link className="primary-btn" to={donePath}>Done</Link>}
-      </div>
-
-      {confirmAction && (
-        <div className="confirm-box">
-          <p className="confirm-text">Stop the timer?</p>
-          <div className="actions-row">
-            <button className="primary-btn" onClick={confirm}>Confirm</button>
-            <button className="secondary-btn" onClick={() => setConfirmAction(null)}>Cancel</button>
+          <div className="actions-row wrap run-actions">
+            {runner.state.status === 'running' && <button className="secondary-btn" onClick={requestPause}>Pause Timer</button>}
+            {runner.state.status === 'paused' && (
+              <button className="primary-btn" onClick={runner.resume}>
+                {isStationStartPause ? 'Start' : 'Resume'}
+              </button>
+            )}
+            {(runner.state.status === 'running' || runner.state.status === 'paused') && (
+              <button className="danger-btn" onClick={requestStop}>{isStationStartPause ? 'Cancel' : 'Stop Timer'}</button>
+            )}
+            {runner.state.status === 'completed' && <Link className="primary-btn" to={donePath}>Done</Link>}
           </div>
+
+          {confirmAction && (
+            <div className="confirm-box">
+              <p className="confirm-text">Stop the timer?</p>
+              <div className="actions-row">
+                <button className="primary-btn" onClick={confirm}>Confirm</button>
+                <button className="secondary-btn" onClick={() => setConfirmAction(null)}>Cancel</button>
+              </div>
+            </div>
+          )}
         </div>
-      )}
+
+        {showSessionMap && (
+          <aside className="run-session-map" aria-label="HIIT session progress map">
+            {sessionMap.showWarmup && (
+              <div className="run-session-map-standalone">
+                <span
+                  className={`run-session-map-circle${sessionMap.warmupActive ? ' active' : ''}`}
+                  style={{ backgroundColor: settings.intervalColors.warmup }}
+                  aria-label={`Warmup${sessionMap.warmupActive ? ' active' : ''}`}
+                />
+              </div>
+            )}
+
+            {sessionMap.stationRows.map((row, rowIndex) => (
+              <div className="run-session-map-row" key={`station-row-${rowIndex + 1}`}>
+                {row.map((circle) => (
+                  <span
+                    key={circle.id}
+                    className={`run-session-map-circle${circle.active ? ' active' : ''}`}
+                    style={{ backgroundColor: settings.intervalColors[circle.type] }}
+                    aria-label={`Station ${rowIndex + 1} ${circle.type}${circle.active ? ' active' : ''}`}
+                  />
+                ))}
+                {sessionMap.transitionTargetRow === rowIndex && (
+                  <span className="run-session-map-transition-arrow" aria-label={`Transition to station ${rowIndex + 1}`}>
+                    ➜
+                  </span>
+                )}
+              </div>
+            ))}
+
+            {sessionMap.showCooldown && (
+              <div className="run-session-map-standalone">
+                <span
+                  className={`run-session-map-circle${sessionMap.cooldownActive ? ' active' : ''}`}
+                  style={{ backgroundColor: settings.intervalColors.cooldown }}
+                  aria-label={`Cooldown${sessionMap.cooldownActive ? ' active' : ''}`}
+                />
+              </div>
+            )}
+          </aside>
+        )}
+      </div>
     </section>
   );
 };
