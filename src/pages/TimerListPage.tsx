@@ -52,7 +52,7 @@ export const TimerListPage = () => {
               timer={timer}
               intervalColors={settings.intervalColors}
               coachMode={settings.coachMode}
-              featureImage={index === 0 ? steampunkGym2 : undefined}
+              featureImage={index === 0 && settings.kobeEverywhere ? steampunkGym2 : undefined}
               onDelete={onDeleteTimer}
             />
           ))}

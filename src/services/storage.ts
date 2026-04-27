@@ -101,6 +101,7 @@ export const SettingsRepository = {
       ...DEFAULT_SETTINGS,
       ...row.value,
       coachMode: row.value.coachMode ?? DEFAULT_SETTINGS.coachMode,
+      kobeEverywhere: row.value.kobeEverywhere ?? DEFAULT_SETTINGS.kobeEverywhere,
       intervalColors: {
         ...DEFAULT_SETTINGS.intervalColors,
         ...row.value.intervalColors,

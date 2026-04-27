@@ -1,8 +1,11 @@
 import { BRAND } from '../config';
+import { useSettings } from '../services/settingsContext';
 import kobeAiSolutions from '../../media/kobe-ai-solutions.png';
 import kobeAndTheCoach from '../../media/kobe-and-the-coach.png';
 
 export const AboutPage = () => {
+  const { settings } = useSettings();
+
   return (
     <section className="about-page">
       <h1 className="screen-title">About NoDoubt Fitness</h1>
@@ -16,7 +19,7 @@ export const AboutPage = () => {
       <a className="about-kobe-btn full" href="https://www.instagram.com/kobetheabby/" target="_blank" rel="noreferrer">
         DM Kobe
       </a>
-      <img src={kobeAiSolutions} alt="Kobe AI Solutions" className="about-kobe-ai-image" />
+      {settings.kobeEverywhere && <img src={kobeAiSolutions} alt="Kobe AI Solutions" className="about-kobe-ai-image" />}
     </section>
   );
 };

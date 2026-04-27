@@ -131,6 +131,9 @@ export const RunningTimerPage = () => {
     return imageByEntryId;
   }, [runner.timeline]);
   const currentImage = useMemo(() => {
+    if (!settings.kobeEverywhere) {
+      return undefined;
+    }
     if (!activeEntry) {
       return undefined;
     }
@@ -138,7 +141,7 @@ export const RunningTimerPage = () => {
       return workImageByEntryId[activeEntry.id] ?? currentImageByType.work;
     }
     return currentImageByType[activeEntry.type];
-  }, [activeEntry, workImageByEntryId]);
+  }, [activeEntry, settings.kobeEverywhere, workImageByEntryId]);
   const currentStyle = useMemo(
     () => entryCardStyle(activeEntry, settings.intervalColors),
     [activeEntry, settings.intervalColors],
