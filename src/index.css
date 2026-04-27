@@ -782,6 +782,7 @@ select {
 .run-session-map {
   min-width: 92px;
   padding-top: 8.5rem;
+  padding-left: 8px;
   display: grid;
   gap: 0.22rem;
 }
@@ -791,11 +792,13 @@ select {
   display: flex;
   gap: 0.2rem;
   align-items: center;
+  padding-left: 12px;
 }
 
 .run-session-map-standalone {
   display: flex;
   justify-content: flex-start;
+  padding-left: 12px;
 }
 
 .run-session-map-circle {
@@ -814,7 +817,7 @@ select {
 
 .run-session-map-transition-arrow {
   position: absolute;
-  right: -14px;
+  left: -7px;
   color: #6cb7e8;
   font-size: 0.9rem;
   line-height: 1;
@@ -1788,11 +1791,17 @@ select {
   .run-session-map {
     min-width: 64px;
     padding-top: 8.2rem;
+    padding-left: 6px;
     gap: 0.18rem;
   }
 
   .run-session-map-row {
     gap: 0.14rem;
+    padding-left: 9px;
+  }
+
+  .run-session-map-standalone {
+    padding-left: 9px;
   }
 
   .run-session-map-circle {
@@ -1801,7 +1810,7 @@ select {
   }
 
   .run-session-map-transition-arrow {
-    right: -11px;
+    left: -5px;
     font-size: 0.72rem;
   }
 
