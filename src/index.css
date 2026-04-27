@@ -1073,8 +1073,110 @@ select {
   padding-bottom: calc(8.4rem + env(safe-area-inset-bottom));
 }
 
+.compact-editor {
+  gap: 0.6rem;
+}
+
+.timer-count-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.5rem;
+}
+
+.timer-count-card {
+  border: 1px solid #2f2f2f;
+  border-radius: 10px;
+  background: #1a1a1a;
+  padding: 0.5rem 0.6rem;
+}
+
+.timer-count-card p {
+  margin: 0;
+  color: #bbb098;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  font-size: 0.78rem;
+  font-family: 'Barlow Condensed', sans-serif;
+}
+
+.timer-count-controls {
+  margin-top: 0.3rem;
+}
+
+.timer-count-controls input {
+  width: 100%;
+  min-height: 40px;
+  border-radius: 8px;
+  text-align: center;
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 2rem;
+  font-weight: 700;
+  padding: 0.28rem 0.4rem;
+}
+
+.timing-matrix {
+  border: 1px solid #2e2e2e;
+  border-radius: 10px;
+  background: linear-gradient(135deg, #161616, #1b1b1b);
+  padding: 0.55rem;
+}
+
+.timing-matrix h3 {
+  margin: 0 0 0.45rem;
+  color: #f0c93a;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-size: 1.05rem;
+  font-family: 'Barlow Condensed', sans-serif;
+}
+
+.timing-matrix-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.45rem;
+}
+
+.timing-block {
+  border: 1px solid #323232;
+  border-radius: 8px;
+  background: #262626;
+  padding: 0.45rem;
+  min-height: 94px;
+}
+
+.timing-block p {
+  margin: 0;
+  color: #b8ad93;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-size: 0.72rem;
+  font-family: 'Barlow Condensed', sans-serif;
+}
+
+.timing-block-time-input {
+  width: 100%;
+  min-height: 44px;
+  margin-top: 0.35rem;
+  border-radius: 8px;
+  text-align: center;
+  padding: 0.28rem 0.35rem;
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 2.1rem;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.timing-block.disabled {
+  opacity: 0.56;
+}
+
 .detail-name-input-top {
   margin-bottom: 0.15rem;
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 1.55rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
 }
 
 .detail-actions {

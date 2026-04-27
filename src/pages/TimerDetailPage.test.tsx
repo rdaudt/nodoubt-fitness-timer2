@@ -78,8 +78,12 @@ describe('TimerDetailPage', () => {
     );
 
     expect(await screen.findByLabelText('Timer name')).toHaveValue('Demo Timer');
-    expect(screen.getByText('Number of Stations')).toBeInTheDocument();
-    expect(screen.getByText('Work Time')).toBeInTheDocument();
+    expect(screen.getByText('Stations')).toBeInTheDocument();
+    expect(screen.getByText('Rounds/Station')).toBeInTheDocument();
+    expect(screen.getByText('Timing Matrix')).toBeInTheDocument();
+    expect(screen.getByText('Station Transition')).toBeInTheDocument();
+    expect(screen.getByText('Cooldown')).toBeInTheDocument();
+    expect(screen.getByText('Start Set Manually')).toBeInTheDocument();
   });
 
   it('persists name edits on blur', async () => {

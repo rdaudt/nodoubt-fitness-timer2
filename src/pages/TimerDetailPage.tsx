@@ -6,67 +6,103 @@ import { useSettings } from '../services/settingsContext';
 import { TimerRepository } from '../services/storage';
 import type { Timer } from '../types';
 
-const toDisplayNumber = (value: number): string =>
-  Number.isNaN(value) ? '' : String(value);
-
 const lockNumberInput = (e: WheelEvent<HTMLInputElement>) => {
   e.currentTarget.blur();
 };
 
-const numberFromInput = (value: string): number =>
-  value === '' ? Number.NaN : Math.max(0, Number(value));
+const fromSeconds = (totalSeconds: number): { minutes: number; seconds: number } => ({
+  minutes: Math.floor(totalSeconds / 60),
+  seconds: totalSeconds % 60,
+});
 
-const countFromInput = (value: string): number =>
-  value === '' ? Number.NaN : Math.max(1, Number(value));
+const toSeconds = (minutes: number, seconds: number): number =>
+  Math.max(0, Math.floor(minutes || 0) * 60 + Math.floor(seconds || 0));
 
-const DurationFields = ({
+const toNumber = (value: string, min = 0): number =>
+  Number.isNaN(Number(value)) ? min : Math.max(min, Number(value));
+
+const parseClockInput = (value: string): number | null => {
+  const trimmed = value.trim();
+  const match = /^(\d+):([0-5]\d)$/.exec(trimmed);
+  if (!match) {
+    return null;
+  }
+  const minutes = Number(match[1]);
+  const seconds = Number(match[2]);
+  return minutes * 60 + seconds;
+};
+
+const CountEditor = ({
   label,
-  minutes,
-  seconds,
-  disabled = false,
-  onMinutes,
-  onSeconds,
-  onBlur,
+  value,
+  onDraftChange,
+  onPersist,
 }: {
   label: string;
-  minutes: number;
-  seconds: number;
-  disabled?: boolean;
-  onMinutes: (value: number) => void;
-  onSeconds: (value: number) => void;
-  onBlur: () => void;
+  value: number;
+  onDraftChange: (next: number) => void;
+  onPersist: () => void;
 }) => (
-  <div className="set-transition-inline timer-attribute-duration">
-    <span className="set-transition-inline-label">{label}</span>
-    <label className="set-transition-inline-field">
-      <span>Min</span>
+  <article className="timer-count-card">
+    <p>{label}</p>
+    <div className="timer-count-controls">
       <input
         type="number"
-        min={0}
-        disabled={disabled}
+        min={1}
         onWheel={lockNumberInput}
-        value={toDisplayNumber(minutes)}
-        aria-label={`${label} minutes`}
-        onChange={(e) => onMinutes(numberFromInput(e.target.value))}
-        onBlur={onBlur}
+        value={String(value)}
+        onChange={(e) => onDraftChange(toNumber(e.target.value, 1))}
+        onBlur={onPersist}
       />
-    </label>
-    <label className="set-transition-inline-field">
-      <span>Sec</span>
-      <input
-        type="number"
-        min={0}
-        max={59}
-        disabled={disabled}
-        onWheel={lockNumberInput}
-        value={toDisplayNumber(seconds)}
-        aria-label={`${label} seconds`}
-        onChange={(e) => onSeconds(numberFromInput(e.target.value))}
-        onBlur={onBlur}
-      />
-    </label>
-  </div>
+    </div>
+  </article>
 );
+
+const TimeMatrixBlock = ({
+  label,
+  totalSeconds,
+  disabled = false,
+  onCommit,
+  onPersist,
+}: {
+  label: string;
+  totalSeconds: number;
+  disabled?: boolean;
+  onCommit: (seconds: number) => void;
+  onPersist: () => void;
+}) => {
+  const [clockValue, setClockValue] = useState(formatClock(totalSeconds));
+
+  useEffect(() => {
+    setClockValue(formatClock(totalSeconds));
+  }, [totalSeconds]);
+
+  const onBlurClock = () => {
+    const parsed = parseClockInput(clockValue);
+    if (parsed !== null) {
+      onCommit(parsed);
+      onPersist();
+      return;
+    }
+    setClockValue(formatClock(totalSeconds));
+  };
+
+  return (
+    <article className={`timing-block${disabled ? ' disabled' : ''}`}>
+      <p>{label}</p>
+      <input
+        className="timing-block-time-input"
+        type="text"
+        inputMode="numeric"
+        disabled={disabled}
+        value={clockValue}
+        onChange={(e) => setClockValue(e.target.value)}
+        onBlur={onBlurClock}
+        aria-label={`${label} time`}
+      />
+    </article>
+  );
+};
 
 export const TimerDetailPage = () => {
   const { id = '' } = useParams();
@@ -91,14 +127,7 @@ export const TimerDetailPage = () => {
     return Math.floor(estimateTimerDurationMs(normalizeTimerFields(timer)) / 1000);
   }, [timer]);
 
-  const updateDraft = (update: Partial<Timer>) => {
-    setTimer((prev) => (prev ? { ...prev, ...update } : prev));
-  };
-
-  const persist = async (candidate = timer) => {
-    if (!candidate) {
-      return false;
-    }
+  const persist = async (candidate: Timer) => {
     const result = validateTimer(candidate, allTimers);
     if (!result.valid) {
       setError(result.errors[0] ?? 'Invalid timer.');
@@ -116,21 +145,46 @@ export const TimerDetailPage = () => {
     return true;
   };
 
-  const persistPatch = async (update: Partial<Timer>) => {
+  const applyPatch = async (patch: Partial<Timer>) => {
     if (!timer) {
       return;
     }
-    const candidate = { ...timer, ...update };
+    const candidate = { ...timer, ...patch };
     setTimer(candidate);
-    await persist(candidate);
-  };
-
-  const onBlur = async () => {
-    const ok = await persist();
+    const ok = await persist(candidate);
     if (!ok) {
       const reloaded = await TimerRepository.get(id);
       setTimer(reloaded ?? null);
     }
+  };
+
+  const patchTime = async (
+    minutesKey:
+      | 'workMinutes'
+      | 'restMinutes'
+      | 'stationTransitionMinutes'
+      | 'warmupMinutes'
+      | 'cooldownMinutes',
+    secondsKey:
+      | 'workSeconds'
+      | 'restSeconds'
+      | 'stationTransitionSeconds'
+      | 'warmupSeconds'
+      | 'cooldownSeconds',
+    nextSeconds: number,
+    persistNow = true,
+  ) => {
+    const parsed = fromSeconds(nextSeconds);
+    const patch = {
+      [minutesKey]: parsed.minutes,
+      [secondsKey]: parsed.seconds,
+    } as Partial<Timer>;
+
+    if (persistNow) {
+      await applyPatch(patch);
+      return;
+    }
+    setTimer((prev) => (prev ? { ...prev, ...patch } : prev));
   };
 
   const onDeleteTimer = async () => {
@@ -149,17 +203,16 @@ export const TimerDetailPage = () => {
     return <p className="empty">Timer not found.</p>;
   }
 
-  const stationLabel = settings.coachMode ? 'Number of Stations' : 'Number of Sets';
-  const transitionLabel = settings.coachMode ? 'Station Transition Time' : 'Set Transition Time';
+  const stationLabel = settings.coachMode ? 'Stations' : 'Sets';
 
   return (
-    <section className="timer-detail-page">
+    <section className="timer-detail-page compact-editor">
       <input
         className="detail-name-input-top"
         value={timer.name}
         maxLength={25}
-        onChange={(e) => updateDraft({ name: e.target.value })}
-        onBlur={onBlur}
+        onChange={(e) => setTimer((prev) => (prev ? { ...prev, name: e.target.value } : prev))}
+        onBlur={() => timer && applyPatch({ name: timer.name })}
         aria-label="Timer name"
         placeholder="Timer name"
       />
@@ -176,123 +229,102 @@ export const TimerDetailPage = () => {
         </div>
       </div>
 
-      <label className="field">
-        {stationLabel}
-        <input
-          type="number"
-          min={1}
-          value={toDisplayNumber(timer.stationCount)}
-          onWheel={lockNumberInput}
-          onChange={(e) => updateDraft({ stationCount: countFromInput(e.target.value) })}
-          onBlur={onBlur}
+      <div className="timer-count-grid">
+        <CountEditor
+          label={stationLabel}
+          value={timer.stationCount}
+          onDraftChange={(stationCount) => setTimer((prev) => (prev ? { ...prev, stationCount } : prev))}
+          onPersist={() => applyPatch({ stationCount: timer.stationCount })}
         />
-      </label>
-
-      <label className="field">
-        Number of Rounds per Station
-        <input
-          type="number"
-          min={1}
-          value={toDisplayNumber(timer.roundsPerStation)}
-          onWheel={lockNumberInput}
-          onChange={(e) => {
-            const roundsPerStation = countFromInput(e.target.value);
-            updateDraft({ roundsPerStation });
-          }}
-          onBlur={onBlur}
+        <CountEditor
+          label="Rounds/Station"
+          value={timer.roundsPerStation}
+          onDraftChange={(roundsPerStation) => setTimer((prev) => (prev ? { ...prev, roundsPerStation } : prev))}
+          onPersist={() => applyPatch({ roundsPerStation: timer.roundsPerStation })}
         />
-      </label>
+      </div>
 
-      <DurationFields
-        label="Work Time"
-        minutes={timer.workMinutes}
-        seconds={timer.workSeconds}
-        onMinutes={(workMinutes) => updateDraft({ workMinutes })}
-        onSeconds={(workSeconds) => updateDraft({ workSeconds })}
-        onBlur={onBlur}
-      />
-
-      <DurationFields
-        label="Rest Time"
-        minutes={timer.restMinutes}
-        seconds={timer.restSeconds}
-        disabled={timer.roundsPerStation <= 1}
-        onMinutes={(restMinutes) => updateDraft({ restMinutes })}
-        onSeconds={(restSeconds) => updateDraft({ restSeconds })}
-        onBlur={onBlur}
-      />
-
-      <DurationFields
-        label={transitionLabel}
-        minutes={timer.stationTransitionMinutes}
-        seconds={timer.stationTransitionSeconds}
-        onMinutes={(stationTransitionMinutes) => updateDraft({ stationTransitionMinutes })}
-        onSeconds={(stationTransitionSeconds) => updateDraft({ stationTransitionSeconds })}
-        onBlur={onBlur}
-      />
+      <section className="timing-matrix">
+        <h3>Timing Matrix</h3>
+        <div className="timing-matrix-grid">
+          <TimeMatrixBlock
+            label="Work"
+            totalSeconds={toSeconds(timer.workMinutes, timer.workSeconds)}
+            onCommit={(seconds) => patchTime('workMinutes', 'workSeconds', seconds, false)}
+            onPersist={() => patchTime('workMinutes', 'workSeconds', toSeconds(timer.workMinutes, timer.workSeconds), true)}
+          />
+          <TimeMatrixBlock
+            label="Rest"
+            totalSeconds={toSeconds(timer.restMinutes, timer.restSeconds)}
+            onCommit={(seconds) => patchTime('restMinutes', 'restSeconds', seconds, false)}
+            onPersist={() => patchTime('restMinutes', 'restSeconds', toSeconds(timer.restMinutes, timer.restSeconds), true)}
+            disabled={timer.roundsPerStation <= 1}
+          />
+          <TimeMatrixBlock
+            label="Station Transition"
+            totalSeconds={toSeconds(timer.stationTransitionMinutes, timer.stationTransitionSeconds)}
+            onCommit={(seconds) => patchTime('stationTransitionMinutes', 'stationTransitionSeconds', seconds, false)}
+            onPersist={() => patchTime('stationTransitionMinutes', 'stationTransitionSeconds', toSeconds(timer.stationTransitionMinutes, timer.stationTransitionSeconds), true)}
+          />
+          <TimeMatrixBlock
+            label="Warmup"
+            totalSeconds={toSeconds(timer.warmupMinutes, timer.warmupSeconds)}
+            onCommit={(seconds) => patchTime('warmupMinutes', 'warmupSeconds', seconds, false)}
+            onPersist={() => patchTime('warmupMinutes', 'warmupSeconds', toSeconds(timer.warmupMinutes, timer.warmupSeconds), true)}
+            disabled={!timer.warmupEnabled}
+          />
+          <TimeMatrixBlock
+            label="Cooldown"
+            totalSeconds={toSeconds(timer.cooldownMinutes, timer.cooldownSeconds)}
+            onCommit={(seconds) => patchTime('cooldownMinutes', 'cooldownSeconds', seconds, false)}
+            onPersist={() => patchTime('cooldownMinutes', 'cooldownSeconds', toSeconds(timer.cooldownMinutes, timer.cooldownSeconds), true)}
+            disabled={!timer.cooldownEnabled}
+          />
+        </div>
+      </section>
 
       {settings.coachMode && (
         <label className="field detail-repeat-toggle-row">
-          <span>Start Station Work Manually</span>
+          <span>Start Set Manually</span>
           <input
             className="settings-toggle-input"
             type="checkbox"
             checked={timer.startStationWorkManually}
-            onChange={(e) => persistPatch({ startStationWorkManually: e.target.checked })}
-            aria-label="Start Station Work Manually"
+            onChange={(e) => applyPatch({ startStationWorkManually: e.target.checked })}
+            aria-label="Start Set Manually"
           />
         </label>
       )}
 
       <label className="field detail-repeat-toggle-row">
-        <span>Warmup</span>
+        <span>Include Warmup</span>
         <input
           className="settings-toggle-input"
           type="checkbox"
           checked={timer.warmupEnabled}
-          onChange={(e) => persistPatch({
+          onChange={(e) => applyPatch({
             warmupEnabled: e.target.checked,
-            warmupMinutes: e.target.checked ? timer.warmupMinutes || 5 : 0,
+            warmupMinutes: e.target.checked ? (timer.warmupMinutes || 5) : 0,
             warmupSeconds: e.target.checked ? timer.warmupSeconds : 0,
           })}
-          aria-label="Warmup"
+          aria-label="Include Warmup"
         />
       </label>
 
-      <DurationFields
-        label="Warmup Time"
-        minutes={timer.warmupMinutes}
-        seconds={timer.warmupSeconds}
-        disabled={!timer.warmupEnabled}
-        onMinutes={(warmupMinutes) => updateDraft({ warmupMinutes })}
-        onSeconds={(warmupSeconds) => updateDraft({ warmupSeconds })}
-        onBlur={onBlur}
-      />
-
       <label className="field detail-repeat-toggle-row">
-        <span>Cooldown</span>
+        <span>Include Cooldown</span>
         <input
           className="settings-toggle-input"
           type="checkbox"
           checked={timer.cooldownEnabled}
-          onChange={(e) => persistPatch({
+          onChange={(e) => applyPatch({
             cooldownEnabled: e.target.checked,
-            cooldownMinutes: e.target.checked ? timer.cooldownMinutes || 5 : 0,
+            cooldownMinutes: e.target.checked ? (timer.cooldownMinutes || 5) : 0,
             cooldownSeconds: e.target.checked ? timer.cooldownSeconds : 0,
           })}
-          aria-label="Cooldown"
+          aria-label="Include Cooldown"
         />
       </label>
-
-      <DurationFields
-        label="Cooldown Time"
-        minutes={timer.cooldownMinutes}
-        seconds={timer.cooldownSeconds}
-        disabled={!timer.cooldownEnabled}
-        onMinutes={(cooldownMinutes) => updateDraft({ cooldownMinutes })}
-        onSeconds={(cooldownSeconds) => updateDraft({ cooldownSeconds })}
-        onBlur={onBlur}
-      />
 
       {error && <p className="error-inline">{error}</p>}
     </section>
