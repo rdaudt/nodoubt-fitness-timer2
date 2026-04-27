@@ -121,4 +121,22 @@ describe('TimerDetailPage', () => {
     await waitFor(() => expect(upsertMock).toHaveBeenCalledTimes(1));
     expect(upsertMock.mock.calls[0][0].stationCount).toBe(1);
   });
+
+  it('persists timing matrix edits on blur', async () => {
+    render(
+      <MemoryRouter initialEntries={['/timer/timer-1']}>
+        <Routes>
+          <Route path="/timer/:id" element={<TimerDetailPage />} />
+        </Routes>
+      </MemoryRouter>,
+    );
+
+    const workInput = await screen.findByLabelText('Work time');
+    fireEvent.change(workInput, { target: { value: '00:45' } });
+    fireEvent.blur(workInput);
+
+    await waitFor(() => expect(upsertMock).toHaveBeenCalledTimes(1));
+    expect(upsertMock.mock.calls[0][0].workMinutes).toBe(0);
+    expect(upsertMock.mock.calls[0][0].workSeconds).toBe(45);
+  });
 });
