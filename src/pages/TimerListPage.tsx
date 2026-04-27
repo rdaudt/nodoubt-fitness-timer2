@@ -7,7 +7,7 @@ import type { Timer } from '../types';
 import steampunkGym2 from '../../media/steampunk-gym-2.png';
 
 export const TimerListPage = () => {
-  const { settings } = useSettings();
+  const { settings, saveSettings } = useSettings();
   const [timers, setTimers] = useState<Timer[]>([]);
 
   useEffect(() => {
@@ -32,6 +32,17 @@ export const TimerListPage = () => {
         </Link>
       </div>
 
+      <label className="field settings-toggle-row home-coach-mode-row">
+        <span>Coach Mode</span>
+        <input
+          className="settings-toggle-input"
+          type="checkbox"
+          checked={settings.coachMode}
+          onChange={(e) => saveSettings({ ...settings, coachMode: e.target.checked })}
+          aria-label="Coach Mode"
+        />
+      </label>
+
       <div className="stack">
         {timers.length === 0
           ? <p className="empty">No timers yet. Create your first interval plan.</p>
@@ -40,6 +51,7 @@ export const TimerListPage = () => {
               key={timer.id}
               timer={timer}
               intervalColors={settings.intervalColors}
+              coachMode={settings.coachMode}
               featureImage={index === 0 ? steampunkGym2 : undefined}
               onDelete={onDeleteTimer}
             />

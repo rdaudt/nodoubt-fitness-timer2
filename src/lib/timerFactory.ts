@@ -1,4 +1,4 @@
-import type { Interval, Timer } from '../types';
+import type { Timer } from '../types';
 
 export const TIMER_NAME_IDEAS = [
   'Certain Death',
@@ -107,24 +107,26 @@ export const randomTimerName = (random = Math.random): string => {
   return TIMER_NAME_IDEAS[Math.min(index, TIMER_NAME_IDEAS.length - 1)];
 };
 
-export const blankWork = (): Interval => ({
-  sequence: 1,
-  name: 'Work',
-  type: 'work',
-  durationMinutes: 0,
-  durationSeconds: 30,
-});
-
 export const newTimer = (): Timer => {
   const now = new Date().toISOString();
   return {
     id: crypto.randomUUID(),
     name: randomTimerName(),
-    sets: 1,
-    repeatSetsUntilStopped: false,
-    setTransitionMinutes: 0,
-    setTransitionSeconds: 30,
-    intervals: [blankWork()],
+    stationCount: 10,
+    roundsPerStation: 3,
+    workMinutes: 0,
+    workSeconds: 30,
+    restMinutes: 0,
+    restSeconds: 15,
+    stationTransitionMinutes: 0,
+    stationTransitionSeconds: 30,
+    startStationWorkManually: false,
+    warmupEnabled: true,
+    warmupMinutes: 5,
+    warmupSeconds: 0,
+    cooldownEnabled: true,
+    cooldownMinutes: 5,
+    cooldownSeconds: 0,
     createdAt: now,
     updatedAt: now,
   };

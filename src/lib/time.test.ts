@@ -1,67 +1,55 @@
 import { describe, expect, it } from 'vitest';
 import type { Timer } from '../types';
-import { formatCompactDuration, formatTimerTotal, getTimerIntervalTypeTotals } from './time';
+import { estimateTimerDurationMs, formatCompactDuration, formatTimerTotal, getTimerSummaryItems } from './time';
 
 const makeTimer = (overrides: Partial<Timer> = {}): Timer => ({
   id: 'timer-1',
   name: 'Demo Timer',
-  sets: 3,
-  repeatSetsUntilStopped: false,
+  stationCount: 2,
+  roundsPerStation: 3,
+  workMinutes: 0,
+  workSeconds: 30,
+  restMinutes: 0,
+  restSeconds: 15,
+  stationTransitionMinutes: 0,
+  stationTransitionSeconds: 20,
+  startStationWorkManually: false,
+  warmupEnabled: true,
+  warmupMinutes: 1,
+  warmupSeconds: 0,
+  cooldownEnabled: true,
+  cooldownMinutes: 0,
+  cooldownSeconds: 30,
   createdAt: '2026-01-01T00:00:00.000Z',
   updatedAt: '2026-01-01T00:00:00.000Z',
-  intervals: [
-    { sequence: 1, name: 'Warmup', type: 'warmup', durationMinutes: 1, durationSeconds: 0 },
-    { sequence: 2, name: 'Work', type: 'work', durationMinutes: 0, durationSeconds: 30 },
-    { sequence: 3, name: 'Rest', type: 'rest', durationMinutes: 0, durationSeconds: 15 },
-    { sequence: 4, name: 'Cooldown', type: 'cooldown', durationMinutes: 0, durationSeconds: 30 },
-  ],
   ...overrides,
 });
 
 describe('time helpers', () => {
-  it('summarizes interval type totals using actual run semantics', () => {
-    expect(getTimerIntervalTypeTotals(makeTimer())).toEqual([
-      { type: 'warmup', durationMs: 60_000 },
-      { type: 'work', durationMs: 90_000 },
-      { type: 'rest', durationMs: 45_000 },
-      { type: 'cooldown', durationMs: 30_000 },
+  it('calculates total time from stations, rounds, transitions, warmup, and cooldown', () => {
+    expect(estimateTimerDurationMs(makeTimer())).toBe(350_000);
+    expect(formatTimerTotal(makeTimer())).toBe('05:50');
+  });
+
+  it('omits rest from summaries when a station has one round', () => {
+    expect(getTimerSummaryItems(makeTimer({ roundsPerStation: 1 }), true).map((item) => item.label)).toEqual([
+      'Stations',
+      'Rounds',
+      'Work',
+      'Station transition',
     ]);
   });
 
-  it('combines duplicate types and omits missing or zero-duration types', () => {
-    const timer = makeTimer({
-      sets: 2,
-      intervals: [
-        { sequence: 1, name: 'Work 1', type: 'work', durationMinutes: 0, durationSeconds: 20 },
-        { sequence: 2, name: 'Work 2', type: 'work', durationMinutes: 0, durationSeconds: 10 },
-        { sequence: 3, name: 'Rest', type: 'rest', durationMinutes: 0, durationSeconds: 0 },
-      ],
+  it('switches station labels when coach mode is off', () => {
+    expect(getTimerSummaryItems(makeTimer(), false)[0]).toMatchObject({
+      label: 'Sets',
+      value: '2',
     });
-
-    expect(getTimerIntervalTypeTotals(timer)).toEqual([
-      { type: 'work', durationMs: 60_000 },
-    ]);
   });
 
   it('formats compact durations for card summaries', () => {
     expect(formatCompactDuration(30)).toBe('30s');
     expect(formatCompactDuration(60)).toBe('1m');
     expect(formatCompactDuration(90)).toBe('1m 30s');
-  });
-
-  it('formats repeat timers as until stopped', () => {
-    expect(formatTimerTotal(makeTimer({ repeatSetsUntilStopped: true }))).toBe('Until stopped');
-  });
-
-  it('includes set transition time between sets for finite timers', () => {
-    expect(formatTimerTotal(makeTimer())).toBe('04:45');
-  });
-
-  it('omits cooldown from repeat timer summaries', () => {
-    expect(getTimerIntervalTypeTotals(makeTimer({ repeatSetsUntilStopped: true })).map((item) => item.type)).toEqual([
-      'warmup',
-      'work',
-      'rest',
-    ]);
   });
 });
