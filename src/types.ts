@@ -12,6 +12,9 @@ export interface Timer {
   id: string;
   name: string;
   sets: number;
+  repeatSetsUntilStopped: boolean;
+  setTransitionMinutes?: number;
+  setTransitionSeconds?: number;
   intervals: Interval[];
   createdAt: string;
   updatedAt: string;
@@ -19,7 +22,6 @@ export interface Timer {
 
 export interface AppSettings {
   intervalColors: Record<IntervalType, string>;
-  pauseBetweenSets: boolean;
 }
 
 export interface TimelineEntry {

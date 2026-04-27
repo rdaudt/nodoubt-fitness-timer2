@@ -9,6 +9,7 @@ const demoTimer: Timer = {
   id: 'timer-1',
   name: 'Demo HIIT',
   sets: 2,
+  repeatSetsUntilStopped: false,
   createdAt: '2026-01-01T00:00:00.000Z',
   updatedAt: '2026-01-01T00:00:00.000Z',
   intervals: [
@@ -65,5 +66,11 @@ describe('TimerCard', () => {
     expect(container.querySelector('.timer-card-feature-image')).toHaveStyle({
       backgroundImage: 'url(/assets/feature.png)',
     });
+  });
+
+  it('shows indefinite timers as until stopped', () => {
+    renderCard({ ...demoTimer, repeatSetsUntilStopped: true, sets: 1 });
+
+    expect(screen.getAllByText('Until stopped')).toHaveLength(2);
   });
 });

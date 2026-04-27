@@ -17,7 +17,6 @@ vi.mock('../services/settingsContext', () => ({
         rest: '#2ecc71',
         cooldown: '#3b82f6',
       },
-      pauseBetweenSets: true,
     },
   }),
 }));
@@ -33,8 +32,10 @@ vi.mock('../lib/useTimerRunner', () => ({
     timeline: [],
     state: {
       status: 'completed',
+      phase: 'interval',
       pauseReason: null,
       currentIndex: 0,
+      currentSetNumber: 1,
       currentRemainingMs: 0,
       totalRemainingMs: 0,
     },
@@ -60,6 +61,7 @@ describe('RunningTimerPage', () => {
       id: 'timer-1',
       name: 'Demo Timer',
       sets: 1,
+      repeatSetsUntilStopped: false,
       createdAt: '2026-01-01T00:00:00.000Z',
       updatedAt: '2026-01-01T00:00:00.000Z',
       intervals: [

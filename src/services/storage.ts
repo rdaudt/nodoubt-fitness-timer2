@@ -33,15 +33,24 @@ const dbPromise = openDB<AppDb>(DB_NAME, DB_VERSION, {
   },
 });
 
+export const normalizeTimer = (timer: Timer): Timer => ({
+  ...timer,
+  sets: Math.max(1, Math.floor(timer.sets || 1)),
+  repeatSetsUntilStopped: timer.repeatSetsUntilStopped ?? false,
+  setTransitionMinutes: Math.max(0, Math.floor(timer.setTransitionMinutes ?? 0)),
+  setTransitionSeconds: Math.max(0, Math.min(59, Math.floor(timer.setTransitionSeconds ?? 30))),
+});
+
 export const TimerRepository = {
   async list(): Promise<Timer[]> {
     const db = await dbPromise;
     const timers = await db.getAll('timers');
-    return timers.sort((a, b) => +new Date(b.updatedAt) - +new Date(a.updatedAt));
+    return timers.map(normalizeTimer).sort((a, b) => +new Date(b.updatedAt) - +new Date(a.updatedAt));
   },
   async get(id: string): Promise<Timer | undefined> {
     const db = await dbPromise;
-    return db.get('timers', id);
+    const timer = await db.get('timers', id);
+    return timer ? normalizeTimer(timer) : undefined;
   },
   async upsert(timer: Timer): Promise<void> {
     const db = await dbPromise;

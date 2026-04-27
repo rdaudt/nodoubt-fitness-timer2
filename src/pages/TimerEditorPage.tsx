@@ -98,7 +98,7 @@ export const TimerEditorPage = () => {
 
   const onSave = async () => {
     const checked = validateIntervals(draft.intervals);
-    if (!checked.valid || !draft.name.trim() || !Number.isFinite(draft.sets) || draft.sets < 1) {
+    if (!checked.valid || !draft.name.trim() || (!draft.repeatSetsUntilStopped && (!Number.isFinite(draft.sets) || draft.sets < 1))) {
       return;
     }
 
@@ -106,7 +106,9 @@ export const TimerEditorPage = () => {
     const next: Timer = {
       ...draft,
       name: draft.name.trim(),
-      sets: Math.max(1, Math.floor(draft.sets)),
+      sets: draft.repeatSetsUntilStopped ? 1 : Math.max(1, Math.floor(draft.sets)),
+      setTransitionMinutes: Math.max(0, Math.floor(draft.setTransitionMinutes ?? 0)),
+      setTransitionSeconds: Math.max(0, Math.min(59, Math.floor(draft.setTransitionSeconds ?? 30))),
       intervals: checked.normalized,
       updatedAt: now,
       createdAt: draft.createdAt || now,
@@ -142,7 +144,8 @@ export const TimerEditorPage = () => {
         <input
           type="number"
           min={1}
-          value={toDisplayNumber(draft.sets)}
+          value={draft.repeatSetsUntilStopped ? '' : toDisplayNumber(draft.sets)}
+          disabled={draft.repeatSetsUntilStopped}
           onWheel={lockNumberInput}
           onChange={(e) =>
             setDraft((prev) => {
@@ -155,6 +158,64 @@ export const TimerEditorPage = () => {
           }
         />
       </label>
+
+      <label className="field settings-toggle-row">
+        <span>Coach Mode</span>
+        <input
+          className="settings-toggle-input"
+          type="checkbox"
+          checked={draft.repeatSetsUntilStopped}
+          onChange={(e) =>
+            setDraft((prev) => ({
+              ...prev,
+              repeatSetsUntilStopped: e.target.checked,
+              sets: 1,
+            }))
+          }
+          aria-label="Repeat sets until manually stopped"
+        />
+      </label>
+
+      <div className="set-transition-inline">
+        <span className="set-transition-inline-label">Set Transition Time</span>
+        <label className="set-transition-inline-field">
+          <span>Min</span>
+          <input
+            type="number"
+            min={0}
+            onWheel={lockNumberInput}
+            value={toDisplayNumber(draft.setTransitionMinutes ?? 0)}
+            aria-label="Set transition minutes"
+            onChange={(e) => {
+              const raw = e.target.value;
+              if (raw === '') {
+                setDraft((prev) => ({ ...prev, setTransitionMinutes: Number.NaN }));
+                return;
+              }
+              setDraft((prev) => ({ ...prev, setTransitionMinutes: Math.max(0, Number(raw)) }));
+            }}
+          />
+        </label>
+        <label className="set-transition-inline-field">
+          <span>Sec</span>
+          <input
+            type="number"
+            min={0}
+            max={59}
+            onWheel={lockNumberInput}
+            value={toDisplayNumber(draft.setTransitionSeconds ?? 30)}
+            aria-label="Set transition seconds"
+            onChange={(e) => {
+              const raw = e.target.value;
+              if (raw === '') {
+                setDraft((prev) => ({ ...prev, setTransitionSeconds: Number.NaN }));
+                return;
+              }
+              setDraft((prev) => ({ ...prev, setTransitionSeconds: Math.max(0, Math.min(59, Number(raw))) }));
+            }}
+          />
+        </label>
+      </div>
 
       <div className="actions-row wrap">
         <button className="secondary-btn" onClick={() => addInterval('warmup')}>+ Warmup</button>
@@ -242,7 +303,7 @@ export const TimerEditorPage = () => {
         </ul>
       )}
 
-      <button className="primary-btn full" disabled={!validation.valid || !draft.name.trim() || !Number.isFinite(draft.sets) || draft.sets < 1} onClick={onSave}>
+      <button className="primary-btn full" disabled={!validation.valid || !draft.name.trim() || (!draft.repeatSetsUntilStopped && (!Number.isFinite(draft.sets) || draft.sets < 1))} onClick={onSave}>
         Save Timer
       </button>
       <button className="secondary-btn full" onClick={onCancel}>

@@ -1,11 +1,12 @@
 import { describe, expect, it } from 'vitest';
 import type { Timer } from '../types';
-import { formatCompactDuration, getTimerIntervalTypeTotals } from './time';
+import { formatCompactDuration, formatTimerTotal, getTimerIntervalTypeTotals } from './time';
 
 const makeTimer = (overrides: Partial<Timer> = {}): Timer => ({
   id: 'timer-1',
   name: 'Demo Timer',
   sets: 3,
+  repeatSetsUntilStopped: false,
   createdAt: '2026-01-01T00:00:00.000Z',
   updatedAt: '2026-01-01T00:00:00.000Z',
   intervals: [
@@ -46,5 +47,21 @@ describe('time helpers', () => {
     expect(formatCompactDuration(30)).toBe('30s');
     expect(formatCompactDuration(60)).toBe('1m');
     expect(formatCompactDuration(90)).toBe('1m 30s');
+  });
+
+  it('formats repeat timers as until stopped', () => {
+    expect(formatTimerTotal(makeTimer({ repeatSetsUntilStopped: true }))).toBe('Until stopped');
+  });
+
+  it('includes set transition time between sets for finite timers', () => {
+    expect(formatTimerTotal(makeTimer())).toBe('04:45');
+  });
+
+  it('omits cooldown from repeat timer summaries', () => {
+    expect(getTimerIntervalTypeTotals(makeTimer({ repeatSetsUntilStopped: true })).map((item) => item.type)).toEqual([
+      'warmup',
+      'work',
+      'rest',
+    ]);
   });
 });
