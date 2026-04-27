@@ -78,8 +78,8 @@ describe('TimerDetailPage', () => {
     );
 
     expect(await screen.findByLabelText('Timer name')).toHaveValue('Demo Timer');
-    expect(screen.getByText('Stations')).toBeInTheDocument();
-    expect(screen.getByText('Rounds/Station')).toBeInTheDocument();
+    expect(screen.getByText('# Stations')).toBeInTheDocument();
+    expect(screen.getByText('# Rounds/Station')).toBeInTheDocument();
     expect(screen.getByText('Timing Matrix')).toBeInTheDocument();
     expect(screen.getByText('Station Transition')).toBeInTheDocument();
     expect(screen.getByText('Cooldown')).toBeInTheDocument();

@@ -229,7 +229,7 @@ export const TimerDetailPage = () => {
     return <p className="empty">Timer not found.</p>;
   }
 
-  const stationLabel = settings.coachMode ? 'Stations' : 'Sets';
+  const stationLabel = settings.coachMode ? '# Stations' : '# Sets';
 
   return (
     <section className="timer-detail-page compact-editor">
@@ -263,7 +263,7 @@ export const TimerDetailPage = () => {
           onPersist={(stationCount) => applyPatch({ stationCount })}
         />
         <CountEditor
-          label="Rounds/Station"
+          label="# Rounds/Station"
           value={timer.roundsPerStation}
           onDraftChange={(roundsPerStation) => setTimer((prev) => (prev ? { ...prev, roundsPerStation } : prev))}
           onPersist={(roundsPerStation) => applyPatch({ roundsPerStation })}
