@@ -95,7 +95,7 @@ const TimeMatrixBlock = ({
   totalSeconds: number;
   disabled?: boolean;
   onCommit: (seconds: number) => void;
-  onPersist: () => void;
+  onPersist: (seconds: number) => void;
 }) => {
   const [clockValue, setClockValue] = useState(formatClock(totalSeconds));
 
@@ -107,7 +107,7 @@ const TimeMatrixBlock = ({
     const parsed = parseClockInput(clockValue);
     if (parsed !== null) {
       onCommit(parsed);
-      onPersist();
+      onPersist(parsed);
       return;
     }
     setClockValue(formatClock(totalSeconds));
@@ -277,33 +277,33 @@ export const TimerDetailPage = () => {
             label="Work"
             totalSeconds={toSeconds(timer.workMinutes, timer.workSeconds)}
             onCommit={(seconds) => patchTime('workMinutes', 'workSeconds', seconds, false)}
-            onPersist={() => patchTime('workMinutes', 'workSeconds', toSeconds(timer.workMinutes, timer.workSeconds), true)}
+            onPersist={(seconds) => patchTime('workMinutes', 'workSeconds', seconds, true)}
           />
           <TimeMatrixBlock
             label="Rest"
             totalSeconds={toSeconds(timer.restMinutes, timer.restSeconds)}
             onCommit={(seconds) => patchTime('restMinutes', 'restSeconds', seconds, false)}
-            onPersist={() => patchTime('restMinutes', 'restSeconds', toSeconds(timer.restMinutes, timer.restSeconds), true)}
+            onPersist={(seconds) => patchTime('restMinutes', 'restSeconds', seconds, true)}
             disabled={timer.roundsPerStation <= 1}
           />
           <TimeMatrixBlock
             label="Station Transition"
             totalSeconds={toSeconds(timer.stationTransitionMinutes, timer.stationTransitionSeconds)}
             onCommit={(seconds) => patchTime('stationTransitionMinutes', 'stationTransitionSeconds', seconds, false)}
-            onPersist={() => patchTime('stationTransitionMinutes', 'stationTransitionSeconds', toSeconds(timer.stationTransitionMinutes, timer.stationTransitionSeconds), true)}
+            onPersist={(seconds) => patchTime('stationTransitionMinutes', 'stationTransitionSeconds', seconds, true)}
           />
           <TimeMatrixBlock
             label="Warmup"
             totalSeconds={toSeconds(timer.warmupMinutes, timer.warmupSeconds)}
             onCommit={(seconds) => patchTime('warmupMinutes', 'warmupSeconds', seconds, false)}
-            onPersist={() => patchTime('warmupMinutes', 'warmupSeconds', toSeconds(timer.warmupMinutes, timer.warmupSeconds), true)}
+            onPersist={(seconds) => patchTime('warmupMinutes', 'warmupSeconds', seconds, true)}
             disabled={!timer.warmupEnabled}
           />
           <TimeMatrixBlock
             label="Cooldown"
             totalSeconds={toSeconds(timer.cooldownMinutes, timer.cooldownSeconds)}
             onCommit={(seconds) => patchTime('cooldownMinutes', 'cooldownSeconds', seconds, false)}
-            onPersist={() => patchTime('cooldownMinutes', 'cooldownSeconds', toSeconds(timer.cooldownMinutes, timer.cooldownSeconds), true)}
+            onPersist={(seconds) => patchTime('cooldownMinutes', 'cooldownSeconds', seconds, true)}
             disabled={!timer.cooldownEnabled}
           />
         </div>
