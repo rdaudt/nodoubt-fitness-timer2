@@ -5,6 +5,7 @@ import { useSettings } from '../services/settingsContext';
 import type { AppSettings, IntervalType } from '../types';
 import kobeSmiling from '../../media/kobe-smiling.png';
 import kobeAngry from '../../media/kobe-angry.png';
+import victorianGym3 from '../../media/victorian-gym-3.png';
 
 const types: IntervalType[] = ['warmup', 'work', 'rest', 'cooldown'];
 
@@ -77,6 +78,12 @@ export const SettingsPage = () => {
         <button className="primary-btn" onClick={onSave} disabled={!unique}>Save</button>
         <button className="secondary-btn" onClick={() => setDraft(DEFAULT_SETTINGS)}>Reset Defaults</button>
       </div>
+
+      {draft.kobeEverywhere && (
+        <div className="settings-float-cat-wrap" aria-hidden="true">
+          <img className="settings-float-cat" src={victorianGym3} alt="" />
+        </div>
+      )}
     </section>
   );
 };
