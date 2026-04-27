@@ -1,51 +1,73 @@
 import type { Timer, TimelineEntry } from '../types';
-import { toDurationMs } from './time';
+import {
+  getCooldownDurationMs,
+  getRestDurationMs,
+  getTransitionDurationMs,
+  getWarmupDurationMs,
+  getWorkDurationMs,
+} from './time';
+
+const pushIfPositive = (timeline: TimelineEntry[], entry: TimelineEntry) => {
+  if (entry.durationMs > 0) {
+    timeline.push(entry);
+  }
+};
 
 export const buildTimeline = (timer: Timer): TimelineEntry[] => {
-  const warmup = timer.intervals.filter((x) => x.type === 'warmup');
-  const cooldown = timer.intervals.filter((x) => x.type === 'cooldown');
-  const block = timer.intervals.filter((x) => x.type === 'work' || x.type === 'rest');
-
   const timeline: TimelineEntry[] = [];
 
-  warmup.forEach((segment) => {
-    timeline.push({
-      id: `warmup-${segment.sequence}`,
-      sourceSequence: segment.sequence,
-      name: segment.name,
-      type: segment.type,
-      durationMs: toDurationMs(segment),
-      setNumber: null,
-    });
+  pushIfPositive(timeline, {
+    id: 'warmup',
+    type: 'warmup',
+    name: 'Warmup',
+    durationMs: getWarmupDurationMs(timer),
+    stationNumber: null,
+    roundNumber: null,
   });
 
-  const setCount = timer.repeatSetsUntilStopped ? 1 : timer.sets;
-
-  for (let set = 1; set <= setCount; set += 1) {
-    block.forEach((segment) => {
-      timeline.push({
-        id: `set-${set}-${segment.sequence}`,
-        sourceSequence: segment.sequence,
-        name: segment.name,
-        type: segment.type,
-        durationMs: toDurationMs(segment),
-        setNumber: set,
+  for (let station = 1; station <= timer.stationCount; station += 1) {
+    for (let round = 1; round <= timer.roundsPerStation; round += 1) {
+      pushIfPositive(timeline, {
+        id: `station-${station}-round-${round}-work`,
+        type: 'work',
+        name: 'Work',
+        durationMs: getWorkDurationMs(timer),
+        stationNumber: station,
+        roundNumber: round,
       });
-    });
+
+      if (round < timer.roundsPerStation) {
+        pushIfPositive(timeline, {
+          id: `station-${station}-round-${round}-rest`,
+          type: 'rest',
+          name: 'Rest',
+          durationMs: getRestDurationMs(timer),
+          stationNumber: station,
+          roundNumber: round,
+        });
+      }
+    }
+
+    if (station < timer.stationCount) {
+      pushIfPositive(timeline, {
+        id: `station-${station}-transition`,
+        type: 'stationTransition',
+        name: `Transition to ${station + 1}`,
+        durationMs: getTransitionDurationMs(timer),
+        stationNumber: station + 1,
+        roundNumber: null,
+      });
+    }
   }
 
-  if (!timer.repeatSetsUntilStopped) {
-    cooldown.forEach((segment) => {
-      timeline.push({
-        id: `cooldown-${segment.sequence}`,
-        sourceSequence: segment.sequence,
-        name: segment.name,
-        type: segment.type,
-        durationMs: toDurationMs(segment),
-        setNumber: null,
-      });
-    });
-  }
+  pushIfPositive(timeline, {
+    id: 'cooldown',
+    type: 'cooldown',
+    name: 'Cooldown',
+    durationMs: getCooldownDurationMs(timer),
+    stationNumber: null,
+    roundNumber: null,
+  });
 
   return timeline;
 };

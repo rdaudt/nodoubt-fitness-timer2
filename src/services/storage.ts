@@ -1,5 +1,6 @@
 import { openDB } from 'idb';
 import { DEFAULT_SETTINGS } from '../config';
+import { normalizeTimerFields } from '../lib/timerRules';
 import type { AppSettings, Timer } from '../types';
 
 interface AppDb {
@@ -33,28 +34,55 @@ const dbPromise = openDB<AppDb>(DB_NAME, DB_VERSION, {
   },
 });
 
-export const normalizeTimer = (timer: Timer): Timer => ({
-  ...timer,
-  sets: Math.max(1, Math.floor(timer.sets || 1)),
-  repeatSetsUntilStopped: timer.repeatSetsUntilStopped ?? false,
-  setTransitionMinutes: Math.max(0, Math.floor(timer.setTransitionMinutes ?? 0)),
-  setTransitionSeconds: Math.max(0, Math.min(59, Math.floor(timer.setTransitionSeconds ?? 30))),
-});
+const isCurrentTimer = (timer: unknown): timer is Timer => (
+  Boolean(timer)
+  && typeof timer === 'object'
+  && typeof (timer as Timer).id === 'string'
+  && typeof (timer as Timer).name === 'string'
+  && typeof (timer as Timer).stationCount === 'number'
+  && typeof (timer as Timer).roundsPerStation === 'number'
+);
+
+export const normalizeTimer = (timer: Timer): Timer | null => {
+  if (!isCurrentTimer(timer)) {
+    return null;
+  }
+  return normalizeTimerFields(timer);
+};
 
 export const TimerRepository = {
   async list(): Promise<Timer[]> {
     const db = await dbPromise;
     const timers = await db.getAll('timers');
-    return timers.map(normalizeTimer).sort((a, b) => +new Date(b.updatedAt) - +new Date(a.updatedAt));
+    const valid: Timer[] = [];
+
+    await Promise.all(timers.map(async (timer) => {
+      const normalized = normalizeTimer(timer);
+      if (!normalized) {
+        await db.delete('timers', timer.id);
+        return;
+      }
+      valid.push(normalized);
+    }));
+
+    return valid.sort((a, b) => +new Date(b.updatedAt) - +new Date(a.updatedAt));
   },
   async get(id: string): Promise<Timer | undefined> {
     const db = await dbPromise;
     const timer = await db.get('timers', id);
-    return timer ? normalizeTimer(timer) : undefined;
+    if (!timer) {
+      return undefined;
+    }
+    const normalized = normalizeTimer(timer);
+    if (!normalized) {
+      await db.delete('timers', id);
+      return undefined;
+    }
+    return normalized;
   },
   async upsert(timer: Timer): Promise<void> {
     const db = await dbPromise;
-    await db.put('timers', timer);
+    await db.put('timers', normalizeTimerFields(timer));
   },
   async remove(id: string): Promise<void> {
     const db = await dbPromise;
@@ -72,6 +100,7 @@ export const SettingsRepository = {
     return {
       ...DEFAULT_SETTINGS,
       ...row.value,
+      coachMode: row.value.coachMode ?? DEFAULT_SETTINGS.coachMode,
       intervalColors: {
         ...DEFAULT_SETTINGS.intervalColors,
         ...row.value.intervalColors,

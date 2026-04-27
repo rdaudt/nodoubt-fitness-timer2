@@ -1,32 +1,93 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useParams, useSearchParams } from 'react-router-dom';
-import { withAlpha } from '../lib/color';
 import { formatClock } from '../lib/time';
 import { useTimerRunner } from '../lib/useTimerRunner';
 import { useSettings } from '../services/settingsContext';
 import { TimerRepository } from '../services/storage';
-import type { IntervalType, Timer } from '../types';
+import type { AppSettings, CountdownType, Timer, TimelineEntry } from '../types';
 
-const intervalCatByType: Record<IntervalType, string> = {
+const currentImageByType: Partial<Record<CountdownType, string>> = {
   warmup: '/assets/cat-in-pajama-transparent-v3.png',
-  work: '/assets/work-cat.png',
+  work: '/assets/jab-throwing-cat.png',
   rest: '/assets/resting-cat.png',
   cooldown: '/assets/tired-cat-transparent-v1.png',
 };
 
-const workCats = [
+const workImages = [
   '/assets/jab-throwing-cat.png',
   '/assets/vintage-apparel-pushup.png',
   '/assets/vintage-apparel-crunches.png',
+  '/assets/pullup-cat.png',
 ];
 
-const shuffled = (items: string[]): string[] => {
-  const copy = [...items];
-  for (let i = copy.length - 1; i > 0; i -= 1) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [copy[i], copy[j]] = [copy[j], copy[i]];
+const emptyTimer = (): Timer => ({
+  id: 'empty',
+  name: 'Missing Timer',
+  stationCount: 1,
+  roundsPerStation: 1,
+  workMinutes: 0,
+  workSeconds: 30,
+  restMinutes: 0,
+  restSeconds: 0,
+  stationTransitionMinutes: 0,
+  stationTransitionSeconds: 30,
+  startStationWorkManually: false,
+  warmupEnabled: false,
+  warmupMinutes: 0,
+  warmupSeconds: 0,
+  cooldownEnabled: false,
+  cooldownMinutes: 0,
+  cooldownSeconds: 0,
+  createdAt: new Date().toISOString(),
+  updatedAt: new Date().toISOString(),
+});
+
+const entryTitle = (entry: TimelineEntry | undefined, coachMode: boolean): string => {
+  if (!entry) {
+    return 'Done';
   }
-  return copy;
+  if (entry.type === 'stationTransition') {
+    return `${coachMode ? 'Station Transition' : 'Set Transition'} ${entry.stationNumber}`;
+  }
+  if (entry.type === 'work') {
+    return 'Work';
+  }
+  if (entry.type === 'rest') {
+    return 'Rest';
+  }
+  if (entry.type === 'warmup') {
+    return 'Warmup';
+  }
+  return 'Cooldown';
+};
+
+const entryContext = (entry: TimelineEntry | undefined, coachMode: boolean): string => {
+  if (!entry) {
+    return '';
+  }
+  const stationLabel = coachMode ? 'Station' : 'Set';
+  if (entry.type === 'work') {
+    return `${stationLabel} ${entry.stationNumber} - Round ${entry.roundNumber}`;
+  }
+  if (entry.type === 'rest') {
+    return `${stationLabel} ${entry.stationNumber} - Round ${entry.roundNumber}`;
+  }
+  return '';
+};
+const entryCardStyle = (
+  entry: TimelineEntry | undefined,
+  intervalColors: AppSettings['intervalColors'],
+) => {
+  if (!entry) {
+    return {};
+  }
+  if (entry.type === 'stationTransition') {
+    return { backgroundColor: '#ffffff', color: '#111111' };
+  }
+  if (entry.type in intervalColors) {
+    return { backgroundColor: intervalColors[entry.type as keyof typeof intervalColors], color: '#ffffff' };
+  }
+  return {};
 };
 
 export const RunningTimerPage = () => {
@@ -35,99 +96,57 @@ export const RunningTimerPage = () => {
   const { settings } = useSettings();
   const [timer, setTimer] = useState<Timer | null>(null);
   const [confirmAction, setConfirmAction] = useState<'stop' | null>(null);
-  const activeRef = useRef<HTMLDivElement | null>(null);
   const autoStartedRef = useRef(false);
 
   useEffect(() => {
     TimerRepository.get(id).then((value) => setTimer(value ?? null));
   }, [id]);
 
-  const runner = useTimerRunner(
-    timer ?? {
-      id: 'empty',
-      name: 'Missing Timer',
-      sets: 1,
-      repeatSetsUntilStopped: false,
-      intervals: [],
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-    },
-  );
-
-  const runCatByEntryId = useMemo(() => {
-    const map: Record<string, string> = {};
-    let workCycle = shuffled(workCats);
-    let workCycleIndex = 0;
-
-    runner.timeline.forEach((entry) => {
-      if (entry.type === 'work') {
-        if (workCycle.length === 0) {
-          map[entry.id] = intervalCatByType.work;
-          return;
-        }
-
-        map[entry.id] = workCycle[workCycleIndex];
-        workCycleIndex += 1;
-
-        if (workCycleIndex >= workCycle.length) {
-          workCycle = shuffled(workCats);
-          workCycleIndex = 0;
-        }
-      } else {
-        map[entry.id] = intervalCatByType[entry.type];
-      }
-    });
-    return map;
-  }, [runner.timeline]);
+  const runner = useTimerRunner(timer ?? emptyTimer(), settings.coachMode);
 
   useEffect(() => {
-    activeRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
-  }, [runner.state.currentIndex]);
-
-  useEffect(() => {
-    if (!timer) {
+    if (!timer || autoStartedRef.current || runner.state.status !== 'idle' || runner.timeline.length === 0) {
       return;
     }
-    if (autoStartedRef.current) {
-      return;
-    }
-    if (runner.state.status !== 'idle') {
-      return;
-    }
-    if (runner.timeline.length === 0) {
-      return;
-    }
-
     autoStartedRef.current = true;
     runner.start();
   }, [runner, timer]);
 
-  if (!timer) {
-    return <p className="empty">Timer not found.</p>;
-  }
-
-  const donePath = searchParams.get('from') === 'home' ? '/' : `/timer/${timer.id}`;
+  const donePath = searchParams.get('from') === 'home' ? '/' : `/timer/${timer?.id ?? id}`;
   const activeEntry = runner.timeline[runner.state.currentIndex];
-  const currentSet = runner.state.currentSetNumber;
-  const visibleIntervals = (() => {
-    if (timer.repeatSetsUntilStopped) {
-      if (activeEntry?.type === 'warmup') {
-        return timer.intervals.filter((x) => x.type !== 'cooldown');
+  const nextEntry = runner.timeline[runner.state.currentIndex + 1];
+  const isStationStartPause = runner.state.status === 'paused' && runner.state.pauseReason === 'stationStart';
+  const workImageByEntryId = useMemo(() => {
+    const imageByEntryId: Record<string, string> = {};
+    let workIndex = 0;
+
+    runner.timeline.forEach((entry) => {
+      if (entry.type !== 'work') {
+        return;
       }
-      return timer.intervals.filter((x) => x.type === 'work' || x.type === 'rest');
+      imageByEntryId[entry.id] = workImages[workIndex % workImages.length];
+      workIndex += 1;
+    });
+
+    return imageByEntryId;
+  }, [runner.timeline]);
+  const currentImage = useMemo(() => {
+    if (!activeEntry) {
+      return undefined;
     }
-    if (timer.sets <= 1) {
-      return timer.intervals;
+    if (activeEntry.type === 'work') {
+      return workImageByEntryId[activeEntry.id] ?? currentImageByType.work;
     }
-    if (currentSet <= 1) {
-      return timer.intervals.filter((x) => x.type !== 'cooldown');
-    }
-    if (currentSet >= timer.sets) {
-      return timer.intervals.filter((x) => x.type !== 'warmup');
-    }
-    return timer.intervals.filter((x) => x.type === 'work' || x.type === 'rest');
-  })();
-  const activeVisibleIndex = visibleIntervals.findIndex((x) => x.sequence === activeEntry?.sourceSequence);
+    return currentImageByType[activeEntry.type];
+  }, [activeEntry, workImageByEntryId]);
+  const currentStyle = useMemo(
+    () => entryCardStyle(activeEntry, settings.intervalColors),
+    [activeEntry, settings.intervalColors],
+  );
+  const nextStyle = useMemo(
+    () => entryCardStyle(nextEntry, settings.intervalColors),
+    [nextEntry, settings.intervalColors],
+  );
 
   const requestPause = async () => {
     if (runner.state.status === 'running') {
@@ -149,39 +168,46 @@ export const RunningTimerPage = () => {
     }
     setConfirmAction(null);
   };
-  const isPausedBetweenSets = runner.state.status === 'paused' && runner.state.pauseReason === 'betweenSets';
-  const isPausedAfterWarmup = runner.state.status === 'paused' && runner.state.pauseReason === 'afterWarmup';
-  const isSetStartPause = isPausedAfterWarmup || isPausedBetweenSets;
-  const isSetTransitionCountdown = runner.state.status === 'running' && runner.state.phase === 'setTransition';
-  const pauseMessage = isPausedAfterWarmup
-    ? 'Prepare to start first set'
-    : isPausedBetweenSets
-      ? 'Prepare for the next set'
-      : '';
+
+  if (!timer) {
+    return <p className="empty">Timer not found.</p>;
+  }
 
   return (
-    <section>
+    <section className="run-page">
       <header className="run-header">
         <p className="run-name">{timer.name}</p>
-        <p className="run-remaining">
-          {timer.repeatSetsUntilStopped ? `Set ${Math.max(1, currentSet)}` : `Set ${Math.max(1, currentSet)} of ${timer.sets}`}
-        </p>
-        <p className="run-remaining">
-          Total remaining: {timer.repeatSetsUntilStopped ? 'Until stopped' : formatClock(runner.state.totalRemainingMs / 1000)}
-        </p>
-        {isSetTransitionCountdown && <p className="run-paused-flag pulse">Set transition</p>}
-        {isSetStartPause && <p className="run-paused-flag run-set-start-flag pulse">{pauseMessage}</p>}
+        <p className="run-remaining">Total remaining: {formatClock(runner.state.totalRemainingMs / 1000)}</p>
+        {isStationStartPause && <p className="run-paused-flag run-set-start-flag pulse">Prepare to start</p>}
       </header>
 
-      <div className="actions-row wrap">
-        {runner.state.status === 'running' && !isSetTransitionCountdown && <button className="secondary-btn" onClick={requestPause}>Pause</button>}
+      <article
+        className={`run-current-card ${activeEntry?.type === 'stationTransition' ? 'station-transition' : ''}`}
+        style={currentStyle}
+      >
+        {currentImage && <img className="run-current-image" src={currentImage} alt="" aria-hidden="true" />}
+        <div className="run-current-copy">
+          <p className="run-current-context">{entryContext(activeEntry, settings.coachMode)}</p>
+          <h1>{entryTitle(activeEntry, settings.coachMode)}</h1>
+          <p className="run-current-time">{formatClock(runner.state.currentRemainingMs / 1000)}</p>
+        </div>
+      </article>
+
+      <article className="run-next-card" style={nextStyle}>
+        <span>next</span>
+        <strong>{entryTitle(nextEntry, settings.coachMode)}</strong>
+        {nextEntry && <p>{entryContext(nextEntry, settings.coachMode)} ({formatClock(nextEntry.durationMs / 1000)})</p>}
+      </article>
+
+      <div className="actions-row wrap run-actions">
+        {runner.state.status === 'running' && <button className="secondary-btn" onClick={requestPause}>Pause Timer</button>}
         {runner.state.status === 'paused' && (
           <button className="primary-btn" onClick={runner.resume}>
-            {isSetStartPause ? 'Start' : 'Resume'}
+            {isStationStartPause ? 'Start' : 'Resume'}
           </button>
         )}
         {(runner.state.status === 'running' || runner.state.status === 'paused') && (
-          <button className="danger-btn" onClick={requestStop}>{isSetStartPause ? 'Cancel' : 'Stop'}</button>
+          <button className="danger-btn" onClick={requestStop}>{isStationStartPause ? 'Cancel' : 'Stop Timer'}</button>
         )}
         {runner.state.status === 'completed' && <Link className="primary-btn" to={donePath}>Done</Link>}
       </div>
@@ -195,59 +221,8 @@ export const RunningTimerPage = () => {
           </div>
         </div>
       )}
-
-      <div className="stack timeline-list">
-        {visibleIntervals.map((entry, index) => {
-          const state = runner.state.status === 'completed'
-            ? 'done'
-            : index < activeVisibleIndex
-              ? 'done'
-              : index === activeVisibleIndex
-                ? 'active'
-                : 'upcoming';
-          const intervalColor = settings.intervalColors[entry.type];
-          const isActiveSetTransition = isSetTransitionCountdown && state === 'active';
-          const surfaceColor = isActiveSetTransition
-            ? '#ffffff'
-            : withAlpha(intervalColor, state === 'active' ? 0.85 : 0.68);
-          const showRunningCat = state === 'active'
-            && !isActiveSetTransition
-            && (runner.state.status === 'running' || runner.state.status === 'paused');
-          const showIntervalType = isSetTransitionCountdown
-            ? state === 'active'
-            : entry.name.trim().toLowerCase() !== entry.type.toLowerCase();
-          const intervalTitle = isSetTransitionCountdown && state === 'active'
-            ? 'Set Transition'
-            : entry.name;
-          const intervalTypeLabel = isSetTransitionCountdown && state === 'active'
-            ? `Next: ${entry.name}`
-            : entry.type;
-          return (
-            <div
-              key={`${entry.sequence}-${entry.type}`}
-              ref={index === activeVisibleIndex ? activeRef : null}
-              className={`timeline-item ${state}${showRunningCat ? ' has-cat' : ''}${isActiveSetTransition ? ' set-transition-card' : ''}`}
-              style={{
-                backgroundColor: surfaceColor,
-              }}
-            >
-              {showRunningCat && activeEntry && (
-                <img className="timeline-cat-bg" src={runCatByEntryId[activeEntry.id]} alt="" aria-hidden="true" />
-              )}
-
-              <div className="timeline-content">
-                <p className="timeline-interval-title">{intervalTitle}</p>
-                {showIntervalType && <p className="timeline-interval-type">{intervalTypeLabel}</p>}
-              </div>
-              <p className={state === 'active' ? 'timeline-time live' : 'timeline-time'}>
-                {state === 'active'
-                  ? formatClock(runner.state.currentRemainingMs / 1000)
-                  : formatClock((entry.durationMinutes * 60 + entry.durationSeconds))}
-              </p>
-            </div>
-          );
-        })}
-      </div>
     </section>
   );
 };
+
+

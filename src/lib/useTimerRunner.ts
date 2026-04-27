@@ -1,196 +1,101 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { buildTimeline } from '../lib/timerEngine';
-import { getSetTransitionDurationMs, totalTimelineDurationMs } from '../lib/time';
+import { totalTimelineDurationMs } from '../lib/time';
 import { AudioService } from '../services/audio';
 import { WakeLockService } from '../services/wakeLock';
 import type { TimelineEntry, Timer } from '../types';
 
 type RunnerStatus = 'idle' | 'running' | 'paused' | 'completed';
-type PauseReason = 'user' | 'afterWarmup' | 'betweenSets' | null;
-type RunnerPhase = 'interval' | 'setTransition';
+type PauseReason = 'user' | 'stationStart' | null;
 
 interface RunnerState {
   status: RunnerStatus;
-  phase: RunnerPhase;
   pauseReason: PauseReason;
   currentIndex: number;
-  currentSetNumber: number;
   currentRemainingMs: number;
   totalRemainingMs: number;
 }
 
-export const isSetBoundaryTransition = (
+const shouldPauseBeforeNext = (
   current: TimelineEntry | undefined,
   next: TimelineEntry | undefined,
+  coachMode: boolean,
+  startStationWorkManually: boolean,
 ): boolean => (
-  Boolean(current)
+  coachMode
+  && startStationWorkManually
   && Boolean(next)
-  && current?.setNumber !== null
-  && next?.setNumber !== null
-  && (next?.setNumber ?? 0) > (current?.setNumber ?? 0)
+  && next?.type === 'work'
+  && (current?.type === 'warmup' || current?.type === 'stationTransition')
 );
 
-export const useTimerRunner = (timer: Timer) => {
+export const useTimerRunner = (timer: Timer, coachMode: boolean) => {
   const timeline = useMemo(() => buildTimeline(timer), [timer]);
-  const repeatSetsUntilStopped = timer.repeatSetsUntilStopped;
-  const setTransitionMs = useMemo(() => getSetTransitionDurationMs(timer), [timer]);
-  const coreStartIndex = useMemo(() => timeline.findIndex((entry) => entry.setNumber !== null), [timeline]);
-  const coreEndIndex = useMemo(() => {
-    for (let i = timeline.length - 1; i >= 0; i -= 1) {
-      if (timeline[i].setNumber !== null) {
-        return i;
-      }
-    }
-    return -1;
-  }, [timeline]);
-  const elapsedBeforeByIndex = useMemo(() => {
-    const values: number[] = [];
-    let total = 0;
-    for (let i = 0; i < timeline.length; i += 1) {
-      values[i] = total;
-      total += timeline[i].durationMs;
-    }
-    return values;
-  }, [timeline]);
-  const finiteSetTransitionCount = useMemo(() => {
-    if (repeatSetsUntilStopped || coreStartIndex < 0) {
-      return 0;
-    }
-    return Math.max(0, timer.sets - 1);
-  }, [coreStartIndex, repeatSetsUntilStopped, timer.sets]);
-  const totalMs = useMemo(
-    () => totalTimelineDurationMs(timeline) + finiteSetTransitionCount * setTransitionMs,
-    [finiteSetTransitionCount, setTransitionMs, timeline],
-  );
+  const totalMs = useMemo(() => totalTimelineDurationMs(timeline), [timeline]);
+  const manualStart = coachMode && timer.startStationWorkManually;
 
   const [state, setState] = useState<RunnerState>({
     status: 'idle',
-    phase: 'interval',
     pauseReason: null,
     currentIndex: 0,
-    currentSetNumber: timeline[0]?.setNumber ?? 1,
     currentRemainingMs: timeline[0]?.durationMs ?? 0,
-    totalRemainingMs: repeatSetsUntilStopped ? 0 : totalMs,
+    totalRemainingMs: totalMs,
   });
 
   const segmentEndRef = useRef<number>(0);
   const startedAtRef = useRef<number>(0);
   const elapsedBeforeCurrentRef = useRef<number>(0);
-  const elapsedTransitionsCompletedRef = useRef<number>(0);
-  const transitionTargetIndexRef = useRef<number>(0);
-  const transitionTargetSetRef = useRef<number>(1);
-  const transitionPauseAfterRef = useRef<boolean>(false);
 
-  const setSegmentFromIndex = useCallback(
-    (index: number, now: number, nextSetNumber?: number) => {
-      const entry = timeline[index];
-      const segmentDuration = entry?.durationMs ?? 0;
-      const elapsedFromPrevious = elapsedBeforeByIndex[index] ?? 0;
-      segmentEndRef.current = now + segmentDuration;
-      startedAtRef.current = now;
-      elapsedBeforeCurrentRef.current = elapsedFromPrevious;
-      setState((prev) => ({
-        ...prev,
-        phase: 'interval',
-        currentIndex: index,
-        currentSetNumber: nextSetNumber ?? entry?.setNumber ?? prev.currentSetNumber,
-        pauseReason: null,
-        currentRemainingMs: segmentDuration,
-        totalRemainingMs: repeatSetsUntilStopped
-          ? 0
-          : Math.max(0, totalMs - elapsedFromPrevious - elapsedTransitionsCompletedRef.current),
-      }));
-    },
-    [elapsedBeforeByIndex, repeatSetsUntilStopped, timeline, totalMs],
-  );
+  const elapsedBeforeIndex = useCallback((index: number): number =>
+    timeline.slice(0, index).reduce((sum, item) => sum + item.durationMs, 0), [timeline]);
 
-  const startSetTransition = useCallback((
-    nextIndex: number,
-    nextSetNumber: number,
-    pauseAfterTransition: boolean,
-    now: number,
-  ) => {
-    const nextEntry = timeline[nextIndex];
-    const nextDuration = nextEntry?.durationMs ?? 0;
-    const elapsedBeforeNext = elapsedBeforeByIndex[nextIndex] ?? 0;
-
-    if (setTransitionMs <= 0) {
-      if (pauseAfterTransition) {
-        WakeLockService.release();
-        elapsedBeforeCurrentRef.current = elapsedBeforeNext;
-        setState((prev) => ({
-          ...prev,
-          status: 'paused',
-          phase: 'interval',
-          pauseReason: 'betweenSets',
-          currentIndex: nextIndex,
-          currentSetNumber: nextSetNumber,
-          currentRemainingMs: nextDuration,
-          totalRemainingMs: repeatSetsUntilStopped
-            ? 0
-            : Math.max(0, totalMs - elapsedBeforeNext - elapsedTransitionsCompletedRef.current),
-        }));
-        return;
-      }
-      setSegmentFromIndex(nextIndex, now, nextSetNumber);
-      setState((prev) => ({ ...prev, status: 'running', phase: 'interval', pauseReason: null }));
-      return;
-    }
-
-    transitionTargetIndexRef.current = nextIndex;
-    transitionTargetSetRef.current = nextSetNumber;
-    transitionPauseAfterRef.current = pauseAfterTransition;
-    segmentEndRef.current = now + setTransitionMs;
+  const setSegmentFromIndex = useCallback((index: number, now: number) => {
+    const entry = timeline[index];
+    const duration = entry?.durationMs ?? 0;
+    const elapsed = elapsedBeforeIndex(index);
+    segmentEndRef.current = now + duration;
     startedAtRef.current = now;
-    elapsedBeforeCurrentRef.current = elapsedBeforeNext;
+    elapsedBeforeCurrentRef.current = elapsed;
     setState((prev) => ({
       ...prev,
-      status: 'running',
-      phase: 'setTransition',
+      currentIndex: index,
       pauseReason: null,
-      currentIndex: nextIndex,
-      currentSetNumber: nextSetNumber,
-      currentRemainingMs: setTransitionMs,
-      totalRemainingMs: repeatSetsUntilStopped
-        ? 0
-        : Math.max(0, totalMs - elapsedBeforeNext - elapsedTransitionsCompletedRef.current),
+      currentRemainingMs: duration,
+      totalRemainingMs: Math.max(0, totalMs - elapsed),
     }));
-  }, [elapsedBeforeByIndex, repeatSetsUntilStopped, setSegmentFromIndex, setTransitionMs, timeline, totalMs]);
+  }, [elapsedBeforeIndex, timeline, totalMs]);
 
   const start = useCallback(async () => {
     if (timeline.length === 0) {
       return;
     }
-
     const now = Date.now();
     await WakeLockService.acquire();
-    elapsedTransitionsCompletedRef.current = 0;
     setSegmentFromIndex(0, now);
-    setState((prev) => ({ ...prev, status: 'running', phase: 'interval', pauseReason: null }));
+    setState((prev) => ({ ...prev, status: 'running', pauseReason: null }));
   }, [setSegmentFromIndex, timeline.length]);
 
   const pause = useCallback(async () => {
-    if (state.status !== 'running' || state.phase !== 'interval') {
+    if (state.status !== 'running') {
       return;
     }
     await WakeLockService.release();
     setState((prev) => ({
       ...prev,
       status: 'paused',
-      phase: 'interval',
       pauseReason: 'user',
       currentRemainingMs: Math.max(0, segmentEndRef.current - Date.now()),
     }));
-  }, [state.phase, state.status]);
+  }, [state.status]);
 
   const resume = useCallback(async () => {
-    if (state.status !== 'paused' || state.phase !== 'interval') {
+    if (state.status !== 'paused') {
       return;
     }
     const now = Date.now();
     await WakeLockService.acquire();
     segmentEndRef.current = now + state.currentRemainingMs;
-    startedAtRef.current = now - (timeline[state.currentIndex].durationMs - state.currentRemainingMs);
+    startedAtRef.current = now - ((timeline[state.currentIndex]?.durationMs ?? 0) - state.currentRemainingMs);
     setState((prev) => ({ ...prev, status: 'running', pauseReason: null }));
   }, [state, timeline]);
 
@@ -198,14 +103,12 @@ export const useTimerRunner = (timer: Timer) => {
     await WakeLockService.release();
     setState({
       status: 'completed',
-      phase: 'interval',
       pauseReason: null,
       currentIndex: timeline.length > 0 ? Math.min(state.currentIndex, timeline.length - 1) : 0,
-      currentSetNumber: state.currentSetNumber,
       currentRemainingMs: 0,
       totalRemainingMs: 0,
     });
-  }, [state.currentIndex, state.currentSetNumber, timeline]);
+  }, [state.currentIndex, timeline]);
 
   useEffect(() => {
     const unlock = () => {
@@ -223,49 +126,6 @@ export const useTimerRunner = (timer: Timer) => {
 
     const tick = () => {
       const now = Date.now();
-
-      if (state.phase === 'setTransition') {
-        const transitionRemainingMs = Math.max(0, segmentEndRef.current - now);
-        const elapsedTransition = Math.max(0, now - startedAtRef.current);
-        const totalRemainingMs = repeatSetsUntilStopped
-          ? 0
-          : Math.max(0, totalMs - elapsedBeforeCurrentRef.current - elapsedTransitionsCompletedRef.current - elapsedTransition);
-
-        if (transitionRemainingMs <= 0) {
-          elapsedTransitionsCompletedRef.current += setTransitionMs;
-          const nextIndex = transitionTargetIndexRef.current;
-          const nextSetNumber = transitionTargetSetRef.current;
-          if (transitionPauseAfterRef.current) {
-            WakeLockService.release();
-            const nextDuration = timeline[nextIndex]?.durationMs ?? 0;
-            setState((prev) => ({
-              ...prev,
-              status: 'paused',
-              phase: 'interval',
-              pauseReason: 'betweenSets',
-              currentIndex: nextIndex,
-              currentSetNumber: nextSetNumber,
-              currentRemainingMs: nextDuration,
-              totalRemainingMs: repeatSetsUntilStopped
-                ? 0
-                : Math.max(0, totalMs - (elapsedBeforeByIndex[nextIndex] ?? 0) - elapsedTransitionsCompletedRef.current),
-            }));
-            return;
-          }
-
-          setSegmentFromIndex(nextIndex, now, nextSetNumber);
-          setState((prev) => ({ ...prev, status: 'running', phase: 'interval', pauseReason: null }));
-          return;
-        }
-
-        setState((prev) => ({
-          ...prev,
-          currentRemainingMs: transitionRemainingMs,
-          totalRemainingMs,
-        }));
-        return;
-      }
-
       let index = state.currentIndex;
       let end = segmentEndRef.current;
 
@@ -274,29 +134,21 @@ export const useTimerRunner = (timer: Timer) => {
         const current = timeline[index];
         const next = timeline[nextIndex];
 
-        const movingFromWarmupToFirstSet = current?.type === 'warmup' && next?.setNumber !== null;
-        const movingToNextSet = isSetBoundaryTransition(current, next);
-        if (repeatSetsUntilStopped && movingFromWarmupToFirstSet) {
-          const nextDuration = next?.durationMs ?? 0;
-          segmentEndRef.current = now + nextDuration;
+        if (shouldPauseBeforeNext(current, next, coachMode, manualStart)) {
+          const elapsed = elapsedBeforeIndex(nextIndex);
+          const duration = next?.durationMs ?? 0;
+          segmentEndRef.current = now + duration;
           startedAtRef.current = now;
-          elapsedBeforeCurrentRef.current = elapsedBeforeByIndex[nextIndex] ?? 0;
+          elapsedBeforeCurrentRef.current = elapsed;
           WakeLockService.release();
           setState((prev) => ({
             ...prev,
             status: 'paused',
-            phase: 'interval',
-            pauseReason: 'afterWarmup',
+            pauseReason: 'stationStart',
             currentIndex: nextIndex,
-            currentSetNumber: next?.setNumber ?? prev.currentSetNumber,
-            currentRemainingMs: nextDuration,
-            totalRemainingMs: 0,
+            currentRemainingMs: duration,
+            totalRemainingMs: Math.max(0, totalMs - elapsed),
           }));
-          return;
-        }
-        if (movingToNextSet) {
-          const nextSetNumber = next?.setNumber ?? (state.currentSetNumber + 1);
-          startSetTransition(nextIndex, nextSetNumber, repeatSetsUntilStopped, now);
           return;
         }
 
@@ -306,17 +158,11 @@ export const useTimerRunner = (timer: Timer) => {
         AudioService.playTransitionCue();
       }
 
-      if (now >= end && repeatSetsUntilStopped && index === coreEndIndex && coreStartIndex >= 0) {
-        startSetTransition(coreStartIndex, state.currentSetNumber + 1, true, now);
-        return;
-      }
-
       if (now >= end && index === timeline.length - 1) {
         WakeLockService.release();
         setState((prev) => ({
           ...prev,
           status: 'completed',
-          phase: 'interval',
           pauseReason: null,
           currentRemainingMs: 0,
           totalRemainingMs: 0,
@@ -327,15 +173,13 @@ export const useTimerRunner = (timer: Timer) => {
       if (index !== state.currentIndex) {
         segmentEndRef.current = end;
         startedAtRef.current = end - timeline[index].durationMs;
-        elapsedBeforeCurrentRef.current = elapsedBeforeByIndex[index] ?? 0;
-        setState((prev) => ({ ...prev, currentIndex: index, currentSetNumber: timeline[index]?.setNumber ?? prev.currentSetNumber }));
+        elapsedBeforeCurrentRef.current = elapsedBeforeIndex(index);
+        setState((prev) => ({ ...prev, currentIndex: index }));
       }
 
       const currentRemainingMs = Math.max(0, segmentEndRef.current - now);
       const elapsedCurrent = Math.max(0, now - startedAtRef.current);
-      const totalRemainingMs = repeatSetsUntilStopped
-        ? 0
-        : Math.max(0, totalMs - elapsedBeforeCurrentRef.current - elapsedTransitionsCompletedRef.current - elapsedCurrent);
+      const totalRemainingMs = Math.max(0, totalMs - elapsedBeforeCurrentRef.current - elapsedCurrent);
 
       setState((prev) => ({
         ...prev,
@@ -347,21 +191,7 @@ export const useTimerRunner = (timer: Timer) => {
     const id = window.setInterval(tick, 120);
     tick();
     return () => window.clearInterval(id);
-  }, [
-    coreEndIndex,
-    coreStartIndex,
-    elapsedBeforeByIndex,
-    repeatSetsUntilStopped,
-    setSegmentFromIndex,
-    setTransitionMs,
-    startSetTransition,
-    state.currentIndex,
-    state.currentSetNumber,
-    state.phase,
-    state.status,
-    timeline,
-    totalMs,
-  ]);
+  }, [coachMode, elapsedBeforeIndex, manualStart, state.currentIndex, state.status, timeline, totalMs]);
 
   useEffect(() => {
     return () => {
