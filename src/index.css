@@ -554,6 +554,22 @@ select {
   accent-color: var(--accent);
 }
 
+.settings-kobe-row {
+  margin: 0 0 0.2rem;
+}
+
+.settings-kobe-control {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.55rem;
+}
+
+.settings-kobe-face {
+  width: 34px;
+  height: 34px;
+  object-fit: contain;
+}
+
 .settings-color-swatch {
   width: 14px;
   height: 14px;

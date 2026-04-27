@@ -4,23 +4,16 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { TimelineEntry } from '../types';
 import { RunningTimerPage } from './RunningTimerPage';
 
-const { getMock, startMock, runnerMock } = vi.hoisted(() => ({
+const { getMock, startMock, runnerMock, settingsMock } = vi.hoisted(() => ({
   getMock: vi.fn(),
   startMock: vi.fn(),
   runnerMock: vi.fn(),
+  settingsMock: vi.fn(),
 }));
 
 vi.mock('../services/settingsContext', () => ({
   useSettings: () => ({
-    settings: {
-      coachMode: true,
-      intervalColors: {
-        warmup: '#ff8c00',
-        work: '#ff4444',
-        rest: '#2ecc71',
-        cooldown: '#3b82f6',
-      },
-    },
+    settings: settingsMock(),
   }),
 }));
 
@@ -67,6 +60,16 @@ const renderRunningPage = (initialPath: string) => render(
 describe('RunningTimerPage', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    settingsMock.mockReturnValue({
+      coachMode: true,
+      kobeEverywhere: true,
+      intervalColors: {
+        warmup: '#ff8c00',
+        work: '#ff4444',
+        rest: '#2ecc71',
+        cooldown: '#3b82f6',
+      },
+    });
     getMock.mockResolvedValue(timer);
     runnerMock.mockReturnValue({
       timeline: [],
@@ -296,5 +299,48 @@ describe('RunningTimerPage', () => {
     expect(secondImage).toBeTruthy();
     const secondSrc = secondImage?.getAttribute('src');
     expect(firstSrc).not.toBe(secondSrc);
+  });
+
+  it('hides running card cat image when Kobe Everywhere is off', async () => {
+    settingsMock.mockReturnValue({
+      coachMode: true,
+      kobeEverywhere: false,
+      intervalColors: {
+        warmup: '#ff8c00',
+        work: '#ff4444',
+        rest: '#2ecc71',
+        cooldown: '#3b82f6',
+      },
+    });
+
+    const timeline: TimelineEntry[] = [
+      {
+        id: 'work-1-1',
+        type: 'work',
+        name: 'Work',
+        durationMs: 30000,
+        stationNumber: 1,
+        roundNumber: 1,
+      },
+    ];
+
+    runnerMock.mockReturnValue({
+      timeline,
+      state: {
+        status: 'running',
+        pauseReason: null,
+        currentIndex: 0,
+        currentRemainingMs: 12000,
+        totalRemainingMs: 30000,
+      },
+      start: startMock,
+      pause: vi.fn(),
+      resume: vi.fn(),
+      stop: vi.fn(),
+    });
+
+    const { container } = renderRunningPage('/timer/timer-1/run');
+    await screen.findByText('Work');
+    expect(container.querySelector('.run-current-image')).toBeNull();
   });
 });

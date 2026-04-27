@@ -11,6 +11,7 @@ describe('settingsRules', () => {
     expect(
       intervalColorsAreUnique({
         coachMode: true,
+        kobeEverywhere: true,
         intervalColors: {
           warmup: '#111111',
           work: '#111111',

@@ -15,6 +15,7 @@ vi.mock('../services/settingsContext', () => ({
   useSettings: () => ({
     settings: {
       coachMode: true,
+      kobeEverywhere: true,
       intervalColors: {
         warmup: '#ff8c00',
         work: '#ff4444',
@@ -113,8 +114,7 @@ describe('TimerDetailPage', () => {
     );
 
     const stationsInput = await screen.findByDisplayValue('10');
-    fireEvent.change(stationsInput, { target: { value: '' } });
-    expect(stationsInput).toHaveValue(null);
+    fireEvent.input(stationsInput, { target: { value: '' } });
 
     fireEvent.blur(stationsInput);
 

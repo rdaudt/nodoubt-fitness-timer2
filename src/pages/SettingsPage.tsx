@@ -3,7 +3,8 @@ import { DEFAULT_SETTINGS, TYPE_LABELS } from '../config';
 import { intervalColorsAreUnique } from '../lib/settingsRules';
 import { useSettings } from '../services/settingsContext';
 import type { AppSettings, IntervalType } from '../types';
-import victorianGym3 from '../../media/victorian-gym-3.png';
+import kobeSmiling from '../../media/kobe-smiling.png';
+import kobeAngry from '../../media/kobe-angry.png';
 
 const types: IntervalType[] = ['warmup', 'work', 'rest', 'cooldown'];
 
@@ -27,6 +28,24 @@ export const SettingsPage = () => {
   return (
     <section>
       <h1 className="screen-title settings-page-title">Settings</h1>
+
+      <label className="field settings-toggle-row settings-kobe-row">
+        <span>Kobe Everywhere</span>
+        <div className="settings-kobe-control">
+          <img
+            className="settings-kobe-face"
+            src={draft.kobeEverywhere ? kobeSmiling : kobeAngry}
+            alt={draft.kobeEverywhere ? 'Kobe smiling' : 'Kobe angry'}
+          />
+          <input
+            className="settings-toggle-input"
+            type="checkbox"
+            checked={draft.kobeEverywhere}
+            onChange={(e) => setDraft((prev) => ({ ...prev, kobeEverywhere: e.target.checked }))}
+            aria-label="Kobe Everywhere"
+          />
+        </div>
+      </label>
 
       <div className="stack settings-stack settings-color-section">
         <p className="timer-meta settings-section-note">Set unique colors for each interval type.</p>
@@ -58,16 +77,6 @@ export const SettingsPage = () => {
         <button className="primary-btn" onClick={onSave} disabled={!unique}>Save</button>
         <button className="secondary-btn" onClick={() => setDraft(DEFAULT_SETTINGS)}>Reset Defaults</button>
       </div>
-
-      <a
-        className="settings-float-cat-wrap"
-        href="https://www.instagram.com/kobetheabby/"
-        target="_blank"
-        rel="noreferrer"
-        aria-label="Kobe the Abby Instagram"
-      >
-        <img className="settings-float-cat" src={victorianGym3} alt="" />
-      </a>
     </section>
   );
 };
