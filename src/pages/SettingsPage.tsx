@@ -48,6 +48,28 @@ export const SettingsPage = () => {
         </div>
       </label>
 
+      <label className="field settings-toggle-row">
+        <span>Long beep at end of interval</span>
+        <input
+          className="settings-toggle-input"
+          type="checkbox"
+          checked={draft.endIntervalLongBeep}
+          onChange={(e) => updateDraft({ ...draft, endIntervalLongBeep: e.target.checked })}
+          aria-label="Long beep at end of interval"
+        />
+      </label>
+
+      <label className="field settings-toggle-row">
+        <span>5-second beeps at end of interval</span>
+        <input
+          className="settings-toggle-input"
+          type="checkbox"
+          checked={draft.countdownLast5Beeps}
+          onChange={(e) => updateDraft({ ...draft, countdownLast5Beeps: e.target.checked })}
+          aria-label="5-second beeps at end of interval"
+        />
+      </label>
+
       <div className="stack settings-stack settings-color-section">
         <p className="timer-meta settings-section-note">Set unique colors for each interval type.</p>
         {types.map((type) => (

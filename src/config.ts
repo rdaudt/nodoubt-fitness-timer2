@@ -15,6 +15,8 @@ export const BRAND = {
 export const DEFAULT_SETTINGS: AppSettings = {
   coachMode: true,
   kobeEverywhere: true,
+  endIntervalLongBeep: true,
+  countdownLast5Beeps: true,
   intervalColors: {
     warmup: '#FF8C00',
     work: '#FF4444',

@@ -16,6 +16,11 @@ interface RunnerState {
   totalRemainingMs: number;
 }
 
+interface RunnerSoundOptions {
+  endIntervalLongBeep: boolean;
+  countdownLast5Beeps: boolean;
+}
+
 const shouldPauseBeforeNext = (
   current: TimelineEntry | undefined,
   next: TimelineEntry | undefined,
@@ -29,7 +34,18 @@ const shouldPauseBeforeNext = (
   && (current?.type === 'warmup' || current?.type === 'stationTransition')
 );
 
-export const useTimerRunner = (timer: Timer, coachMode: boolean) => {
+export const shouldPlayCountdownBeep = (
+  remainingMs: number,
+  previousSecond: number | null,
+): number | null => {
+  const second = Math.ceil(Math.max(0, remainingMs) / 1000);
+  if (second >= 1 && second <= 5 && second !== previousSecond) {
+    return second;
+  }
+  return null;
+};
+
+export const useTimerRunner = (timer: Timer, coachMode: boolean, sound: RunnerSoundOptions) => {
   const timeline = useMemo(() => buildTimeline(timer), [timer]);
   const totalMs = useMemo(() => totalTimelineDurationMs(timeline), [timeline]);
   const manualStart = coachMode && timer.startStationWorkManually;
@@ -45,6 +61,8 @@ export const useTimerRunner = (timer: Timer, coachMode: boolean) => {
   const segmentEndRef = useRef<number>(0);
   const startedAtRef = useRef<number>(0);
   const elapsedBeforeCurrentRef = useRef<number>(0);
+  const lastCountdownSecondRef = useRef<number | null>(null);
+  const lastCountdownEntryIdRef = useRef<string | null>(null);
 
   const elapsedBeforeIndex = useCallback((index: number): number =>
     timeline.slice(0, index).reduce((sum, item) => sum + item.durationMs, 0), [timeline]);
@@ -63,6 +81,9 @@ export const useTimerRunner = (timer: Timer, coachMode: boolean) => {
       currentRemainingMs: duration,
       totalRemainingMs: Math.max(0, totalMs - elapsed),
     }));
+    const entryId = timeline[index]?.id ?? null;
+    lastCountdownEntryIdRef.current = entryId;
+    lastCountdownSecondRef.current = null;
   }, [elapsedBeforeIndex, timeline, totalMs]);
 
   const start = useCallback(async () => {
@@ -149,16 +170,24 @@ export const useTimerRunner = (timer: Timer, coachMode: boolean) => {
             currentRemainingMs: duration,
             totalRemainingMs: Math.max(0, totalMs - elapsed),
           }));
+          const entryId = timeline[nextIndex]?.id ?? null;
+          lastCountdownEntryIdRef.current = entryId;
+          lastCountdownSecondRef.current = null;
           return;
         }
 
+        if (sound.endIntervalLongBeep) {
+          AudioService.playLongIntervalEndBeep();
+        }
         index = nextIndex;
         const nextDuration = timeline[index].durationMs;
         end += nextDuration;
-        AudioService.playTransitionCue();
       }
 
       if (now >= end && index === timeline.length - 1) {
+        if (sound.endIntervalLongBeep) {
+          AudioService.playLongIntervalEndBeep();
+        }
         WakeLockService.release();
         setState((prev) => ({
           ...prev,
@@ -174,6 +203,8 @@ export const useTimerRunner = (timer: Timer, coachMode: boolean) => {
         segmentEndRef.current = end;
         startedAtRef.current = end - timeline[index].durationMs;
         elapsedBeforeCurrentRef.current = elapsedBeforeIndex(index);
+        lastCountdownEntryIdRef.current = timeline[index]?.id ?? null;
+        lastCountdownSecondRef.current = null;
         setState((prev) => ({ ...prev, currentIndex: index }));
       }
 
@@ -186,12 +217,25 @@ export const useTimerRunner = (timer: Timer, coachMode: boolean) => {
         currentRemainingMs,
         totalRemainingMs,
       }));
+
+      if (sound.countdownLast5Beeps) {
+        const activeEntryId = timeline[index]?.id ?? null;
+        if (activeEntryId !== lastCountdownEntryIdRef.current) {
+          lastCountdownEntryIdRef.current = activeEntryId;
+          lastCountdownSecondRef.current = null;
+        }
+        const beepSecond = shouldPlayCountdownBeep(currentRemainingMs, lastCountdownSecondRef.current);
+        if (beepSecond !== null) {
+          lastCountdownSecondRef.current = beepSecond;
+          AudioService.playShortCountdownBeep();
+        }
+      }
     };
 
     const id = window.setInterval(tick, 120);
     tick();
     return () => window.clearInterval(id);
-  }, [coachMode, elapsedBeforeIndex, manualStart, state.currentIndex, state.status, timeline, totalMs]);
+  }, [coachMode, elapsedBeforeIndex, manualStart, sound.countdownLast5Beeps, sound.endIntervalLongBeep, state.currentIndex, state.status, timeline, totalMs]);
 
   useEffect(() => {
     return () => {

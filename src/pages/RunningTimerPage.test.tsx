@@ -69,6 +69,8 @@ describe('RunningTimerPage', () => {
     settingsMock.mockReturnValue({
       coachMode: true,
       kobeEverywhere: true,
+      endIntervalLongBeep: true,
+      countdownLast5Beeps: true,
       intervalColors: {
         warmup: '#ff8c00',
         work: '#ff4444',
@@ -311,6 +313,8 @@ describe('RunningTimerPage', () => {
     settingsMock.mockReturnValue({
       coachMode: true,
       kobeEverywhere: false,
+      endIntervalLongBeep: true,
+      countdownLast5Beeps: true,
       intervalColors: {
         warmup: '#ff8c00',
         work: '#ff4444',
@@ -614,6 +618,8 @@ describe('RunningTimerPage', () => {
     settingsMock.mockReturnValue({
       coachMode: true,
       kobeEverywhere: true,
+      endIntervalLongBeep: true,
+      countdownLast5Beeps: true,
       intervalColors: {
         warmup: '#111111',
         work: '#123456',
@@ -671,6 +677,29 @@ describe('RunningTimerPage', () => {
     expect(saveSettingsMock).toHaveBeenCalledWith({
       coachMode: true,
       kobeEverywhere: false,
+      endIntervalLongBeep: true,
+      countdownLast5Beeps: true,
+      intervalColors: {
+        warmup: '#ff8c00',
+        work: '#ff4444',
+        rest: '#2ecc71',
+        cooldown: '#3b82f6',
+      },
+    });
+  });
+
+  it('persists long end-interval beep setting immediately when toggled', async () => {
+    renderRunningPage('/timer/timer-1/run');
+    const toggle = await screen.findByLabelText('Long beep at end of interval');
+
+    fireEvent.click(toggle);
+
+    expect(saveSettingsMock).toHaveBeenCalledTimes(1);
+    expect(saveSettingsMock).toHaveBeenCalledWith({
+      coachMode: true,
+      kobeEverywhere: true,
+      endIntervalLongBeep: false,
+      countdownLast5Beeps: true,
       intervalColors: {
         warmup: '#ff8c00',
         work: '#ff4444',

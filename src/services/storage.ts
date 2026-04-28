@@ -102,6 +102,8 @@ export const SettingsRepository = {
       ...row.value,
       coachMode: row.value.coachMode ?? DEFAULT_SETTINGS.coachMode,
       kobeEverywhere: row.value.kobeEverywhere ?? DEFAULT_SETTINGS.kobeEverywhere,
+      endIntervalLongBeep: row.value.endIntervalLongBeep ?? DEFAULT_SETTINGS.endIntervalLongBeep,
+      countdownLast5Beeps: row.value.countdownLast5Beeps ?? DEFAULT_SETTINGS.countdownLast5Beeps,
       intervalColors: {
         ...DEFAULT_SETTINGS.intervalColors,
         ...row.value.intervalColors,

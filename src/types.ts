@@ -26,6 +26,8 @@ export interface Timer {
 export interface AppSettings {
   coachMode: boolean;
   kobeEverywhere: boolean;
+  endIntervalLongBeep: boolean;
+  countdownLast5Beeps: boolean;
   intervalColors: Record<IntervalType, string>;
 }
 
