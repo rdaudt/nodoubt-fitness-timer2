@@ -1,6 +1,7 @@
 import { BrowserRouter, Navigate, Route, Routes, useParams } from 'react-router-dom';
 import { AppLayout } from './components/AppLayout';
 import { AboutPage } from './pages/AboutPage';
+import { HistoryPage } from './pages/HistoryPage';
 import { NewTimerPage } from './pages/NewTimerPage';
 import { RunningTimerPage } from './pages/RunningTimerPage';
 import { SettingsPage } from './pages/SettingsPage';
@@ -20,6 +21,7 @@ function App() {
         <Routes>
           <Route element={<AppLayout />}>
             <Route path="/" element={<TimerListPage />} />
+            <Route path="/history" element={<HistoryPage />} />
             <Route path="/about" element={<AboutPage />} />
             <Route path="/settings" element={<SettingsPage />} />
             <Route path="/timer/new" element={<NewTimerPage />} />

@@ -23,6 +23,18 @@ export interface Timer {
   updatedAt: string;
 }
 
+export interface TimerRun {
+  id: string;
+  timerId: string;
+  timerNameAtRun: string;
+  timerSnapshot: Timer;
+  complete: boolean;
+  ranAt: string;
+  location: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
 export interface AppSettings {
   coachMode: boolean;
   kobeEverywhere: boolean;

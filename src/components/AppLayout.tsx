@@ -18,6 +18,14 @@ const AboutIcon = () => (
   </svg>
 );
 
+const HistoryIcon = () => (
+  <svg viewBox="0 0 24 24" aria-hidden="true">
+    <path d="M4 12a8 8 0 1 0 2.3-5.6" fill="none" stroke="currentColor" strokeWidth="2" />
+    <path d="M4 4v4h4" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+    <path d="M12 8v5l3 2" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+  </svg>
+);
+
 const SettingsIcon = () => (
   <svg viewBox="0 0 24 24" aria-hidden="true">
     <path
@@ -30,6 +38,7 @@ const SettingsIcon = () => (
 
 const navItems = [
   { to: '/', label: 'Timers', icon: TimersIcon },
+  { to: '/history', label: 'History', icon: HistoryIcon },
   { to: '/about', label: 'About', icon: AboutIcon },
   { to: '/settings', label: 'Settings', icon: SettingsIcon },
 ];

@@ -1,7 +1,7 @@
 import { openDB } from 'idb';
 import { DEFAULT_SETTINGS } from '../config';
 import { normalizeTimerFields } from '../lib/timerRules';
-import type { AppSettings, Timer } from '../types';
+import type { AppSettings, Timer, TimerRun } from '../types';
 
 interface AppDb {
   timers: {
@@ -12,6 +12,14 @@ interface AppDb {
     key: string;
     value: AppSettingsRow;
   };
+  timerRuns: {
+    key: string;
+    value: TimerRun;
+    indexes: {
+      'by-timer-id': string;
+      'by-ran-at': string;
+    };
+  };
 }
 
 interface AppSettingsRow {
@@ -20,7 +28,7 @@ interface AppSettingsRow {
 }
 
 const DB_NAME = 'nodoubt-hiit';
-const DB_VERSION = 1;
+const DB_VERSION = 2;
 
 const dbPromise = openDB<AppDb>(DB_NAME, DB_VERSION, {
   upgrade(db) {
@@ -30,6 +38,12 @@ const dbPromise = openDB<AppDb>(DB_NAME, DB_VERSION, {
 
     if (!db.objectStoreNames.contains('settings')) {
       db.createObjectStore('settings', { keyPath: 'key' });
+    }
+
+    if (!db.objectStoreNames.contains('timerRuns')) {
+      const timerRunsStore = db.createObjectStore('timerRuns', { keyPath: 'id' });
+      timerRunsStore.createIndex('by-timer-id', 'timerId');
+      timerRunsStore.createIndex('by-ran-at', 'ranAt');
     }
   },
 });
@@ -42,6 +56,22 @@ const isCurrentTimer = (timer: unknown): timer is Timer => (
   && typeof (timer as Timer).stationCount === 'number'
   && typeof (timer as Timer).roundsPerStation === 'number'
 );
+
+const normalizeTimerRun = (run: TimerRun): TimerRun | null => {
+  if (!run || typeof run !== 'object' || typeof run.id !== 'string' || typeof run.timerId !== 'string') {
+    return null;
+  }
+  const snapshot = normalizeTimer(run.timerSnapshot);
+  if (!snapshot) {
+    return null;
+  }
+  return {
+    ...run,
+    timerSnapshot: snapshot,
+    complete: run.complete ?? true,
+    location: run.location ?? '',
+  };
+};
 
 export const normalizeTimer = (timer: Timer): Timer | null => {
   if (!isCurrentTimer(timer)) {
@@ -113,5 +143,56 @@ export const SettingsRepository = {
   async save(settings: AppSettings): Promise<void> {
     const db = await dbPromise;
     await db.put('settings', { key: 'app', value: settings });
+  },
+};
+
+export const TimerRunRepository = {
+  async listAll(): Promise<TimerRun[]> {
+    const db = await dbPromise;
+    const runs = await db.getAll('timerRuns');
+    const valid: TimerRun[] = [];
+    await Promise.all(runs.map(async (run) => {
+      const normalized = normalizeTimerRun(run);
+      if (!normalized) {
+        await db.delete('timerRuns', run.id);
+        return;
+      }
+      valid.push(normalized);
+    }));
+    return valid.sort((a, b) => +new Date(b.ranAt) - +new Date(a.ranAt));
+  },
+  async listByTimer(timerId: string): Promise<TimerRun[]> {
+    const db = await dbPromise;
+    const runs = await db.getAllFromIndex('timerRuns', 'by-timer-id', timerId);
+    const valid: TimerRun[] = [];
+    await Promise.all(runs.map(async (run) => {
+      const normalized = normalizeTimerRun(run);
+      if (!normalized) {
+        await db.delete('timerRuns', run.id);
+        return;
+      }
+      valid.push(normalized);
+    }));
+    return valid.sort((a, b) => +new Date(b.ranAt) - +new Date(a.ranAt));
+  },
+  async create(run: TimerRun): Promise<void> {
+    const db = await dbPromise;
+    const normalized = normalizeTimerRun(run);
+    if (!normalized) {
+      return;
+    }
+    await db.put('timerRuns', normalized);
+  },
+  async update(run: TimerRun): Promise<void> {
+    const db = await dbPromise;
+    const normalized = normalizeTimerRun(run);
+    if (!normalized) {
+      return;
+    }
+    await db.put('timerRuns', normalized);
+  },
+  async remove(id: string): Promise<void> {
+    const db = await dbPromise;
+    await db.delete('timerRuns', id);
   },
 };

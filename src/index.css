@@ -1859,6 +1859,17 @@ select {
   animation: pulse 1.9s ease-in-out infinite;
 }
 
+.timer-run-history {
+  margin-top: 1rem;
+}
+
+.timer-run-card {
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 0.8rem;
+  background: #101010;
+}
+
 @keyframes pulse {
   0%,
   100% {
