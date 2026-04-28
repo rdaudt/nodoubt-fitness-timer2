@@ -825,7 +825,7 @@ select {
   width: 100%;
   min-width: 0;
   justify-self: stretch;
-  padding-top: 8.5rem;
+  padding-top: var(--run-session-map-offset, 10.6rem);
   padding-left: 2px;
   padding-right: 6px;
   display: grid;
@@ -1850,7 +1850,7 @@ select {
   }
 
   .run-session-map {
-    padding-top: 8.2rem;
+    padding-top: var(--run-session-map-offset, 10.3rem);
     padding-left: 0;
     padding-right: 6px;
     gap: 0.18rem;
