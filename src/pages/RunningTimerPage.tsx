@@ -140,6 +140,9 @@ export const RunningTimerPage = () => {
   const [showSessionMap, setShowSessionMap] = useState(true);
   const [confirmAction, setConfirmAction] = useState<'stop' | null>(null);
   const autoStartedRef = useRef(false);
+  const mainColumnRef = useRef<HTMLDivElement | null>(null);
+  const currentCardRef = useRef<HTMLElement | null>(null);
+  const [sessionMapOffsetPx, setSessionMapOffsetPx] = useState(0);
 
   useEffect(() => {
     TimerRepository.get(id).then((value) => setTimer(value ?? null));
@@ -154,6 +157,39 @@ export const RunningTimerPage = () => {
     autoStartedRef.current = true;
     runner.start();
   }, [runner, timer]);
+
+  useEffect(() => {
+    const updateOffset = () => {
+      const currentCardEl = currentCardRef.current;
+      const mainColEl = mainColumnRef.current;
+      if (!currentCardEl || !mainColEl) {
+        return;
+      }
+      const mainRect = mainColEl.getBoundingClientRect();
+      const currentRect = currentCardEl.getBoundingClientRect();
+      setSessionMapOffsetPx(Math.max(0, currentRect.top - mainRect.top));
+    };
+
+    updateOffset();
+    const observer = typeof ResizeObserver !== 'undefined'
+      ? new ResizeObserver(() => updateOffset())
+      : null;
+    if (observer) {
+      if (mainColumnRef.current) {
+        observer.observe(mainColumnRef.current);
+      }
+      if (currentCardRef.current) {
+        observer.observe(currentCardRef.current);
+      }
+    } else {
+      window.addEventListener('resize', updateOffset);
+    }
+
+    return () => {
+      observer?.disconnect();
+      window.removeEventListener('resize', updateOffset);
+    };
+  }, [settings.coachMode, timer?.startStationWorkManually, runner.state.status, confirmAction]);
 
   const donePath = searchParams.get('from') === 'home' ? '/' : `/timer/${timer?.id ?? id}`;
   const activeEntry = runner.timeline[runner.state.currentIndex];
@@ -274,50 +310,20 @@ export const RunningTimerPage = () => {
     <section className="run-page">
       <div
         className={`run-layout${showSessionMap ? ' has-session-map' : ''}`}
-        style={{ '--session-map-circle-count': sessionMapCircleCount } as CSSProperties}
+        style={{
+          '--session-map-circle-count': sessionMapCircleCount,
+          '--run-session-map-offset': `${sessionMapOffsetPx}px`,
+        } as CSSProperties}
       >
-        <div className="run-main-column">
+        <div className="run-main-column" ref={mainColumnRef}>
           <header className="run-header">
             <p className="run-name">{timer.name}</p>
             <p className="run-remaining">Total remaining: {formatClock(runner.state.totalRemainingMs / 1000)}</p>
             {isStationStartPause && <p className="run-paused-flag run-set-start-flag pulse">Prepare to start</p>}
-            <div className="run-header-toggles">
-              <label className="run-map-toggle-row">
-                <span>Kobe Everywhere</span>
-                <input
-                  className="settings-toggle-input"
-                  type="checkbox"
-                  checked={settings.kobeEverywhere}
-                  onChange={(e) => void saveSettings({ ...settings, kobeEverywhere: e.target.checked })}
-                  aria-label="Kobe Everywhere"
-                />
-              </label>
-              <label className="run-map-toggle-row">
-                <span>Session Map</span>
-                <input
-                  className="settings-toggle-input"
-                  type="checkbox"
-                  checked={showSessionMap}
-                  onChange={(e) => setShowSessionMap(e.target.checked)}
-                  aria-label="Show session map"
-                />
-              </label>
-              {settings.coachMode && (
-                <label className="run-map-toggle-row">
-                  <span>Start Set Manually</span>
-                  <input
-                    className="settings-toggle-input"
-                    type="checkbox"
-                    checked={timer.startStationWorkManually}
-                    onChange={(e) => void persistTimerPatch({ startStationWorkManually: e.target.checked })}
-                    aria-label="Start Set Manually"
-                  />
-                </label>
-              )}
-            </div>
           </header>
 
           <article
+            ref={currentCardRef}
             className={`run-current-card ${activeEntry?.type === 'stationTransition' ? 'station-transition' : ''}`}
             style={currentStyle}
           >
@@ -346,6 +352,41 @@ export const RunningTimerPage = () => {
               <button className="danger-btn" onClick={requestStop}>{isStationStartPause ? 'Cancel' : 'Stop Timer'}</button>
             )}
             {runner.state.status === 'completed' && <Link className="primary-btn" to={donePath}>Done</Link>}
+          </div>
+
+          <div className="run-bottom-toggles" aria-label="Running page controls">
+            <label className="run-map-toggle-row">
+              <span>Kobe Everywhere</span>
+              <input
+                className="settings-toggle-input"
+                type="checkbox"
+                checked={settings.kobeEverywhere}
+                onChange={(e) => void saveSettings({ ...settings, kobeEverywhere: e.target.checked })}
+                aria-label="Kobe Everywhere"
+              />
+            </label>
+            <label className="run-map-toggle-row">
+              <span>Session Map</span>
+              <input
+                className="settings-toggle-input"
+                type="checkbox"
+                checked={showSessionMap}
+                onChange={(e) => setShowSessionMap(e.target.checked)}
+                aria-label="Show session map"
+              />
+            </label>
+            {settings.coachMode && (
+              <label className="run-map-toggle-row">
+                <span>Start Set Manually</span>
+                <input
+                  className="settings-toggle-input"
+                  type="checkbox"
+                  checked={timer.startStationWorkManually}
+                  onChange={(e) => void persistTimerPatch({ startStationWorkManually: e.target.checked })}
+                  aria-label="Start Set Manually"
+                />
+              </label>
+            )}
           </div>
 
           {confirmAction && (
