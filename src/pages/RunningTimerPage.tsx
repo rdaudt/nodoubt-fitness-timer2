@@ -140,6 +140,9 @@ export const RunningTimerPage = () => {
   const [showSessionMap, setShowSessionMap] = useState(true);
   const [confirmAction, setConfirmAction] = useState<'stop' | null>(null);
   const autoStartedRef = useRef(false);
+  const mainColumnRef = useRef<HTMLDivElement | null>(null);
+  const headerRef = useRef<HTMLElement | null>(null);
+  const [sessionMapOffsetPx, setSessionMapOffsetPx] = useState(0);
 
   useEffect(() => {
     TimerRepository.get(id).then((value) => setTimer(value ?? null));
@@ -154,6 +157,41 @@ export const RunningTimerPage = () => {
     autoStartedRef.current = true;
     runner.start();
   }, [runner, timer]);
+
+  useEffect(() => {
+    const updateOffset = () => {
+      const headerEl = headerRef.current;
+      const mainColEl = mainColumnRef.current;
+      if (!headerEl || !mainColEl) {
+        return;
+      }
+      const headerComputed = window.getComputedStyle(headerEl);
+      const computed = window.getComputedStyle(mainColEl);
+      const rowGap = Number.parseFloat(computed.rowGap || computed.gap || '0') || 0;
+      const headerMarginBottom = Number.parseFloat(headerComputed.marginBottom || '0') || 0;
+      setSessionMapOffsetPx(headerEl.getBoundingClientRect().height + headerMarginBottom + rowGap);
+    };
+
+    updateOffset();
+    const observer = typeof ResizeObserver !== 'undefined'
+      ? new ResizeObserver(() => updateOffset())
+      : null;
+    if (observer) {
+      if (headerRef.current) {
+        observer.observe(headerRef.current);
+      }
+      if (mainColumnRef.current) {
+        observer.observe(mainColumnRef.current);
+      }
+    } else {
+      window.addEventListener('resize', updateOffset);
+    }
+
+    return () => {
+      observer?.disconnect();
+      window.removeEventListener('resize', updateOffset);
+    };
+  }, [settings.coachMode, timer?.startStationWorkManually]);
 
   const donePath = searchParams.get('from') === 'home' ? '/' : `/timer/${timer?.id ?? id}`;
   const activeEntry = runner.timeline[runner.state.currentIndex];
@@ -274,10 +312,13 @@ export const RunningTimerPage = () => {
     <section className="run-page">
       <div
         className={`run-layout${showSessionMap ? ' has-session-map' : ''}`}
-        style={{ '--session-map-circle-count': sessionMapCircleCount } as CSSProperties}
+        style={{
+          '--session-map-circle-count': sessionMapCircleCount,
+          '--run-session-map-offset': `${sessionMapOffsetPx}px`,
+        } as CSSProperties}
       >
-        <div className="run-main-column">
-          <header className="run-header">
+        <div className="run-main-column" ref={mainColumnRef}>
+          <header className="run-header" ref={headerRef}>
             <p className="run-name">{timer.name}</p>
             <p className="run-remaining">Total remaining: {formatClock(runner.state.totalRemainingMs / 1000)}</p>
             {isStationStartPause && <p className="run-paused-flag run-set-start-flag pulse">Prepare to start</p>}
