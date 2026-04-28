@@ -10,21 +10,13 @@ const { getMock, listMock, upsertMock, removeMock } = vi.hoisted(() => ({
   upsertMock: vi.fn(),
   removeMock: vi.fn(),
 }));
+const { settingsMock } = vi.hoisted(() => ({
+  settingsMock: vi.fn(),
+}));
 
 vi.mock('../services/settingsContext', () => ({
   useSettings: () => ({
-    settings: {
-      coachMode: true,
-      kobeEverywhere: true,
-      endIntervalLongBeep: true,
-      countdownLast5Beeps: true,
-      intervalColors: {
-        warmup: '#ff8c00',
-        work: '#ff4444',
-        rest: '#2ecc71',
-        cooldown: '#3b82f6',
-      },
-    },
+    settings: settingsMock(),
   }),
 }));
 
@@ -41,6 +33,7 @@ const timer: Timer = {
   id: 'timer-1',
   name: 'Demo Timer',
   stationCount: 10,
+  stationWorkoutTypes: [],
   roundsPerStation: 3,
   workMinutes: 0,
   workSeconds: 30,
@@ -62,6 +55,18 @@ const timer: Timer = {
 describe('TimerDetailPage', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    settingsMock.mockReturnValue({
+      coachMode: true,
+      kobeEverywhere: true,
+      endIntervalLongBeep: true,
+      countdownLast5Beeps: true,
+      intervalColors: {
+        warmup: '#ff8c00',
+        work: '#ff4444',
+        rest: '#2ecc71',
+        cooldown: '#3b82f6',
+      },
+    });
     getMock.mockResolvedValue(timer);
     listMock.mockResolvedValue([timer]);
     upsertMock.mockResolvedValue(undefined);
@@ -213,5 +218,50 @@ describe('TimerDetailPage', () => {
     fireEvent.blur(workInput);
 
     await waitFor(() => expect(upsertMock).not.toHaveBeenCalled());
+  });
+
+  it('shows workout type inputs in coach mode and persists on blur', async () => {
+    render(
+      <MemoryRouter initialEntries={['/timer/timer-1']}>
+        <Routes>
+          <Route path="/timer/:id" element={<TimerDetailPage />} />
+        </Routes>
+      </MemoryRouter>,
+    );
+
+    const station1Input = await screen.findByLabelText('Station 1 workout type');
+    fireEvent.change(station1Input, { target: { value: 'Pushups' } });
+    fireEvent.blur(station1Input);
+
+    await waitFor(() => expect(upsertMock).toHaveBeenCalledTimes(1));
+    expect(upsertMock.mock.calls[0][0]).toEqual(expect.objectContaining({
+      stationWorkoutTypes: expect.arrayContaining(['Pushups']),
+    }));
+  });
+
+  it('hides workout type section when coach mode is off', async () => {
+    settingsMock.mockReturnValue({
+      coachMode: false,
+      kobeEverywhere: true,
+      endIntervalLongBeep: true,
+      countdownLast5Beeps: true,
+      intervalColors: {
+        warmup: '#ff8c00',
+        work: '#ff4444',
+        rest: '#2ecc71',
+        cooldown: '#3b82f6',
+      },
+    });
+
+    render(
+      <MemoryRouter initialEntries={['/timer/timer-1']}>
+        <Routes>
+          <Route path="/timer/:id" element={<TimerDetailPage />} />
+        </Routes>
+      </MemoryRouter>,
+    );
+
+    await screen.findByLabelText('Timer name');
+    expect(screen.queryByText('Workout Types (Optional)')).toBeNull();
   });
 });

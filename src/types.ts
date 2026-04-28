@@ -5,6 +5,7 @@ export interface Timer {
   id: string;
   name: string;
   stationCount: number;
+  stationWorkoutTypes?: string[];
   roundsPerStation: number;
   workMinutes: number;
   workSeconds: number;
@@ -28,6 +29,7 @@ export interface TimerRun {
   timerId: string;
   timerNameAtRun: string;
   timerSnapshot: Timer;
+  stationWorkoutTypes?: string[];
   complete: boolean;
   ranAt: string;
   location: string;
