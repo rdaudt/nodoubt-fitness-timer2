@@ -596,6 +596,8 @@ describe('RunningTimerPage', () => {
     expect(firstRowActive).toHaveLength(1);
     expect(secondRowActive).toHaveLength(0);
     expect(firstRowActive?.[0]).toHaveAttribute('aria-label', 'Station 1 rest active');
+    expect(rows[0]).toHaveClass('station-active');
+    expect(rows[1]).not.toHaveClass('station-active');
   });
 
   it('shows transition arrow and no active station circles during station transition', async () => {
