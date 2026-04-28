@@ -304,6 +304,36 @@ export const TimerDetailPage = () => {
         />
       </div>
 
+      <label className="field detail-repeat-toggle-row">
+        <span>Include Warmup</span>
+        <input
+          className="settings-toggle-input"
+          type="checkbox"
+          checked={timer.warmupEnabled}
+          onChange={(e) => applyPatch({
+            warmupEnabled: e.target.checked,
+            warmupMinutes: e.target.checked ? (timer.warmupMinutes || 5) : 0,
+            warmupSeconds: e.target.checked ? timer.warmupSeconds : 0,
+          })}
+          aria-label="Include Warmup"
+        />
+      </label>
+
+      <label className="field detail-repeat-toggle-row">
+        <span>Include Cooldown</span>
+        <input
+          className="settings-toggle-input"
+          type="checkbox"
+          checked={timer.cooldownEnabled}
+          onChange={(e) => applyPatch({
+            cooldownEnabled: e.target.checked,
+            cooldownMinutes: e.target.checked ? (timer.cooldownMinutes || 5) : 0,
+            cooldownSeconds: e.target.checked ? timer.cooldownSeconds : 0,
+          })}
+          aria-label="Include Cooldown"
+        />
+      </label>
+
       <section className="timing-matrix">
         <h3>Timing Matrix</h3>
         <div className="timing-matrix-grid">
@@ -350,36 +380,6 @@ export const TimerDetailPage = () => {
           />
         </label>
       )}
-
-      <label className="field detail-repeat-toggle-row">
-        <span>Include Warmup</span>
-        <input
-          className="settings-toggle-input"
-          type="checkbox"
-          checked={timer.warmupEnabled}
-          onChange={(e) => applyPatch({
-            warmupEnabled: e.target.checked,
-            warmupMinutes: e.target.checked ? (timer.warmupMinutes || 5) : 0,
-            warmupSeconds: e.target.checked ? timer.warmupSeconds : 0,
-          })}
-          aria-label="Include Warmup"
-        />
-      </label>
-
-      <label className="field detail-repeat-toggle-row">
-        <span>Include Cooldown</span>
-        <input
-          className="settings-toggle-input"
-          type="checkbox"
-          checked={timer.cooldownEnabled}
-          onChange={(e) => applyPatch({
-            cooldownEnabled: e.target.checked,
-            cooldownMinutes: e.target.checked ? (timer.cooldownMinutes || 5) : 0,
-            cooldownSeconds: e.target.checked ? timer.cooldownSeconds : 0,
-          })}
-          aria-label="Include Cooldown"
-        />
-      </label>
 
       {error && <p className="error-inline">{error}</p>}
     </section>

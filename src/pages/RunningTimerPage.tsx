@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState, type CSSProperties } from 'react';
 import { Link, useParams, useSearchParams } from 'react-router-dom';
 import { formatClock } from '../lib/time';
 import { useTimerRunner } from '../lib/useTimerRunner';
@@ -135,7 +135,7 @@ const toCircleIndex = (entry: TimelineEntry | undefined): number | null => {
 export const RunningTimerPage = () => {
   const { id = '' } = useParams();
   const [searchParams] = useSearchParams();
-  const { settings } = useSettings();
+  const { settings, saveSettings } = useSettings();
   const [timer, setTimer] = useState<Timer | null>(null);
   const [showSessionMap, setShowSessionMap] = useState(true);
   const [confirmAction, setConfirmAction] = useState<'stop' | null>(null);
@@ -227,6 +227,10 @@ export const RunningTimerPage = () => {
       cooldownActive: activeEntry?.type === 'cooldown',
     };
   }, [activeEntry, timer]);
+  const sessionMapCircleCount = useMemo(() => {
+    const roundsPerStation = Math.max(1, timer?.roundsPerStation ?? 1);
+    return roundsPerStation * 2 - 1;
+  }, [timer?.roundsPerStation]);
 
   const requestPause = async () => {
     if (runner.state.status === 'running') {
@@ -255,22 +259,37 @@ export const RunningTimerPage = () => {
 
   return (
     <section className="run-page">
-      <div className={`run-layout${showSessionMap ? ' has-session-map' : ''}`}>
+      <div
+        className={`run-layout${showSessionMap ? ' has-session-map' : ''}`}
+        style={{ '--session-map-circle-count': sessionMapCircleCount } as CSSProperties}
+      >
         <div className="run-main-column">
           <header className="run-header">
             <p className="run-name">{timer.name}</p>
             <p className="run-remaining">Total remaining: {formatClock(runner.state.totalRemainingMs / 1000)}</p>
             {isStationStartPause && <p className="run-paused-flag run-set-start-flag pulse">Prepare to start</p>}
-            <label className="run-map-toggle-row">
-              <span>Session Map</span>
-              <input
-                className="settings-toggle-input"
-                type="checkbox"
-                checked={showSessionMap}
-                onChange={(e) => setShowSessionMap(e.target.checked)}
-                aria-label="Show session map"
-              />
-            </label>
+            <div className="run-header-toggles">
+              <label className="run-map-toggle-row">
+                <span>Kobe Everywhere</span>
+                <input
+                  className="settings-toggle-input"
+                  type="checkbox"
+                  checked={settings.kobeEverywhere}
+                  onChange={(e) => void saveSettings({ ...settings, kobeEverywhere: e.target.checked })}
+                  aria-label="Kobe Everywhere"
+                />
+              </label>
+              <label className="run-map-toggle-row">
+                <span>Session Map</span>
+                <input
+                  className="settings-toggle-input"
+                  type="checkbox"
+                  checked={showSessionMap}
+                  onChange={(e) => setShowSessionMap(e.target.checked)}
+                  aria-label="Show session map"
+                />
+              </label>
+            </div>
           </header>
 
           <article

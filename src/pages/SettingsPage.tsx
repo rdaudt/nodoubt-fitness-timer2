@@ -19,11 +19,11 @@ export const SettingsPage = () => {
 
   const unique = useMemo(() => intervalColorsAreUnique(draft), [draft]);
 
-  const onSave = async () => {
-    if (!unique) {
-      return;
+  const updateDraft = (next: AppSettings) => {
+    setDraft(next);
+    if (intervalColorsAreUnique(next)) {
+      void saveSettings(next);
     }
-    await saveSettings(draft);
   };
 
   return (
@@ -42,7 +42,7 @@ export const SettingsPage = () => {
             className="settings-toggle-input"
             type="checkbox"
             checked={draft.kobeEverywhere}
-            onChange={(e) => setDraft((prev) => ({ ...prev, kobeEverywhere: e.target.checked }))}
+            onChange={(e) => updateDraft({ ...draft, kobeEverywhere: e.target.checked })}
             aria-label="Kobe Everywhere"
           />
         </div>
@@ -58,13 +58,13 @@ export const SettingsPage = () => {
               type="color"
               value={draft.intervalColors[type]}
               onChange={(e) =>
-                setDraft((prev) => ({
-                  ...prev,
+                updateDraft({
+                  ...draft,
                   intervalColors: {
-                    ...prev.intervalColors,
+                    ...draft.intervalColors,
                     [type]: e.target.value,
                   },
-                }))
+                })
               }
             />
             <span>{TYPE_LABELS[type]} Color</span>
@@ -75,8 +75,7 @@ export const SettingsPage = () => {
       {!unique && <p className="error-inline">Each interval type must use a unique color.</p>}
 
       <div className="actions-row settings-actions-row">
-        <button className="primary-btn" onClick={onSave} disabled={!unique}>Save</button>
-        <button className="secondary-btn" onClick={() => setDraft(DEFAULT_SETTINGS)}>Reset Defaults</button>
+        <button className="secondary-btn" onClick={() => updateDraft(DEFAULT_SETTINGS)}>Reset Defaults</button>
       </div>
 
       {draft.kobeEverywhere && (

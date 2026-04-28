@@ -4,16 +4,18 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { TimelineEntry } from '../types';
 import { RunningTimerPage } from './RunningTimerPage';
 
-const { getMock, startMock, runnerMock, settingsMock } = vi.hoisted(() => ({
+const { getMock, startMock, runnerMock, settingsMock, saveSettingsMock } = vi.hoisted(() => ({
   getMock: vi.fn(),
   startMock: vi.fn(),
   runnerMock: vi.fn(),
   settingsMock: vi.fn(),
+  saveSettingsMock: vi.fn(),
 }));
 
 vi.mock('../services/settingsContext', () => ({
   useSettings: () => ({
     settings: settingsMock(),
+    saveSettings: saveSettingsMock,
   }),
 }));
 
@@ -60,6 +62,7 @@ const renderRunningPage = (initialPath: string) => render(
 describe('RunningTimerPage', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    saveSettingsMock.mockResolvedValue(undefined);
     settingsMock.mockReturnValue({
       coachMode: true,
       kobeEverywhere: true,
@@ -653,5 +656,24 @@ describe('RunningTimerPage', () => {
 
     const firstWorkCircle = container.querySelector('.run-session-map-row .run-session-map-circle');
     expect(firstWorkCircle).toHaveStyle({ backgroundColor: '#123456' });
+  });
+
+  it('persists Kobe Everywhere immediately when toggled', async () => {
+    renderRunningPage('/timer/timer-1/run');
+    const toggle = await screen.findByLabelText('Kobe Everywhere');
+
+    fireEvent.click(toggle);
+
+    expect(saveSettingsMock).toHaveBeenCalledTimes(1);
+    expect(saveSettingsMock).toHaveBeenCalledWith({
+      coachMode: true,
+      kobeEverywhere: false,
+      intervalColors: {
+        warmup: '#ff8c00',
+        work: '#ff4444',
+        rest: '#2ecc71',
+        cooldown: '#3b82f6',
+      },
+    });
   });
 });
