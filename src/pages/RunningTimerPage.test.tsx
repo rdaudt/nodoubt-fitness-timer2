@@ -4,8 +4,9 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { TimelineEntry } from '../types';
 import { RunningTimerPage } from './RunningTimerPage';
 
-const { getMock, startMock, runnerMock, settingsMock, saveSettingsMock } = vi.hoisted(() => ({
+const { getMock, upsertMock, startMock, runnerMock, settingsMock, saveSettingsMock } = vi.hoisted(() => ({
   getMock: vi.fn(),
+  upsertMock: vi.fn(),
   startMock: vi.fn(),
   runnerMock: vi.fn(),
   settingsMock: vi.fn(),
@@ -22,6 +23,7 @@ vi.mock('../services/settingsContext', () => ({
 vi.mock('../services/storage', () => ({
   TimerRepository: {
     get: getMock,
+    upsert: upsertMock,
   },
 }));
 
@@ -63,6 +65,7 @@ describe('RunningTimerPage', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     saveSettingsMock.mockResolvedValue(undefined);
+    upsertMock.mockResolvedValue(undefined);
     settingsMock.mockReturnValue({
       coachMode: true,
       kobeEverywhere: true,
@@ -675,5 +678,18 @@ describe('RunningTimerPage', () => {
         cooldown: '#3b82f6',
       },
     });
+  });
+
+  it('persists Start Set Manually immediately when toggled', async () => {
+    renderRunningPage('/timer/timer-1/run');
+    const toggle = await screen.findByLabelText('Start Set Manually');
+
+    fireEvent.click(toggle);
+
+    expect(upsertMock).toHaveBeenCalledTimes(1);
+    expect(upsertMock).toHaveBeenCalledWith(expect.objectContaining({
+      id: 'timer-1',
+      startStationWorkManually: true,
+    }));
   });
 });
