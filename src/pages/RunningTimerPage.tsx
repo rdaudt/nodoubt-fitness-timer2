@@ -198,19 +198,21 @@ export const RunningTimerPage = () => {
   const activeEntry = runner.timeline[runner.state.currentIndex];
   const nextEntry = runner.timeline[runner.state.currentIndex + 1];
   const isStationStartPause = runner.state.status === 'paused' && runner.state.pauseReason === 'stationStart';
-  const workImageByEntryId = useMemo(() => {
-    const imageByEntryId: Record<string, string> = {};
-    let workIndex = 0;
+  const workImageByStation = useMemo(() => {
+    const imageByStation: Record<number, string> = {};
+    let stationIndex = 0;
 
     runner.timeline.forEach((entry) => {
-      if (entry.type !== 'work') {
+      if (entry.type !== 'work' || !entry.stationNumber) {
         return;
       }
-      imageByEntryId[entry.id] = workImages[workIndex % workImages.length];
-      workIndex += 1;
+      if (!(entry.stationNumber in imageByStation)) {
+        imageByStation[entry.stationNumber] = workImages[stationIndex % workImages.length];
+        stationIndex += 1;
+      }
     });
 
-    return imageByEntryId;
+    return imageByStation;
   }, [runner.timeline]);
   const currentImage = useMemo(() => {
     if (!settings.kobeEverywhere) {
@@ -220,10 +222,13 @@ export const RunningTimerPage = () => {
       return undefined;
     }
     if (activeEntry.type === 'work') {
-      return workImageByEntryId[activeEntry.id] ?? currentImageByType.work;
+      if (!activeEntry.stationNumber) {
+        return currentImageByType.work;
+      }
+      return workImageByStation[activeEntry.stationNumber] ?? currentImageByType.work;
     }
     return currentImageByType[activeEntry.type];
-  }, [activeEntry, settings.kobeEverywhere, workImageByEntryId]);
+  }, [activeEntry, settings.kobeEverywhere, workImageByStation]);
   const currentStyle = useMemo(
     () => entryCardStyle(activeEntry, settings.intervalColors),
     [activeEntry, settings.intervalColors],
