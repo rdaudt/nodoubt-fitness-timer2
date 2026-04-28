@@ -114,9 +114,30 @@ export const TimerRepository = {
     const db = await dbPromise;
     await db.put('timers', normalizeTimerFields(timer));
   },
+  async upsertMany(timers: Timer[]): Promise<void> {
+    const db = await dbPromise;
+    const tx = db.transaction('timers', 'readwrite');
+    for (const timer of timers) {
+      await tx.store.put(normalizeTimerFields(timer));
+    }
+    await tx.done;
+  },
   async remove(id: string): Promise<void> {
     const db = await dbPromise;
     await db.delete('timers', id);
+  },
+  async clearAll(): Promise<void> {
+    const db = await dbPromise;
+    await db.clear('timers');
+  },
+  async replaceAll(timers: Timer[]): Promise<void> {
+    const db = await dbPromise;
+    const tx = db.transaction('timers', 'readwrite');
+    await tx.store.clear();
+    for (const timer of timers) {
+      await tx.store.put(normalizeTimerFields(timer));
+    }
+    await tx.done;
   },
 };
 
