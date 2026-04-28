@@ -11,7 +11,12 @@ export const TimerListPage = () => {
   const [timers, setTimers] = useState<Timer[]>([]);
 
   useEffect(() => {
-    TimerRepository.list().then(setTimers);
+    const loadTimers = () => {
+      TimerRepository.list().then(setTimers);
+    };
+    loadTimers();
+    window.addEventListener('timers:changed', loadTimers);
+    return () => window.removeEventListener('timers:changed', loadTimers);
   }, []);
 
   const onDeleteTimer = async (id: string) => {

@@ -516,6 +516,16 @@ select {
   margin-bottom: 1rem;
 }
 
+.settings-page {
+  position: relative;
+  overflow: hidden;
+}
+
+.settings-page > * {
+  position: relative;
+  z-index: 1;
+}
+
 .settings-row {
   display: flex;
   align-items: center;
@@ -538,6 +548,23 @@ select {
 
 .settings-actions-row {
   margin-top: 1.4rem;
+}
+
+.settings-transfer-section {
+  margin-top: 1.2rem;
+}
+
+.settings-subtitle {
+  margin: 0;
+  font-family: 'Barlow Condensed', sans-serif;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  font-size: 1.15rem;
+}
+
+.settings-success-inline {
+  color: #7bd88f;
+  margin: 0.2rem 0 0;
 }
 
 .settings-toggle-row {
@@ -599,11 +626,12 @@ select {
 
 .settings-float-cat-wrap {
   position: fixed;
-  right: 0.85rem;
+  right: -0.35rem;
   bottom: calc(3.95rem + env(safe-area-inset-bottom));
-  z-index: 8;
-  pointer-events: auto;
+  z-index: 0;
+  pointer-events: none;
   display: block;
+  opacity: 1;
 }
 
 .settings-float-cat {
@@ -1952,7 +1980,7 @@ select {
   }
 
   .settings-float-cat-wrap {
-    right: 1.2rem;
+    right: 0;
     bottom: calc(4.2rem + env(safe-area-inset-bottom));
   }
 
