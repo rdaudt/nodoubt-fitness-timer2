@@ -238,6 +238,19 @@ export const RunningTimerPage = () => {
     }
   };
 
+  const persistTimerPatch = async (patch: Partial<Timer>) => {
+    if (!timer) {
+      return;
+    }
+    const nextTimer: Timer = {
+      ...timer,
+      ...patch,
+      updatedAt: new Date().toISOString(),
+    };
+    setTimer(nextTimer);
+    await TimerRepository.upsert(nextTimer);
+  };
+
   const requestStop = () => {
     if (runner.state.status === 'running') {
       setConfirmAction('stop');
@@ -289,6 +302,18 @@ export const RunningTimerPage = () => {
                   aria-label="Show session map"
                 />
               </label>
+              {settings.coachMode && (
+                <label className="run-map-toggle-row">
+                  <span>Start Set Manually</span>
+                  <input
+                    className="settings-toggle-input"
+                    type="checkbox"
+                    checked={timer.startStationWorkManually}
+                    onChange={(e) => void persistTimerPatch({ startStationWorkManually: e.target.checked })}
+                    aria-label="Start Set Manually"
+                  />
+                </label>
+              )}
             </div>
           </header>
 
