@@ -762,4 +762,42 @@ describe('RunningTimerPage', () => {
     }
     expect(runActions.compareDocumentPosition(bottomControls) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
   });
+
+  it('shows stop confirmation inline and hides controls while confirming', async () => {
+    const timeline: TimelineEntry[] = [
+      {
+        id: 'work-1-1',
+        type: 'work',
+        name: 'Work',
+        durationMs: 30000,
+        stationNumber: 1,
+        roundNumber: 1,
+      },
+    ];
+
+    runnerMock.mockReturnValue({
+      timeline,
+      state: {
+        status: 'running',
+        pauseReason: null,
+        currentIndex: 0,
+        currentRemainingMs: 16000,
+        totalRemainingMs: 30000,
+      },
+      start: startMock,
+      pause: vi.fn(),
+      resume: vi.fn(),
+      stop: vi.fn(),
+    });
+
+    const { container } = renderRunningPage('/timer/timer-1/run');
+    await screen.findByText('Work');
+
+    fireEvent.click(screen.getByRole('button', { name: 'Stop Timer' }));
+
+    expect(screen.getByText('Stop the timer?')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Confirm Stop' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Cancel' })).toBeInTheDocument();
+    expect(container.querySelector('.run-bottom-toggles')).toBeNull();
+  });
 });

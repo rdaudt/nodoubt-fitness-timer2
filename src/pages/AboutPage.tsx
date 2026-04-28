@@ -1,7 +1,7 @@
 import { BRAND } from '../config';
 import { useSettings } from '../services/settingsContext';
 import kobeAiSolutions from '../../media/kobe-ai-solutions.png';
-import kobeAndTheCoach from '../../media/kobe-and-the-coach.png';
+import coachGabeAndKobe from '../../media/coach-gabe-and-kobe.png';
 
 export const AboutPage = () => {
   const { settings } = useSettings();
@@ -9,7 +9,7 @@ export const AboutPage = () => {
   return (
     <section className="about-page">
       <h1 className="screen-title">About NoDoubt Fitness</h1>
-      <img src={kobeAndTheCoach} alt="Coach Gabe with Kobe the Abby" className="owner-photo about-coach-photo" />
+      <img src={coachGabeAndKobe} alt="Coach Gabe with Kobe the Abby" className="owner-photo about-coach-photo" />
       <p className="about-coach-name">Coach Gabe</p>
       <p className="about-coach-subname">(and Kobe the Abby)</p>
       <p className="about-copy">{BRAND.aboutBio}</p>
