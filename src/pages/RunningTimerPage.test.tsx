@@ -239,7 +239,7 @@ describe('RunningTimerPage', () => {
     expect(await screen.findByText('Station Transition 2')).toBeInTheDocument();
   });
 
-  it('rotates work card image across work entries', async () => {
+  it('keeps the same work card image across rounds in the same station', async () => {
     const timeline: TimelineEntry[] = [
       {
         id: 'work-1-1',
@@ -256,6 +256,76 @@ describe('RunningTimerPage', () => {
         durationMs: 30000,
         stationNumber: 1,
         roundNumber: 2,
+      },
+    ];
+
+    runnerMock.mockReturnValue({
+      timeline,
+      state: {
+        status: 'running',
+        pauseReason: null,
+        currentIndex: 0,
+        currentRemainingMs: 12000,
+        totalRemainingMs: 60000,
+      },
+      start: startMock,
+      pause: vi.fn(),
+      resume: vi.fn(),
+      stop: vi.fn(),
+    });
+
+    const { container, rerender } = renderRunningPage('/timer/timer-1/run');
+    await screen.findAllByText('Work');
+    const firstImage = container.querySelector('.run-current-image');
+    expect(firstImage).toBeTruthy();
+    const firstSrc = firstImage?.getAttribute('src');
+
+    runnerMock.mockReturnValue({
+      timeline,
+      state: {
+        status: 'running',
+        pauseReason: null,
+        currentIndex: 1,
+        currentRemainingMs: 11000,
+        totalRemainingMs: 30000,
+      },
+      start: startMock,
+      pause: vi.fn(),
+      resume: vi.fn(),
+      stop: vi.fn(),
+    });
+
+    rerender(
+      <MemoryRouter initialEntries={['/timer/timer-1/run']}>
+        <Routes>
+          <Route path="/timer/:id/run" element={<RunningTimerPage />} />
+        </Routes>
+      </MemoryRouter>,
+    );
+
+    const secondImage = container.querySelector('.run-current-image');
+    expect(secondImage).toBeTruthy();
+    const secondSrc = secondImage?.getAttribute('src');
+    expect(firstSrc).toBe(secondSrc);
+  });
+
+  it('changes work card image when advancing to a new station', async () => {
+    const timeline: TimelineEntry[] = [
+      {
+        id: 'work-1-1',
+        type: 'work',
+        name: 'Work',
+        durationMs: 30000,
+        stationNumber: 1,
+        roundNumber: 1,
+      },
+      {
+        id: 'work-2-1',
+        type: 'work',
+        name: 'Work',
+        durationMs: 30000,
+        stationNumber: 2,
+        roundNumber: 1,
       },
     ];
 
