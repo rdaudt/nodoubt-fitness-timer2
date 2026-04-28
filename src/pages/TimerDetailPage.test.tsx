@@ -139,4 +139,77 @@ describe('TimerDetailPage', () => {
     expect(upsertMock.mock.calls[0][0].workMinutes).toBe(0);
     expect(upsertMock.mock.calls[0][0].workSeconds).toBe(45);
   });
+
+  it('interprets one or two typed digits as seconds', async () => {
+    render(
+      <MemoryRouter initialEntries={['/timer/timer-1']}>
+        <Routes>
+          <Route path="/timer/:id" element={<TimerDetailPage />} />
+        </Routes>
+      </MemoryRouter>,
+    );
+
+    const workInput = await screen.findByLabelText('Work time');
+
+    fireEvent.focus(workInput);
+    fireEvent.change(workInput, { target: { value: '5' } });
+    fireEvent.blur(workInput);
+
+    await waitFor(() => expect(upsertMock).toHaveBeenCalledTimes(1));
+    expect(upsertMock.mock.calls[0][0].workMinutes).toBe(0);
+    expect(upsertMock.mock.calls[0][0].workSeconds).toBe(5);
+
+    fireEvent.focus(workInput);
+    fireEvent.change(workInput, { target: { value: '15' } });
+    fireEvent.blur(workInput);
+
+    await waitFor(() => expect(upsertMock).toHaveBeenCalledTimes(2));
+    expect(upsertMock.mock.calls[1][0].workMinutes).toBe(0);
+    expect(upsertMock.mock.calls[1][0].workSeconds).toBe(15);
+  });
+
+  it('interprets three or four typed digits as minutes and seconds', async () => {
+    render(
+      <MemoryRouter initialEntries={['/timer/timer-1']}>
+        <Routes>
+          <Route path="/timer/:id" element={<TimerDetailPage />} />
+        </Routes>
+      </MemoryRouter>,
+    );
+
+    const workInput = await screen.findByLabelText('Work time');
+
+    fireEvent.focus(workInput);
+    fireEvent.change(workInput, { target: { value: '130' } });
+    fireEvent.blur(workInput);
+
+    await waitFor(() => expect(upsertMock).toHaveBeenCalledTimes(1));
+    expect(upsertMock.mock.calls[0][0].workMinutes).toBe(1);
+    expect(upsertMock.mock.calls[0][0].workSeconds).toBe(30);
+
+    fireEvent.focus(workInput);
+    fireEvent.change(workInput, { target: { value: '1510' } });
+    fireEvent.blur(workInput);
+
+    await waitFor(() => expect(upsertMock).toHaveBeenCalledTimes(2));
+    expect(upsertMock.mock.calls[1][0].workMinutes).toBe(15);
+    expect(upsertMock.mock.calls[1][0].workSeconds).toBe(10);
+  });
+
+  it('rejects invalid seconds and does not persist out-of-range values', async () => {
+    render(
+      <MemoryRouter initialEntries={['/timer/timer-1']}>
+        <Routes>
+          <Route path="/timer/:id" element={<TimerDetailPage />} />
+        </Routes>
+      </MemoryRouter>,
+    );
+
+    const workInput = await screen.findByLabelText('Work time');
+    fireEvent.focus(workInput);
+    fireEvent.change(workInput, { target: { value: '1560' } });
+    fireEvent.blur(workInput);
+
+    await waitFor(() => expect(upsertMock).not.toHaveBeenCalled());
+  });
 });
