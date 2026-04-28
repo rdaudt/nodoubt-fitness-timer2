@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { buildTimeline } from './timerEngine';
+import { shouldPlayCountdownBeep } from './useTimerRunner';
 import type { Timer } from '../types';
 
 const timer: Timer = {
@@ -27,5 +28,14 @@ const timer: Timer = {
 describe('useTimerRunner dependencies', () => {
   it('uses timeline entries that can support manual station starts', () => {
     expect(buildTimeline(timer).map((entry) => entry.type)).toEqual(['warmup', 'work', 'rest', 'work']);
+  });
+
+  it('returns countdown beep seconds only for 5..1 boundaries', () => {
+    expect(shouldPlayCountdownBeep(5000, null)).toBe(5);
+    expect(shouldPlayCountdownBeep(4000, 5)).toBe(4);
+    expect(shouldPlayCountdownBeep(3200, 4)).toBeNull();
+    expect(shouldPlayCountdownBeep(1000, 2)).toBe(1);
+    expect(shouldPlayCountdownBeep(0, 1)).toBeNull();
+    expect(shouldPlayCountdownBeep(6100, null)).toBeNull();
   });
 });
