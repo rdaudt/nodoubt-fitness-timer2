@@ -845,7 +845,24 @@ select {
   display: flex;
   gap: var(--session-map-dot-gap);
   align-items: center;
-  padding-left: var(--session-map-left-offset);
+  padding-left: calc(var(--session-map-left-offset) + 10px);
+}
+
+.run-session-map-row-number {
+  position: absolute;
+  left: 0;
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 0.56rem;
+  font-weight: 800;
+  line-height: 1;
+  letter-spacing: 0.08em;
+  color: #ffffff;
+  opacity: 0.38;
+  pointer-events: none;
+}
+
+.run-session-map-row.station-active .run-session-map-row-number {
+  opacity: 1;
 }
 
 .run-session-map-standalone {
@@ -1877,7 +1894,7 @@ select {
 
   .run-session-map-row {
     gap: var(--session-map-dot-gap);
-    padding-left: var(--session-map-left-offset);
+    padding-left: calc(var(--session-map-left-offset) + 9px);
   }
 
   .run-session-map-standalone {
