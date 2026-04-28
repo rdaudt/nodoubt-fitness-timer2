@@ -21,15 +21,36 @@ const toSeconds = (minutes: number, seconds: number): number =>
 const toNumber = (value: string, min = 0): number =>
   Number.isNaN(Number(value)) ? min : Math.max(min, Number(value));
 
-const parseClockInput = (value: string): number | null => {
-  const trimmed = value.trim();
-  const match = /^(\d+):([0-5]\d)$/.exec(trimmed);
-  if (!match) {
+const normalizeTimeDigits = (value: string): string => value.replace(/\D/g, '').slice(0, 4);
+
+const parseTimeDigits = (digits: string): number | null => {
+  if (!digits) {
     return null;
   }
-  const minutes = Number(match[1]);
-  const seconds = Number(match[2]);
+
+  if (digits.length <= 2) {
+    const seconds = Number(digits);
+    if (seconds > 59) {
+      return null;
+    }
+    return seconds;
+  }
+
+  const minutes = Number(digits.slice(0, -2));
+  const seconds = Number(digits.slice(-2));
+  if (minutes > 99 || seconds > 59) {
+    return null;
+  }
   return minutes * 60 + seconds;
+};
+
+const toTimeDigits = (totalSeconds: number): string => {
+  const minutes = Math.floor(totalSeconds / 60);
+  const seconds = totalSeconds % 60;
+  if (minutes <= 0) {
+    return String(seconds);
+  }
+  return `${minutes}${String(seconds).padStart(2, '0')}`;
 };
 
 const CountEditor = ({
@@ -88,29 +109,47 @@ const TimeMatrixBlock = ({
   label,
   totalSeconds,
   disabled = false,
-  onCommit,
   onPersist,
 }: {
   label: string;
   totalSeconds: number;
   disabled?: boolean;
-  onCommit: (seconds: number) => void;
   onPersist: (seconds: number) => void;
 }) => {
-  const [clockValue, setClockValue] = useState(formatClock(totalSeconds));
+  const [draftDigits, setDraftDigits] = useState(toTimeDigits(totalSeconds));
+  const [focused, setFocused] = useState(false);
 
   useEffect(() => {
-    setClockValue(formatClock(totalSeconds));
+    setDraftDigits(toTimeDigits(totalSeconds));
   }, [totalSeconds]);
 
+  const onFocusClock = () => {
+    setFocused(true);
+    setDraftDigits(toTimeDigits(totalSeconds));
+  };
+
+  const onChangeClock = (nextValue: string) => {
+    const normalized = normalizeTimeDigits(nextValue);
+    if (normalized === '') {
+      setDraftDigits('');
+      return;
+    }
+    const parsed = parseTimeDigits(normalized);
+    if (parsed === null) {
+      return;
+    }
+    setDraftDigits(normalized);
+  };
+
   const onBlurClock = () => {
-    const parsed = parseClockInput(clockValue);
-    if (parsed !== null) {
-      onCommit(parsed);
+    setFocused(false);
+    const parsed = parseTimeDigits(draftDigits);
+    if (parsed !== null && parsed !== totalSeconds) {
       onPersist(parsed);
       return;
     }
-    setClockValue(formatClock(totalSeconds));
+    // Revert invalid/empty entry to the current persisted value.
+    setDraftDigits(toTimeDigits(totalSeconds));
   };
 
   return (
@@ -121,8 +160,9 @@ const TimeMatrixBlock = ({
         type="text"
         inputMode="numeric"
         disabled={disabled}
-        value={clockValue}
-        onChange={(e) => setClockValue(e.target.value)}
+        value={focused ? draftDigits : formatClock(totalSeconds)}
+        onFocus={onFocusClock}
+        onChange={(e) => onChangeClock(e.target.value)}
         onBlur={onBlurClock}
         aria-label={`${label} time`}
       />
@@ -198,19 +238,13 @@ export const TimerDetailPage = () => {
       | 'warmupSeconds'
       | 'cooldownSeconds',
     nextSeconds: number,
-    persistNow = true,
   ) => {
     const parsed = fromSeconds(nextSeconds);
     const patch = {
       [minutesKey]: parsed.minutes,
       [secondsKey]: parsed.seconds,
     } as Partial<Timer>;
-
-    if (persistNow) {
-      await applyPatch(patch);
-      return;
-    }
-    setTimer((prev) => (prev ? { ...prev, ...patch } : prev));
+    await applyPatch(patch);
   };
 
   const onDeleteTimer = async () => {
@@ -276,34 +310,29 @@ export const TimerDetailPage = () => {
           <TimeMatrixBlock
             label="Work"
             totalSeconds={toSeconds(timer.workMinutes, timer.workSeconds)}
-            onCommit={(seconds) => patchTime('workMinutes', 'workSeconds', seconds, false)}
-            onPersist={(seconds) => patchTime('workMinutes', 'workSeconds', seconds, true)}
+            onPersist={(seconds) => patchTime('workMinutes', 'workSeconds', seconds)}
           />
           <TimeMatrixBlock
             label="Rest"
             totalSeconds={toSeconds(timer.restMinutes, timer.restSeconds)}
-            onCommit={(seconds) => patchTime('restMinutes', 'restSeconds', seconds, false)}
-            onPersist={(seconds) => patchTime('restMinutes', 'restSeconds', seconds, true)}
+            onPersist={(seconds) => patchTime('restMinutes', 'restSeconds', seconds)}
             disabled={timer.roundsPerStation <= 1}
           />
           <TimeMatrixBlock
             label="Station Transition"
             totalSeconds={toSeconds(timer.stationTransitionMinutes, timer.stationTransitionSeconds)}
-            onCommit={(seconds) => patchTime('stationTransitionMinutes', 'stationTransitionSeconds', seconds, false)}
-            onPersist={(seconds) => patchTime('stationTransitionMinutes', 'stationTransitionSeconds', seconds, true)}
+            onPersist={(seconds) => patchTime('stationTransitionMinutes', 'stationTransitionSeconds', seconds)}
           />
           <TimeMatrixBlock
             label="Warmup"
             totalSeconds={toSeconds(timer.warmupMinutes, timer.warmupSeconds)}
-            onCommit={(seconds) => patchTime('warmupMinutes', 'warmupSeconds', seconds, false)}
-            onPersist={(seconds) => patchTime('warmupMinutes', 'warmupSeconds', seconds, true)}
+            onPersist={(seconds) => patchTime('warmupMinutes', 'warmupSeconds', seconds)}
             disabled={!timer.warmupEnabled}
           />
           <TimeMatrixBlock
             label="Cooldown"
             totalSeconds={toSeconds(timer.cooldownMinutes, timer.cooldownSeconds)}
-            onCommit={(seconds) => patchTime('cooldownMinutes', 'cooldownSeconds', seconds, false)}
-            onPersist={(seconds) => patchTime('cooldownMinutes', 'cooldownSeconds', seconds, true)}
+            onPersist={(seconds) => patchTime('cooldownMinutes', 'cooldownSeconds', seconds)}
             disabled={!timer.cooldownEnabled}
           />
         </div>
