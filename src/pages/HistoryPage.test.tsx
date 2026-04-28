@@ -1,6 +1,6 @@
-import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { HistoryPage } from './HistoryPage';
 
 const { listAllRunsMock, listTimersMock, updateRunMock } = vi.hoisted(() => ({
@@ -24,6 +24,7 @@ const timer = {
   id: 'timer-1',
   name: 'Demo Timer',
   stationCount: 1,
+  stationWorkoutTypes: ['Burpees'],
   roundsPerStation: 1,
   workMinutes: 0,
   workSeconds: 30,
@@ -51,6 +52,7 @@ describe('HistoryPage', () => {
       timerId: 'timer-1',
       timerNameAtRun: 'Demo Timer',
       timerSnapshot: timer,
+      stationWorkoutTypes: ['Burpees'],
       complete: false,
       ranAt: '2026-02-01T10:00:00.000Z',
       location: '',
@@ -77,5 +79,33 @@ describe('HistoryPage', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Save' }));
     await waitFor(() => expect(updateRunMock).toHaveBeenCalledTimes(1));
     expect(updateRunMock.mock.calls[0][0]).toEqual(expect.objectContaining({ location: 'Downtown Box' }));
+  });
+
+  afterEach(() => {
+    cleanup();
+  });
+
+  it('edits run station workout types without mutating timer', async () => {
+    render(
+      <MemoryRouter initialEntries={['/history']}>
+        <Routes>
+          <Route path="/history" element={<HistoryPage />} />
+        </Routes>
+      </MemoryRouter>,
+    );
+
+    await screen.findByRole('link', { name: 'Demo Timer' });
+    fireEvent.click(screen.getByRole('button', { name: 'Edit' }));
+    const stationInput = screen.getByLabelText('Run station 1 workout type');
+    fireEvent.change(stationInput, { target: { value: 'Pullups' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Save' }));
+
+    await waitFor(() => expect(updateRunMock).toHaveBeenCalledTimes(1));
+    expect(updateRunMock.mock.calls[0][0]).toEqual(expect.objectContaining({
+      stationWorkoutTypes: ['Pullups'],
+      timerSnapshot: expect.objectContaining({
+        stationWorkoutTypes: ['Burpees'],
+      }),
+    }));
   });
 });

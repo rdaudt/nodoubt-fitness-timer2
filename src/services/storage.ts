@@ -68,6 +68,11 @@ const normalizeTimerRun = (run: TimerRun): TimerRun | null => {
   return {
     ...run,
     timerSnapshot: snapshot,
+    stationWorkoutTypes: Array.isArray(run.stationWorkoutTypes)
+      ? run.stationWorkoutTypes
+        .slice(0, snapshot.stationCount)
+        .map((item) => (typeof item === 'string' ? item : String(item ?? '')).trim())
+      : snapshot.stationWorkoutTypes ?? [],
     complete: run.complete ?? true,
     location: run.location ?? '',
   };

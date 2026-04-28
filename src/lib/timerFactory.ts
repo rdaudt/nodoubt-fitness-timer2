@@ -113,6 +113,7 @@ export const newTimer = (): Timer => {
     id: crypto.randomUUID(),
     name: randomTimerName(),
     stationCount: 10,
+    stationWorkoutTypes: [],
     roundsPerStation: 3,
     workMinutes: 0,
     workSeconds: 30,

@@ -264,6 +264,7 @@ export const TimerDetailPage = () => {
   }
 
   const stationLabel = settings.coachMode ? '# Stations' : '# Sets';
+  const stationWorkoutTypes = timer.stationWorkoutTypes ?? [];
 
   return (
     <section className="timer-detail-page compact-editor">
@@ -379,6 +380,34 @@ export const TimerDetailPage = () => {
             aria-label="Start Set Manually"
           />
         </label>
+      )}
+
+      {settings.coachMode && (
+        <section className="stack">
+          <h3>Workout Types (Optional)</h3>
+          {Array.from({ length: timer.stationCount }, (_, index) => (
+            <label className="field" key={`station-workout-${index + 1}`}>
+              <span>Station {index + 1}</span>
+              <input
+                type="text"
+                value={stationWorkoutTypes[index] ?? ''}
+                maxLength={40}
+                onChange={(e) => {
+                  const next = [...stationWorkoutTypes];
+                  next[index] = e.target.value;
+                  setTimer((prev) => (prev ? { ...prev, stationWorkoutTypes: next } : prev));
+                }}
+                onBlur={() => {
+                  const next = [...(timer.stationWorkoutTypes ?? [])];
+                  next[index] = (next[index] ?? '').trim();
+                  void applyPatch({ stationWorkoutTypes: next });
+                }}
+                aria-label={`Station ${index + 1} workout type`}
+                placeholder="e.g. pushups"
+              />
+            </label>
+          ))}
+        </section>
       )}
 
       {error && <p className="error-inline">{error}</p>}
