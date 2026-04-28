@@ -692,4 +692,45 @@ describe('RunningTimerPage', () => {
       startStationWorkManually: true,
     }));
   });
+
+  it('renders controls block after the primary run actions', async () => {
+    const timeline: TimelineEntry[] = [
+      {
+        id: 'work-1-1',
+        type: 'work',
+        name: 'Work',
+        durationMs: 30000,
+        stationNumber: 1,
+        roundNumber: 1,
+      },
+    ];
+
+    runnerMock.mockReturnValue({
+      timeline,
+      state: {
+        status: 'running',
+        pauseReason: null,
+        currentIndex: 0,
+        currentRemainingMs: 16000,
+        totalRemainingMs: 30000,
+      },
+      start: startMock,
+      pause: vi.fn(),
+      resume: vi.fn(),
+      stop: vi.fn(),
+    });
+
+    const { container } = renderRunningPage('/timer/timer-1/run');
+    await screen.findByText('Work');
+
+    const runActions = container.querySelector('.run-actions');
+    const bottomControls = container.querySelector('.run-bottom-toggles');
+
+    expect(runActions).toBeTruthy();
+    expect(bottomControls).toBeTruthy();
+    if (!runActions || !bottomControls) {
+      throw new Error('Expected run actions and bottom controls to exist');
+    }
+    expect(runActions.compareDocumentPosition(bottomControls) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+  });
 });

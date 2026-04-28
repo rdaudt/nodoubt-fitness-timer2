@@ -792,9 +792,9 @@ select {
   gap: 0.5rem;
   margin-top: 0;
   font-family: 'Barlow Condensed', sans-serif;
-  font-size: 1.02rem;
+  font-size: 0.94rem;
   font-weight: 700;
-  letter-spacing: 0.04em;
+  letter-spacing: 0.03em;
   text-transform: uppercase;
   white-space: nowrap;
   min-width: 0;
@@ -802,22 +802,24 @@ select {
   width: 100%;
 }
 
-.run-header-toggles {
+.run-bottom-toggles {
   display: flex;
   flex-direction: column;
   align-items: flex-start;
-  background: #000000;
+  background: #101010;
+  border: 1px solid #252525;
+  border-radius: 10px;
   width: 100%;
-  gap: 0.32rem;
-  padding: 0.55rem 0.7rem;
-  margin-top: 0.45rem;
+  gap: 0.28rem;
+  padding: 0.5rem 0.6rem;
+  margin-top: 0.15rem;
 }
 
-.run-header-toggles .run-map-toggle-row:first-child {
+.run-bottom-toggles .run-map-toggle-row:first-child {
   padding-right: 0;
 }
 
-.run-header-toggles .run-map-toggle-row:last-child {
+.run-bottom-toggles .run-map-toggle-row:last-child {
   padding-left: 0;
 }
 
@@ -825,7 +827,7 @@ select {
   width: 100%;
   min-width: 0;
   justify-self: stretch;
-  padding-top: 8.5rem;
+  padding-top: var(--run-session-map-offset, 10.6rem);
   padding-left: 2px;
   padding-right: 6px;
   display: grid;
@@ -1850,7 +1852,7 @@ select {
   }
 
   .run-session-map {
-    padding-top: 8.2rem;
+    padding-top: var(--run-session-map-offset, 10.3rem);
     padding-left: 0;
     padding-right: 6px;
     gap: 0.18rem;
