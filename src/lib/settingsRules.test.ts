@@ -12,6 +12,8 @@ describe('settingsRules', () => {
       intervalColorsAreUnique({
         coachMode: true,
         kobeEverywhere: true,
+        endIntervalLongBeep: true,
+        countdownLast5Beeps: true,
         intervalColors: {
           warmup: '#111111',
           work: '#111111',

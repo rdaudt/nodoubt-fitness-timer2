@@ -148,7 +148,10 @@ export const RunningTimerPage = () => {
     TimerRepository.get(id).then((value) => setTimer(value ?? null));
   }, [id]);
 
-  const runner = useTimerRunner(timer ?? emptyTimer(), settings.coachMode);
+  const runner = useTimerRunner(timer ?? emptyTimer(), settings.coachMode, {
+    endIntervalLongBeep: settings.endIntervalLongBeep,
+    countdownLast5Beeps: settings.countdownLast5Beeps,
+  });
 
   useEffect(() => {
     if (!timer || autoStartedRef.current || runner.state.status !== 'idle' || runner.timeline.length === 0) {
@@ -387,6 +390,26 @@ export const RunningTimerPage = () => {
                 />
               </label>
             )}
+            <label className="run-map-toggle-row">
+              <span>5-second beeps at end of interval</span>
+              <input
+                className="settings-toggle-input"
+                type="checkbox"
+                checked={settings.countdownLast5Beeps}
+                onChange={(e) => void saveSettings({ ...settings, countdownLast5Beeps: e.target.checked })}
+                aria-label="5-second beeps at end of interval"
+              />
+            </label>
+            <label className="run-map-toggle-row">
+              <span>Long beep at end of interval</span>
+              <input
+                className="settings-toggle-input"
+                type="checkbox"
+                checked={settings.endIntervalLongBeep}
+                onChange={(e) => void saveSettings({ ...settings, endIntervalLongBeep: e.target.checked })}
+                aria-label="Long beep at end of interval"
+              />
+            </label>
           </div>
 
           {confirmAction && (
