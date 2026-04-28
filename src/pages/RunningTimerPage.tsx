@@ -3,8 +3,8 @@ import { Link, useParams, useSearchParams } from 'react-router-dom';
 import { formatClock } from '../lib/time';
 import { useTimerRunner } from '../lib/useTimerRunner';
 import { useSettings } from '../services/settingsContext';
-import { TimerRepository } from '../services/storage';
-import type { AppSettings, CountdownType, Timer, TimelineEntry } from '../types';
+import { TimerRepository, TimerRunRepository } from '../services/storage';
+import type { AppSettings, CountdownType, Timer, TimerRun, TimelineEntry } from '../types';
 
 const currentImageByType: Partial<Record<CountdownType, string>> = {
   warmup: '/assets/cat-in-pajama-transparent-v3.png',
@@ -143,6 +143,7 @@ export const RunningTimerPage = () => {
   const [showSessionMap, setShowSessionMap] = useState(true);
   const [confirmAction, setConfirmAction] = useState<'stop' | null>(null);
   const autoStartedRef = useRef(false);
+  const runLoggedRef = useRef(false);
   const mainColumnRef = useRef<HTMLDivElement | null>(null);
   const currentCardRef = useRef<HTMLElement | null>(null);
   const [sessionMapOffsetPx, setSessionMapOffsetPx] = useState(0);
@@ -163,6 +164,33 @@ export const RunningTimerPage = () => {
     autoStartedRef.current = true;
     runner.start();
   }, [runner, timer]);
+
+  const logRun = async (complete: boolean) => {
+    if (!timer || runLoggedRef.current) {
+      return;
+    }
+    runLoggedRef.current = true;
+    const nowIso = new Date().toISOString();
+    const run: TimerRun = {
+      id: crypto.randomUUID(),
+      timerId: timer.id,
+      timerNameAtRun: timer.name,
+      timerSnapshot: timer,
+      complete,
+      ranAt: nowIso,
+      location: '',
+      createdAt: nowIso,
+      updatedAt: nowIso,
+    };
+    await TimerRunRepository.create(run);
+  };
+
+  useEffect(() => {
+    if (!timer || runner.state.status !== 'completed') {
+      return;
+    }
+    void logRun(true);
+  }, [runner.state.status, timer]);
 
   useEffect(() => {
     const updateOffset = () => {
@@ -312,6 +340,7 @@ export const RunningTimerPage = () => {
 
   const confirm = async () => {
     if (confirmAction === 'stop') {
+      await logRun(false);
       await runner.stop();
     }
     setConfirmAction(null);
