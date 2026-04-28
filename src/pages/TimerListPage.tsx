@@ -4,7 +4,7 @@ import { TimerCard } from '../components/TimerCard';
 import { useSettings } from '../services/settingsContext';
 import { TimerRepository } from '../services/storage';
 import type { Timer } from '../types';
-import steampunkGym2 from '../../media/steampunk-gym-2.png';
+import steampunkGym2 from '../../media/steampunk-gym.png';
 
 export const TimerListPage = () => {
   const { settings, saveSettings } = useSettings();
