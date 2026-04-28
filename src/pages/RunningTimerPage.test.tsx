@@ -728,6 +728,9 @@ describe('RunningTimerPage', () => {
 
     expect(runActions).toBeTruthy();
     expect(bottomControls).toBeTruthy();
-    expect(runActions?.compareDocumentPosition(bottomControls as Node) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    if (!runActions || !bottomControls) {
+      throw new Error('Expected run actions and bottom controls to exist');
+    }
+    expect(runActions.compareDocumentPosition(bottomControls) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
   });
 });
