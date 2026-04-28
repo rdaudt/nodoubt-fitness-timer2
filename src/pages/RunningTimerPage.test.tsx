@@ -469,6 +469,8 @@ describe('RunningTimerPage', () => {
     rows.forEach((row) => {
       expect(row.querySelectorAll('.run-session-map-circle')).toHaveLength(5);
     });
+    const rowNumbers = Array.from(container.querySelectorAll('.run-session-map-row-number')).map((x) => x.textContent);
+    expect(rowNumbers).toEqual(['01', '02', '03']);
 
     const standaloneCircles = container.querySelectorAll('.run-session-map-standalone .run-session-map-circle');
     expect(standaloneCircles).toHaveLength(2);
