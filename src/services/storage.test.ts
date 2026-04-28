@@ -10,6 +10,7 @@ const timer: Timer = {
   id: 'timer-1',
   name: 'Demo',
   stationCount: 10,
+  stationWorkoutTypes: [' pushups ', 'pullups'],
   roundsPerStation: 3,
   workMinutes: 0,
   workSeconds: 30,
@@ -33,6 +34,17 @@ describe('normalizeTimer', () => {
     expect(normalizeTimer(timer)).toMatchObject({
       stationCount: 10,
       roundsPerStation: 3,
+      stationWorkoutTypes: ['pushups', 'pullups'],
+    });
+  });
+
+  it('sanitizes and trims station workout types', () => {
+    expect(normalizeTimer({
+      ...timer,
+      stationCount: 1,
+      stationWorkoutTypes: [' pushups ', 5 as unknown as string, 'ignored'],
+    })).toMatchObject({
+      stationWorkoutTypes: ['pushups'],
     });
   });
 

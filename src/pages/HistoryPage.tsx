@@ -20,6 +20,7 @@ export const HistoryPage = () => {
   const [editingRunId, setEditingRunId] = useState<string | null>(null);
   const [draftDateTime, setDraftDateTime] = useState('');
   const [draftLocation, setDraftLocation] = useState('');
+  const [draftStationWorkoutTypes, setDraftStationWorkoutTypes] = useState<string[]>([]);
 
   useEffect(() => {
     Promise.all([TimerRunRepository.listAll(), TimerRepository.list()]).then(([allRuns, allTimers]) => {
@@ -37,6 +38,7 @@ export const HistoryPage = () => {
     setEditingRunId(run.id);
     setDraftDateTime(toDateTimeLocal(run.ranAt));
     setDraftLocation(run.location ?? '');
+    setDraftStationWorkoutTypes((run.stationWorkoutTypes ?? run.timerSnapshot.stationWorkoutTypes ?? []).slice(0, run.timerSnapshot.stationCount));
   };
 
   const saveEdit = async (run: TimerRun) => {
@@ -48,6 +50,9 @@ export const HistoryPage = () => {
       ...run,
       ranAt: parsed.toISOString(),
       location: draftLocation.trim(),
+      stationWorkoutTypes: draftStationWorkoutTypes
+        .slice(0, run.timerSnapshot.stationCount)
+        .map((item) => item.trim()),
       updatedAt: new Date().toISOString(),
     };
     await TimerRunRepository.update(next);
@@ -109,6 +114,25 @@ export const HistoryPage = () => {
                         placeholder="Location"
                       />
                     </label>
+                    <div className="stack">
+                      <p>Workout Types (Optional)</p>
+                      {Array.from({ length: run.timerSnapshot.stationCount }, (_, index) => (
+                        <label className="field" key={`run-${run.id}-station-${index + 1}`}>
+                          <span>Station {index + 1}</span>
+                          <input
+                            type="text"
+                            value={draftStationWorkoutTypes[index] ?? ''}
+                            onChange={(e) => setDraftStationWorkoutTypes((prev) => {
+                              const next = [...prev];
+                              next[index] = e.target.value;
+                              return next;
+                            })}
+                            aria-label={`Run station ${index + 1} workout type`}
+                            placeholder="e.g. pushups"
+                          />
+                        </label>
+                      ))}
+                    </div>
                     <div className="actions-row wrap">
                       <button className="primary-btn" onClick={() => void saveEdit(run)}>Save</button>
                       <button className="secondary-btn" onClick={() => setEditingRunId(null)}>Cancel</button>
