@@ -39,6 +39,7 @@ const timer = {
   id: 'timer-1',
   name: 'Demo Timer',
   stationCount: 1,
+  stationWorkoutTypes: ['Pushups'],
   roundsPerStation: 1,
   workMinutes: 0,
   workSeconds: 30,
@@ -321,6 +322,7 @@ describe('RunningTimerPage', () => {
     expect(createRunMock.mock.calls[0][0]).toEqual(expect.objectContaining({
       timerId: 'timer-1',
       timerNameAtRun: 'Demo Timer',
+      stationWorkoutTypes: ['Pushups'],
       complete: true,
       location: '',
     }));

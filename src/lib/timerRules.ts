@@ -10,14 +10,25 @@ const cleanMinutes = (value: number, fallback = 0): number =>
 const cleanSeconds = (value: number, fallback = 0): number =>
   Math.max(0, Math.min(59, Math.floor(Number.isFinite(value) ? value : fallback)));
 
+const normalizeStationWorkoutTypes = (value: unknown, stationCount: number): string[] => {
+  if (!Array.isArray(value)) {
+    return [];
+  }
+  return value
+    .slice(0, stationCount)
+    .map((item) => (typeof item === 'string' ? item : String(item ?? '')).trim());
+};
+
 export const normalizeTimerFields = (timer: Timer): Timer => {
   const warmupEnabled = Boolean(timer.warmupEnabled);
   const cooldownEnabled = Boolean(timer.cooldownEnabled);
+  const stationCount = cleanCount(timer.stationCount, 10);
 
   return {
     ...timer,
     name: timer.name.trim(),
-    stationCount: cleanCount(timer.stationCount, 10),
+    stationCount,
+    stationWorkoutTypes: normalizeStationWorkoutTypes(timer.stationWorkoutTypes, stationCount),
     roundsPerStation: cleanCount(timer.roundsPerStation, 3),
     workMinutes: cleanMinutes(timer.workMinutes),
     workSeconds: cleanSeconds(timer.workSeconds, 30),
