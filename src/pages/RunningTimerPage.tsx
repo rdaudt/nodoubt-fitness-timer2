@@ -345,19 +345,30 @@ export const RunningTimerPage = () => {
           </article>
 
           <div className="actions-row wrap run-actions">
-            {runner.state.status === 'running' && <button className="secondary-btn" onClick={requestPause}>Pause Timer</button>}
-            {runner.state.status === 'paused' && (
-              <button className="primary-btn" onClick={runner.resume}>
-                {isStationStartPause ? 'Start' : 'Resume'}
-              </button>
+            {confirmAction === 'stop' ? (
+              <>
+                <p className="run-confirm-inline-text">Stop the timer?</p>
+                <button className="danger-btn" onClick={confirm}>Confirm Stop</button>
+                <button className="secondary-btn" onClick={() => setConfirmAction(null)}>Cancel</button>
+              </>
+            ) : (
+              <>
+                {runner.state.status === 'running' && <button className="secondary-btn" onClick={requestPause}>Pause Timer</button>}
+                {runner.state.status === 'paused' && (
+                  <button className="primary-btn" onClick={runner.resume}>
+                    {isStationStartPause ? 'Start' : 'Resume'}
+                  </button>
+                )}
+                {(runner.state.status === 'running' || runner.state.status === 'paused') && (
+                  <button className="danger-btn" onClick={requestStop}>{isStationStartPause ? 'Cancel' : 'Stop Timer'}</button>
+                )}
+                {runner.state.status === 'completed' && <Link className="primary-btn" to={donePath}>Done</Link>}
+              </>
             )}
-            {(runner.state.status === 'running' || runner.state.status === 'paused') && (
-              <button className="danger-btn" onClick={requestStop}>{isStationStartPause ? 'Cancel' : 'Stop Timer'}</button>
-            )}
-            {runner.state.status === 'completed' && <Link className="primary-btn" to={donePath}>Done</Link>}
           </div>
 
-          <div className="run-bottom-toggles" aria-label="Running page controls">
+          {!confirmAction && (
+            <div className="run-bottom-toggles" aria-label="Running page controls">
             <label className="run-map-toggle-row">
               <span>Kobe Everywhere</span>
               <input
@@ -410,15 +421,6 @@ export const RunningTimerPage = () => {
                 aria-label="Long beep at end of interval"
               />
             </label>
-          </div>
-
-          {confirmAction && (
-            <div className="confirm-box">
-              <p className="confirm-text">Stop the timer?</p>
-              <div className="actions-row">
-                <button className="primary-btn" onClick={confirm}>Confirm</button>
-                <button className="secondary-btn" onClick={() => setConfirmAction(null)}>Cancel</button>
-              </div>
             </div>
           )}
         </div>
