@@ -133,6 +133,8 @@ const toCircleIndex = (entry: TimelineEntry | undefined): number | null => {
   return null;
 };
 
+const formatSessionMapRowNumber = (stationNumber: number): string => String(stationNumber).padStart(2, '0');
+
 export const RunningTimerPage = () => {
   const { id = '' } = useParams();
   const [searchParams] = useSearchParams();
@@ -452,6 +454,9 @@ export const RunningTimerPage = () => {
                 className={`run-session-map-row${sessionMap.activeStationRow === rowIndex ? ' station-active' : ''}`}
                 key={`station-row-${rowIndex + 1}`}
               >
+                <span className="run-session-map-row-number" aria-hidden="true">
+                  {formatSessionMapRowNumber(rowIndex + 1)}
+                </span>
                 {row.map((circle) => (
                   <span
                     key={circle.id}
