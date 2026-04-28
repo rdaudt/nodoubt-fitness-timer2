@@ -863,6 +863,10 @@ select {
   transition: opacity 120ms ease, border-color 120ms ease;
 }
 
+.run-session-map-row.station-active .run-session-map-circle {
+  opacity: 1;
+}
+
 .run-session-map-circle.active {
   opacity: 1;
   border-color: #ffffff;

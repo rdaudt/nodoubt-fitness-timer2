@@ -32,6 +32,7 @@ interface SessionMapModel {
   showWarmup: boolean;
   warmupActive: boolean;
   stationRows: SessionCircle[][];
+  activeStationRow: number | null;
   transitionTargetRow: number | null;
   showCooldown: boolean;
   cooldownActive: boolean;
@@ -243,6 +244,9 @@ export const RunningTimerPage = () => {
     const circlesPerStation = roundsPerStation * 2 - 1;
 
     const activeStation = activeEntry?.stationNumber ?? null;
+    const activeStationRow = (activeEntry?.type === 'work' || activeEntry?.type === 'rest') && activeStation
+      ? activeStation - 1
+      : null;
     const activeCircleIndex = toCircleIndex(activeEntry);
     const transitionTargetRow = activeEntry?.type === 'stationTransition' && activeEntry.stationNumber
       ? activeEntry.stationNumber - 1
@@ -266,6 +270,7 @@ export const RunningTimerPage = () => {
       showWarmup: hasConfiguredWarmup(timer),
       warmupActive: activeEntry?.type === 'warmup',
       stationRows,
+      activeStationRow,
       transitionTargetRow,
       showCooldown: hasConfiguredCooldown(timer),
       cooldownActive: activeEntry?.type === 'cooldown',
@@ -443,7 +448,10 @@ export const RunningTimerPage = () => {
             )}
 
             {sessionMap.stationRows.map((row, rowIndex) => (
-              <div className="run-session-map-row" key={`station-row-${rowIndex + 1}`}>
+              <div
+                className={`run-session-map-row${sessionMap.activeStationRow === rowIndex ? ' station-active' : ''}`}
+                key={`station-row-${rowIndex + 1}`}
+              >
                 {row.map((circle) => (
                   <span
                     key={circle.id}
