@@ -1,12 +1,13 @@
-import { cleanup, fireEvent, render, screen } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { TimelineEntry } from '../types';
 import { RunningTimerPage } from './RunningTimerPage';
 
-const { getMock, upsertMock, startMock, runnerMock, settingsMock, saveSettingsMock } = vi.hoisted(() => ({
+const { getMock, upsertMock, createRunMock, startMock, runnerMock, settingsMock, saveSettingsMock } = vi.hoisted(() => ({
   getMock: vi.fn(),
   upsertMock: vi.fn(),
+  createRunMock: vi.fn(),
   startMock: vi.fn(),
   runnerMock: vi.fn(),
   settingsMock: vi.fn(),
@@ -24,6 +25,9 @@ vi.mock('../services/storage', () => ({
   TimerRepository: {
     get: getMock,
     upsert: upsertMock,
+  },
+  TimerRunRepository: {
+    create: createRunMock,
   },
 }));
 
@@ -66,6 +70,7 @@ describe('RunningTimerPage', () => {
     vi.clearAllMocks();
     saveSettingsMock.mockResolvedValue(undefined);
     upsertMock.mockResolvedValue(undefined);
+    createRunMock.mockResolvedValue(undefined);
     settingsMock.mockReturnValue({
       coachMode: true,
       kobeEverywhere: true,
@@ -307,6 +312,59 @@ describe('RunningTimerPage', () => {
     expect(secondImage).toBeTruthy();
     const secondSrc = secondImage?.getAttribute('src');
     expect(firstSrc).toBe(secondSrc);
+  });
+
+  it('logs one run when timer completes', async () => {
+    renderRunningPage('/timer/timer-1/run');
+    await screen.findByRole('link', { name: 'Done' });
+    expect(createRunMock).toHaveBeenCalledTimes(1);
+    expect(createRunMock.mock.calls[0][0]).toEqual(expect.objectContaining({
+      timerId: 'timer-1',
+      timerNameAtRun: 'Demo Timer',
+      complete: true,
+      location: '',
+    }));
+  });
+
+  it('logs an incomplete run when user confirms stop before completion', async () => {
+    const stopMock = vi.fn().mockResolvedValue(undefined);
+    const timeline: TimelineEntry[] = [
+      {
+        id: 'work-1-1',
+        type: 'work',
+        name: 'Work',
+        durationMs: 30000,
+        stationNumber: 1,
+        roundNumber: 1,
+      },
+    ];
+
+    runnerMock.mockReturnValue({
+      timeline,
+      state: {
+        status: 'running',
+        pauseReason: null,
+        currentIndex: 0,
+        currentRemainingMs: 16000,
+        totalRemainingMs: 30000,
+      },
+      start: startMock,
+      pause: vi.fn(),
+      resume: vi.fn(),
+      stop: stopMock,
+    });
+
+    renderRunningPage('/timer/timer-1/run');
+    await screen.findByText('Work');
+    fireEvent.click(screen.getByRole('button', { name: 'Stop Timer' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Confirm Stop' }));
+
+    await waitFor(() => expect(createRunMock).toHaveBeenCalledTimes(1));
+    expect(createRunMock.mock.calls[0][0]).toEqual(expect.objectContaining({
+      timerId: 'timer-1',
+      complete: false,
+    }));
+    await waitFor(() => expect(stopMock).toHaveBeenCalledTimes(1));
   });
 
   it('changes work card image when advancing to a new station', async () => {
