@@ -865,6 +865,10 @@ select {
   opacity: 1;
 }
 
+.run-session-map-row.transition-target .run-session-map-row-number {
+  opacity: 0;
+}
+
 .run-session-map-standalone {
   display: flex;
   justify-content: flex-start;

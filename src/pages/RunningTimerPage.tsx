@@ -451,7 +451,7 @@ export const RunningTimerPage = () => {
 
             {sessionMap.stationRows.map((row, rowIndex) => (
               <div
-                className={`run-session-map-row${sessionMap.activeStationRow === rowIndex ? ' station-active' : ''}`}
+                className={`run-session-map-row${sessionMap.activeStationRow === rowIndex ? ' station-active' : ''}${sessionMap.transitionTargetRow === rowIndex ? ' transition-target' : ''}`}
                 key={`station-row-${rowIndex + 1}`}
               >
                 <span className="run-session-map-row-number" aria-hidden="true">
