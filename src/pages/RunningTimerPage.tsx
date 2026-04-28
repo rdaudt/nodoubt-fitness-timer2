@@ -141,7 +141,7 @@ export const RunningTimerPage = () => {
   const [confirmAction, setConfirmAction] = useState<'stop' | null>(null);
   const autoStartedRef = useRef(false);
   const mainColumnRef = useRef<HTMLDivElement | null>(null);
-  const headerRef = useRef<HTMLElement | null>(null);
+  const currentCardRef = useRef<HTMLElement | null>(null);
   const [sessionMapOffsetPx, setSessionMapOffsetPx] = useState(0);
 
   useEffect(() => {
@@ -160,16 +160,14 @@ export const RunningTimerPage = () => {
 
   useEffect(() => {
     const updateOffset = () => {
-      const headerEl = headerRef.current;
+      const currentCardEl = currentCardRef.current;
       const mainColEl = mainColumnRef.current;
-      if (!headerEl || !mainColEl) {
+      if (!currentCardEl || !mainColEl) {
         return;
       }
-      const headerComputed = window.getComputedStyle(headerEl);
-      const computed = window.getComputedStyle(mainColEl);
-      const rowGap = Number.parseFloat(computed.rowGap || computed.gap || '0') || 0;
-      const headerMarginBottom = Number.parseFloat(headerComputed.marginBottom || '0') || 0;
-      setSessionMapOffsetPx(headerEl.getBoundingClientRect().height + headerMarginBottom + rowGap);
+      const mainRect = mainColEl.getBoundingClientRect();
+      const currentRect = currentCardEl.getBoundingClientRect();
+      setSessionMapOffsetPx(Math.max(0, currentRect.top - mainRect.top));
     };
 
     updateOffset();
@@ -177,11 +175,11 @@ export const RunningTimerPage = () => {
       ? new ResizeObserver(() => updateOffset())
       : null;
     if (observer) {
-      if (headerRef.current) {
-        observer.observe(headerRef.current);
-      }
       if (mainColumnRef.current) {
         observer.observe(mainColumnRef.current);
+      }
+      if (currentCardRef.current) {
+        observer.observe(currentCardRef.current);
       }
     } else {
       window.addEventListener('resize', updateOffset);
@@ -191,7 +189,7 @@ export const RunningTimerPage = () => {
       observer?.disconnect();
       window.removeEventListener('resize', updateOffset);
     };
-  }, [settings.coachMode, timer?.startStationWorkManually]);
+  }, [settings.coachMode, timer?.startStationWorkManually, runner.state.status, confirmAction]);
 
   const donePath = searchParams.get('from') === 'home' ? '/' : `/timer/${timer?.id ?? id}`;
   const activeEntry = runner.timeline[runner.state.currentIndex];
@@ -318,47 +316,14 @@ export const RunningTimerPage = () => {
         } as CSSProperties}
       >
         <div className="run-main-column" ref={mainColumnRef}>
-          <header className="run-header" ref={headerRef}>
+          <header className="run-header">
             <p className="run-name">{timer.name}</p>
             <p className="run-remaining">Total remaining: {formatClock(runner.state.totalRemainingMs / 1000)}</p>
             {isStationStartPause && <p className="run-paused-flag run-set-start-flag pulse">Prepare to start</p>}
-            <div className="run-header-toggles">
-              <label className="run-map-toggle-row">
-                <span>Kobe Everywhere</span>
-                <input
-                  className="settings-toggle-input"
-                  type="checkbox"
-                  checked={settings.kobeEverywhere}
-                  onChange={(e) => void saveSettings({ ...settings, kobeEverywhere: e.target.checked })}
-                  aria-label="Kobe Everywhere"
-                />
-              </label>
-              <label className="run-map-toggle-row">
-                <span>Session Map</span>
-                <input
-                  className="settings-toggle-input"
-                  type="checkbox"
-                  checked={showSessionMap}
-                  onChange={(e) => setShowSessionMap(e.target.checked)}
-                  aria-label="Show session map"
-                />
-              </label>
-              {settings.coachMode && (
-                <label className="run-map-toggle-row">
-                  <span>Start Set Manually</span>
-                  <input
-                    className="settings-toggle-input"
-                    type="checkbox"
-                    checked={timer.startStationWorkManually}
-                    onChange={(e) => void persistTimerPatch({ startStationWorkManually: e.target.checked })}
-                    aria-label="Start Set Manually"
-                  />
-                </label>
-              )}
-            </div>
           </header>
 
           <article
+            ref={currentCardRef}
             className={`run-current-card ${activeEntry?.type === 'stationTransition' ? 'station-transition' : ''}`}
             style={currentStyle}
           >
@@ -387,6 +352,41 @@ export const RunningTimerPage = () => {
               <button className="danger-btn" onClick={requestStop}>{isStationStartPause ? 'Cancel' : 'Stop Timer'}</button>
             )}
             {runner.state.status === 'completed' && <Link className="primary-btn" to={donePath}>Done</Link>}
+          </div>
+
+          <div className="run-bottom-toggles" aria-label="Running page controls">
+            <label className="run-map-toggle-row">
+              <span>Kobe Everywhere</span>
+              <input
+                className="settings-toggle-input"
+                type="checkbox"
+                checked={settings.kobeEverywhere}
+                onChange={(e) => void saveSettings({ ...settings, kobeEverywhere: e.target.checked })}
+                aria-label="Kobe Everywhere"
+              />
+            </label>
+            <label className="run-map-toggle-row">
+              <span>Session Map</span>
+              <input
+                className="settings-toggle-input"
+                type="checkbox"
+                checked={showSessionMap}
+                onChange={(e) => setShowSessionMap(e.target.checked)}
+                aria-label="Show session map"
+              />
+            </label>
+            {settings.coachMode && (
+              <label className="run-map-toggle-row">
+                <span>Start Set Manually</span>
+                <input
+                  className="settings-toggle-input"
+                  type="checkbox"
+                  checked={timer.startStationWorkManually}
+                  onChange={(e) => void persistTimerPatch({ startStationWorkManually: e.target.checked })}
+                  aria-label="Start Set Manually"
+                />
+              </label>
+            )}
           </div>
 
           {confirmAction && (
