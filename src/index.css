@@ -872,7 +872,7 @@ select {
 .run-session-map-standalone {
   display: flex;
   justify-content: flex-start;
-  padding-left: var(--session-map-left-offset);
+  padding-left: calc(var(--session-map-left-offset) + 10px);
 }
 
 .run-session-map-circle {
@@ -1902,7 +1902,7 @@ select {
   }
 
   .run-session-map-standalone {
-    padding-left: var(--session-map-left-offset);
+    padding-left: calc(var(--session-map-left-offset) + 9px);
   }
 
   .run-session-map-transition-arrow {
