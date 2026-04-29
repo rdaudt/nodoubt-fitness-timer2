@@ -44,8 +44,13 @@ const timer = {
 };
 
 describe('HistoryPage', () => {
+  let createObjectURLSpy: ReturnType<typeof vi.spyOn>;
+  let revokeObjectURLSpy: ReturnType<typeof vi.spyOn>;
+
   beforeEach(() => {
     vi.clearAllMocks();
+    createObjectURLSpy = vi.spyOn(URL, 'createObjectURL').mockReturnValue('blob:test-url');
+    revokeObjectURLSpy = vi.spyOn(URL, 'revokeObjectURL').mockImplementation(() => undefined);
     listTimersMock.mockResolvedValue([timer]);
     listAllRunsMock.mockResolvedValue([{
       id: 'run-1',
@@ -92,6 +97,8 @@ describe('HistoryPage', () => {
   });
 
   afterEach(() => {
+    createObjectURLSpy.mockRestore();
+    revokeObjectURLSpy.mockRestore();
     cleanup();
   });
 
@@ -117,5 +124,32 @@ describe('HistoryPage', () => {
         stationWorkoutTypes: ['Burpees'],
       }),
     }));
+  });
+
+  it('exports a run entry as JSON', async () => {
+    const clickSpy = vi.spyOn(HTMLAnchorElement.prototype, 'click').mockImplementation(() => undefined);
+    render(
+      <MemoryRouter initialEntries={['/history']}>
+        <Routes>
+          <Route path="/history" element={<HistoryPage />} />
+        </Routes>
+      </MemoryRouter>,
+    );
+
+    await screen.findByRole('link', { name: 'HIIT Session Name: Demo Timer' });
+    fireEvent.click(screen.getByRole('button', { name: 'Export JSON' }));
+
+    expect(createObjectURLSpy).toHaveBeenCalledTimes(1);
+    const exportedBlob = createObjectURLSpy.mock.calls[0][0] as Blob;
+    const exportedJson = JSON.parse(await exportedBlob.text());
+    expect(exportedJson.stationSetWorkoutTypes).toEqual([
+      {
+        stationSetNumber: 1,
+        workoutType: 'Burpees',
+      },
+    ]);
+    expect(revokeObjectURLSpy).toHaveBeenCalledWith('blob:test-url');
+    expect(clickSpy).toHaveBeenCalledTimes(1);
+    clickSpy.mockRestore();
   });
 });

@@ -22,6 +22,33 @@ const toDateTimeLocal = (value: string): string => {
   return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}`;
 };
 
+const downloadRunExport = (run: TimerRun) => {
+  const snapshot = normalizeTimerFields(run.timerSnapshot);
+  const workoutTypes = (run.stationWorkoutTypes ?? snapshot.stationWorkoutTypes ?? [])
+    .slice(0, snapshot.stationCount)
+    .map((item) => item.trim());
+  const stationSetWorkoutTypes = Array.from({ length: snapshot.stationCount }, (_, index) => ({
+    stationSetNumber: index + 1,
+    workoutType: workoutTypes[index] ?? '',
+  }));
+  const payload = {
+    ...run,
+    stationSetWorkoutTypes,
+    exportedAt: new Date().toISOString(),
+  };
+  const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const safeRunId = run.id.replace(/[^a-zA-Z0-9_-]/g, '-');
+  const safeRanAt = run.ranAt.replace(/[:.]/g, '-');
+  const anchor = document.createElement('a');
+  anchor.href = url;
+  anchor.download = `hiit-run-${safeRunId}-${safeRanAt}.json`;
+  document.body.appendChild(anchor);
+  anchor.click();
+  document.body.removeChild(anchor);
+  URL.revokeObjectURL(url);
+};
+
 export const HistoryPage = () => {
   const [runs, setRuns] = useState<TimerRun[]>([]);
   const [timers, setTimers] = useState<Timer[]>([]);
@@ -178,6 +205,7 @@ export const HistoryPage = () => {
                     <p>Total work time: {formatClock(totalWorkSeconds)}</p>
                     <p>Snapshot total: {formatClock(runSeconds)}</p>
                     <div className="actions-row wrap">
+                      <button className="primary-btn" onClick={() => downloadRunExport(run)}>Export JSON</button>
                       <button className="secondary-btn" onClick={() => startEdit(run)}>Edit</button>
                       <button className="danger-btn" onClick={() => void deleteRun(run.id)}>Delete</button>
                     </div>
