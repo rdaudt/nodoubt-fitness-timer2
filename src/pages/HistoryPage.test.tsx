@@ -3,10 +3,11 @@ import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { HistoryPage } from './HistoryPage';
 
-const { listAllRunsMock, listTimersMock, updateRunMock } = vi.hoisted(() => ({
+const { listAllRunsMock, listTimersMock, updateRunMock, settingsMock } = vi.hoisted(() => ({
   listAllRunsMock: vi.fn(),
   listTimersMock: vi.fn(),
   updateRunMock: vi.fn(),
+  settingsMock: vi.fn(),
 }));
 
 vi.mock('../services/storage', () => ({
@@ -18,6 +19,14 @@ vi.mock('../services/storage', () => ({
     update: updateRunMock,
     remove: vi.fn(),
   },
+}));
+
+vi.mock('../services/settingsContext', () => ({
+  useSettings: () => ({
+    settings: settingsMock(),
+    loaded: true,
+    saveSettings: vi.fn(),
+  }),
 }));
 
 const timer = {
@@ -43,14 +52,47 @@ const timer = {
   updatedAt: '2026-01-01T00:00:00.000Z',
 };
 
+const completeRun = {
+  id: 'run-1',
+  timerId: 'timer-1',
+  timerNameAtRun: 'Demo Timer',
+  timerSnapshot: timer,
+  stationWorkoutTypes: ['Burpees'],
+  totalPerStationMs: 30000,
+  totalWorkMs: 30000,
+  complete: true,
+  ranAt: '2026-02-01T10:00:00.000Z',
+  location: '',
+  createdAt: '2026-02-01T10:00:00.000Z',
+  updatedAt: '2026-02-01T10:00:00.000Z',
+};
+
 describe('HistoryPage', () => {
   let createObjectURLSpy: ReturnType<typeof vi.spyOn>;
   let revokeObjectURLSpy: ReturnType<typeof vi.spyOn>;
+  let promptSpy: ReturnType<typeof vi.spyOn>;
+  let fetchSpy: ReturnType<typeof vi.spyOn>;
 
   beforeEach(() => {
     vi.clearAllMocks();
     createObjectURLSpy = vi.spyOn(URL, 'createObjectURL').mockReturnValue('blob:test-url');
     revokeObjectURLSpy = vi.spyOn(URL, 'revokeObjectURL').mockImplementation(() => undefined);
+    promptSpy = vi.spyOn(window, 'prompt').mockReturnValue('kobetheabby');
+    fetchSpy = vi.spyOn(window, 'fetch').mockResolvedValue(new Response(JSON.stringify({
+      imageBase64: btoa('image-bytes'),
+    }), { status: 200 }));
+    settingsMock.mockReturnValue({
+      coachMode: true,
+      kobeEverywhere: true,
+      endIntervalLongBeep: true,
+      countdownLast5Beeps: true,
+      intervalColors: {
+        warmup: '#FF8C00',
+        work: '#FF4444',
+        rest: '#2ECC71',
+        cooldown: '#3B82F6',
+      },
+    });
     listTimersMock.mockResolvedValue([timer]);
     listAllRunsMock.mockResolvedValue([{
       id: 'run-1',
@@ -99,6 +141,8 @@ describe('HistoryPage', () => {
   afterEach(() => {
     createObjectURLSpy.mockRestore();
     revokeObjectURLSpy.mockRestore();
+    promptSpy.mockRestore();
+    fetchSpy.mockRestore();
     cleanup();
   });
 
@@ -151,5 +195,119 @@ describe('HistoryPage', () => {
     expect(revokeObjectURLSpy).toHaveBeenCalledWith('blob:test-url');
     expect(clickSpy).toHaveBeenCalledTimes(1);
     clickSpy.mockRestore();
+  });
+
+  it('hides IG generation button when coach mode is off', async () => {
+    settingsMock.mockReturnValue({
+      coachMode: false,
+      kobeEverywhere: true,
+      endIntervalLongBeep: true,
+      countdownLast5Beeps: true,
+      intervalColors: {
+        warmup: '#FF8C00',
+        work: '#FF4444',
+        rest: '#2ECC71',
+        cooldown: '#3B82F6',
+      },
+    });
+
+    render(
+      <MemoryRouter initialEntries={['/history']}>
+        <Routes>
+          <Route path="/history" element={<HistoryPage />} />
+        </Routes>
+      </MemoryRouter>,
+    );
+
+    await screen.findByRole('link', { name: 'HIIT Session Name: Demo Timer' });
+    expect(screen.queryByRole('button', { name: 'Generate IG Image' })).toBeNull();
+  });
+
+  it('blocks IG generation for ineligible runs', async () => {
+    listAllRunsMock.mockResolvedValue([{
+      id: 'run-1',
+      timerId: 'timer-1',
+      timerNameAtRun: 'Demo Timer',
+      timerSnapshot: timer,
+      stationWorkoutTypes: [''],
+      totalPerStationMs: 30000,
+      totalWorkMs: 30000,
+      complete: false,
+      ranAt: '2026-02-01T10:00:00.000Z',
+      location: '',
+      createdAt: '2026-02-01T10:00:00.000Z',
+      updatedAt: '2026-02-01T10:00:00.000Z',
+    }]);
+    render(
+      <MemoryRouter initialEntries={['/history']}>
+        <Routes>
+          <Route path="/history" element={<HistoryPage />} />
+        </Routes>
+      </MemoryRouter>,
+    );
+
+    const button = await screen.findByRole('button', { name: 'Generate IG Image' });
+    expect(button).toBeDisabled();
+    expect(screen.getByText('IG generation requires a complete run and workout type set for every station.')).toBeInTheDocument();
+  });
+
+  it('shows error when password is invalid', async () => {
+    listAllRunsMock.mockResolvedValue([completeRun]);
+    promptSpy.mockReturnValue('wrong-password');
+    render(
+      <MemoryRouter initialEntries={['/history']}>
+        <Routes>
+          <Route path="/history" element={<HistoryPage />} />
+        </Routes>
+      </MemoryRouter>,
+    );
+
+    await screen.findByRole('link', { name: 'HIIT Session Name: Demo Timer' });
+    fireEvent.click(screen.getByRole('button', { name: 'Generate IG Image' }));
+
+    expect(await screen.findByRole('alert')).toHaveTextContent('IG generation error: Invalid password.');
+    expect(fetchSpy).not.toHaveBeenCalled();
+  });
+
+  it('generates image, previews it, and auto-downloads', async () => {
+    listAllRunsMock.mockResolvedValue([completeRun]);
+    const clickSpy = vi.spyOn(HTMLAnchorElement.prototype, 'click').mockImplementation(() => undefined);
+
+    render(
+      <MemoryRouter initialEntries={['/history']}>
+        <Routes>
+          <Route path="/history" element={<HistoryPage />} />
+        </Routes>
+      </MemoryRouter>,
+    );
+
+    await screen.findByRole('link', { name: 'HIIT Session Name: Demo Timer' });
+    fireEvent.click(screen.getByRole('button', { name: 'Generate IG Image' }));
+
+    await waitFor(() => expect(fetchSpy).toHaveBeenCalledTimes(1));
+    expect(fetchSpy.mock.calls[0][0]).toBe('/api/generate-ig-image');
+    expect(await screen.findByAltText('Generated IG preview for Demo Timer')).toBeInTheDocument();
+    expect(clickSpy).toHaveBeenCalled();
+    clickSpy.mockRestore();
+  });
+
+  it('shows retryable inline error on API failure', async () => {
+    listAllRunsMock.mockResolvedValue([completeRun]);
+    fetchSpy.mockResolvedValue(new Response(JSON.stringify({ error: 'bad gateway' }), { status: 502 }));
+
+    render(
+      <MemoryRouter initialEntries={['/history']}>
+        <Routes>
+          <Route path="/history" element={<HistoryPage />} />
+        </Routes>
+      </MemoryRouter>,
+    );
+
+    await screen.findByRole('link', { name: 'HIIT Session Name: Demo Timer' });
+    fireEvent.click(screen.getByRole('button', { name: 'Generate IG Image' }));
+
+    expect(await screen.findByRole('alert')).toHaveTextContent('IG generation error: bad gateway');
+    fireEvent.click(screen.getByRole('button', { name: 'Generate IG Image' }));
+    await waitFor(() => expect(fetchSpy).toHaveBeenCalledTimes(2));
   });
 });
