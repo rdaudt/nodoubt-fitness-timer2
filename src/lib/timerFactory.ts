@@ -128,6 +128,7 @@ export const newTimer = (): Timer => {
     cooldownEnabled: true,
     cooldownMinutes: 5,
     cooldownSeconds: 0,
+    category: 'GENERAL',
     createdAt: now,
     updatedAt: now,
   };

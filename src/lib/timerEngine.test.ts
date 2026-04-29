@@ -20,6 +20,7 @@ const baseTimer = (): Timer => ({
   cooldownEnabled: true,
   cooldownMinutes: 0,
   cooldownSeconds: 5,
+  category: 'GENERAL',
   createdAt: new Date().toISOString(),
   updatedAt: new Date().toISOString(),
 });
