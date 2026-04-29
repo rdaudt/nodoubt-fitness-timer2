@@ -37,8 +37,9 @@ type NodeReq = {
 };
 
 type NodeRes = {
-  status: (code: number) => NodeRes;
-  json: (body: unknown) => void;
+  status: (code: number) => {
+    json: (body: unknown) => void;
+  };
 };
 
 const safeJson = (value: unknown): string => JSON.stringify(value, null, 2);
