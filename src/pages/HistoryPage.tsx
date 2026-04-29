@@ -109,6 +109,13 @@ const resizeImageBlob = async (source: Blob, width: number, height: number): Pro
   }
 };
 
+const StatCard = ({ label, value }: { label: string; value: string }) => (
+  <div className="history-stat-card">
+    <span className="history-stat-label">{label}</span>
+    <strong className="history-stat-value">{value}</strong>
+  </div>
+);
+
 export const HistoryPage = () => {
   const { settings } = useSettings();
   const [runs, setRuns] = useState<TimerRun[]>([]);
@@ -304,105 +311,49 @@ export const HistoryPage = () => {
             };
             const canGenerate = settings.coachMode && run.complete && hasCompleteWorkoutTypes(run);
             return (
-              <article key={run.id} className="timer-run-card">
-                <p>
-                  {activeTimer ? (
-                    <Link to={`/timer/${run.timerId}`}>HIIT Session Name: {run.timerNameAtRun}</Link>
-                  ) : (
-                    <span>HIIT Session Name: {run.timerNameAtRun} (Deleted timer)</span>
-                  )}
-                </p>
-                {isEditing ? (
+              <article key={run.id} className="timer-run-card history-run-card">
+                <div className="history-run-card-head">
+                  <div className="history-run-title-wrap">
+                    {activeTimer ? (
+                      <Link to={`/timer/${run.timerId}`} className="history-run-title-link">
+                        {run.timerNameAtRun}
+                      </Link>
+                    ) : (
+                      <p className="history-run-title-link">{run.timerNameAtRun} (Deleted timer)</p>
+                    )}
+                    <p className="history-run-datetime">{new Date(run.ranAt).toLocaleString()}</p>
+                  </div>
+                  <span className={`history-run-complete ${run.complete ? 'is-on' : 'is-off'}`}>
+                    {run.complete ? 'Complete' : 'Incomplete'}
+                  </span>
+                </div>
+
+                {!isEditing ? (
                   <>
-                    <label className="field">
-                      <span>Timer name</span>
-                      <input
-                        type="text"
-                        value={draftTimerName}
-                        maxLength={25}
-                        onChange={(e) => setDraftTimerName(e.target.value)}
-                        aria-label="Run timer name"
-                        placeholder="Timer name"
-                      />
-                    </label>
-                    <label className="field">
-                      <span>Date & time</span>
-                      <input
-                        type="datetime-local"
-                        value={draftDateTime}
-                        onChange={(e) => setDraftDateTime(e.target.value)}
-                        aria-label="Run date and time"
-                      />
-                    </label>
-                    <label className="field">
-                      <span>Location</span>
-                      <input
-                        type="text"
-                        value={draftLocation}
-                        onChange={(e) => setDraftLocation(e.target.value)}
-                        aria-label="Run location"
-                        placeholder="Location"
-                      />
-                    </label>
-                    <div className="stack">
-                      <p>Workout Types (Optional)</p>
-                      {Array.from({ length: run.timerSnapshot.stationCount }, (_, index) => (
-                        <label className="field" key={`run-${run.id}-station-${index + 1}`}>
-                          <span>Station {index + 1}</span>
-                          <input
-                            type="text"
-                            value={draftStationWorkoutTypes[index] ?? ''}
-                            onChange={(e) => setDraftStationWorkoutTypes((prev) => {
-                              const next = [...prev];
-                              next[index] = e.target.value;
-                              return next;
-                            })}
-                            aria-label={`Run station ${index + 1} workout type`}
-                            placeholder="e.g. pushups"
-                          />
-                        </label>
-                      ))}
+                    <div className="history-stats-grid">
+                      <StatCard label="Total Time" value={formatClock(runSeconds)} />
+                      <StatCard label="Work/Rest" value={`${formatClock(workSeconds)} / ${formatClock(restSeconds)}`} />
+                      <StatCard label="Rounds" value={String(normalizedSnapshot.roundsPerStation)} />
+                      <StatCard label="Stations" value={String(normalizedSnapshot.stationCount)} />
                     </div>
-                    <div className="actions-row wrap">
-                      <button className="primary-btn" onClick={() => void saveEdit(run)}>Save</button>
-                      <button className="secondary-btn" onClick={() => setEditingRunId(null)}>Cancel</button>
-                    </div>
-                  </>
-                ) : (
-                  <>
-                    <p><strong>Date & start time: {new Date(run.ranAt).toLocaleString()}</strong></p>
-                    <p>Complete: {run.complete ? 'ON' : 'OFF'}</p>
-                    <p>Location: {run.location || 'Not set'}</p>
-                    <p>Warmup time: {formatClock(warmupSeconds)}</p>
-                    <p>Cooldown time: {formatClock(cooldownSeconds)}</p>
-                    <p>Number of stations/sets: {normalizedSnapshot.stationCount}</p>
-                    <p>Number of rounds per station/set: {normalizedSnapshot.roundsPerStation}</p>
-                    <p>Work interval time: {formatClock(workSeconds)}</p>
-                    <p>Rest interval time: {formatClock(restSeconds)}</p>
-                    <p>Station/set transition time: {formatClock(transitionSeconds)}</p>
-                    <p>
-                      Name of the workout type in each station/set:{' '}
-                      {runWorkoutTypes.length > 0 ? runWorkoutTypes.join(', ') : 'Not set'}
-                    </p>
-                    <p>Total time per station/set: {formatClock(totalPerStationSeconds)}</p>
-                    <p>Total work time: {formatClock(totalWorkSeconds)}</p>
-                    <p>Snapshot total: {formatClock(runSeconds)}</p>
-                    <div className="actions-row wrap">
-                      <button className="primary-btn" onClick={() => downloadRunExport(run)}>Export JSON</button>
+                    <p className="history-run-location">Location: {run.location || 'Not set'}</p>
+                    <div className="history-card-actions" aria-label="Run actions">
+                      <button className="secondary-btn history-action-btn" onClick={() => downloadRunExport(run)}>Export JSON</button>
                       {settings.coachMode && (
                         <button
-                          className="primary-btn"
+                          className="primary-btn history-action-btn"
                           onClick={() => void generateIgImage(run)}
                           disabled={!canGenerate || generation.status === 'generating'}
                         >
-                          {generation.status === 'generating' ? 'Generating...' : 'Generate IG Image'}
+                          {generation.status === 'generating' ? 'Sharing...' : 'Share'}
                         </button>
                       )}
-                      <button className="secondary-btn" onClick={() => startEdit(run)}>Edit</button>
-                      <button className="danger-btn" onClick={() => void deleteRun(run.id)}>Delete</button>
+                      <button className="secondary-btn history-action-icon" onClick={() => startEdit(run)} aria-label="Edit">✎</button>
+                      <button className="danger-btn history-action-icon" onClick={() => void deleteRun(run.id)} aria-label="Delete">🗑</button>
                     </div>
+
                     {settings.coachMode && !canGenerate && (
-                      <p>IG generation requires a complete run and workout type set for every station.</p>
+                      <p className="history-share-note">IG generation requires a complete run and workout type set for every station.</p>
                     )}
                     {generation.error && <p role="alert">IG generation error: {generation.error}</p>}
                     {generation.previewUrl && (
@@ -413,6 +364,89 @@ export const HistoryPage = () => {
                       />
                     )}
                   </>
+                ) : (
+                  <div className="history-edit-layout">
+                    <section className="history-edit-section">
+                      <h2 className="history-edit-title">General Parameters</h2>
+                      <label className="field">
+                        <span>Session Name</span>
+                        <input
+                          type="text"
+                          value={draftTimerName}
+                          maxLength={25}
+                          onChange={(e) => setDraftTimerName(e.target.value)}
+                          aria-label="Run timer name"
+                          placeholder="Timer name"
+                        />
+                      </label>
+                      <label className="field">
+                        <span>Date & time</span>
+                        <input
+                          type="datetime-local"
+                          value={draftDateTime}
+                          onChange={(e) => setDraftDateTime(e.target.value)}
+                          aria-label="Run date and time"
+                        />
+                      </label>
+                      <label className="field">
+                        <span>Location</span>
+                        <input
+                          type="text"
+                          value={draftLocation}
+                          onChange={(e) => setDraftLocation(e.target.value)}
+                          aria-label="Run location"
+                          placeholder="Location"
+                        />
+                      </label>
+                    </section>
+
+                    <section className="history-edit-section">
+                      <h2 className="history-edit-title">Timing & Intervals</h2>
+                      <div className="history-readonly-grid">
+                        <StatCard label="Stations" value={String(normalizedSnapshot.stationCount)} />
+                        <StatCard label="Rounds" value={String(normalizedSnapshot.roundsPerStation)} />
+                        <StatCard label="Work" value={formatClock(workSeconds)} />
+                        <StatCard label="Rest" value={formatClock(restSeconds)} />
+                        <StatCard label="Transition" value={formatClock(transitionSeconds)} />
+                        <StatCard label="Warmup" value={formatClock(warmupSeconds)} />
+                        <StatCard label="Cooldown" value={formatClock(cooldownSeconds)} />
+                        <StatCard label="Per Station" value={formatClock(totalPerStationSeconds)} />
+                        <StatCard label="Total Work" value={formatClock(totalWorkSeconds)} />
+                      </div>
+                    </section>
+
+                    <section className="history-edit-section">
+                      <h2 className="history-edit-title">Workout Types</h2>
+                      <div className="stack">
+                        {Array.from({ length: run.timerSnapshot.stationCount }, (_, index) => (
+                          <label className="field" key={`run-${run.id}-station-${index + 1}`}>
+                            <span>Station {index + 1}</span>
+                            <input
+                              type="text"
+                              value={draftStationWorkoutTypes[index] ?? ''}
+                              onChange={(e) => setDraftStationWorkoutTypes((prev) => {
+                                const next = [...prev];
+                                next[index] = e.target.value;
+                                return next;
+                              })}
+                              aria-label={`Run station ${index + 1} workout type`}
+                              placeholder="e.g. pushups"
+                            />
+                          </label>
+                        ))}
+                      </div>
+                    </section>
+
+                    <div className="history-edit-actions">
+                      <button className="secondary-btn" onClick={() => setEditingRunId(null)}>Cancel</button>
+                      <button className="primary-btn" onClick={() => void saveEdit(run)}>Save Session</button>
+                    </div>
+                  </div>
+                )}
+                {!isEditing && runWorkoutTypes.length > 0 && (
+                  <p className="history-run-types">
+                    Workout Types: {runWorkoutTypes.join(', ')}
+                  </p>
                 )}
               </article>
             );
