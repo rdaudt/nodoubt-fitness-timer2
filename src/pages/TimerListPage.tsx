@@ -6,12 +6,42 @@ import { randomTimerName } from '../lib/timerFactory';
 import { useSettings } from '../services/settingsContext';
 import { TimerRepository } from '../services/storage';
 import type { Timer } from '../types';
-import steampunkGym2 from '../../media/steampunk-gym.png';
+
+const homeCardImages = Object.entries(
+  import.meta.glob('../../media/home-page-first-timer-card/*.{png,jpg,jpeg,webp,avif}', {
+    eager: true,
+    import: 'default',
+  }),
+)
+  .sort(([a], [b]) => a.localeCompare(b))
+  .map(([, value]) => String(value));
+
+const HOME_CARD_IMAGE_INDEX_KEY = 'home:first-card-image-index';
+const HOME_CARD_IMAGE_SESSION_KEY = 'home:first-card-image-selected';
+
+const resolveSessionFirstCardImage = (): string | undefined => {
+  if (homeCardImages.length === 0 || typeof window === 'undefined') {
+    return undefined;
+  }
+  const selectedForSession = window.sessionStorage.getItem(HOME_CARD_IMAGE_SESSION_KEY);
+  if (selectedForSession && homeCardImages.includes(selectedForSession)) {
+    return selectedForSession;
+  }
+
+  const currentIndex = Number.parseInt(window.localStorage.getItem(HOME_CARD_IMAGE_INDEX_KEY) ?? '0', 10);
+  const safeIndex = Number.isFinite(currentIndex) && currentIndex >= 0 ? currentIndex % homeCardImages.length : 0;
+  const selected = homeCardImages[safeIndex];
+  const nextIndex = (safeIndex + 1) % homeCardImages.length;
+  window.localStorage.setItem(HOME_CARD_IMAGE_INDEX_KEY, String(nextIndex));
+  window.sessionStorage.setItem(HOME_CARD_IMAGE_SESSION_KEY, selected);
+  return selected;
+};
 
 export const TimerListPage = () => {
   const { settings, saveSettings } = useSettings();
   const [timers, setTimers] = useState<Timer[]>([]);
   const [categoryFilter, setCategoryFilter] = useState<WorkoutCategoryFilter>('ALL');
+  const [firstCardImage] = useState<string | undefined>(() => resolveSessionFirstCardImage());
 
   useEffect(() => {
     const loadTimers = () => {
@@ -90,7 +120,7 @@ export const TimerListPage = () => {
               timer={timer}
               intervalColors={settings.intervalColors}
               coachMode={settings.coachMode}
-              featureImage={index === 0 && settings.kobeEverywhere ? steampunkGym2 : undefined}
+              featureImage={index === 0 ? firstCardImage : undefined}
               onDelete={onDeleteTimer}
               onClone={onCloneTimer}
             />
