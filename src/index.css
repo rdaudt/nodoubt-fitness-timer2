@@ -311,6 +311,38 @@ select {
   min-width: 0;
 }
 
+.timer-card-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: start;
+  gap: 0.6rem;
+  min-width: 0;
+}
+
+.timer-card-head h3 {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow-wrap: break-word;
+  word-break: normal;
+}
+
+.timer-card-category-badge {
+  position: absolute;
+  top: 0.7rem;
+  right: 0.85rem;
+  z-index: 2;
+  border-radius: 999px;
+  border: 1px solid #5b6e3f;
+  padding: 0.15rem 0.5rem;
+  font-family: 'Barlow Condensed', sans-serif;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-size: 0.74rem;
+  white-space: nowrap;
+  color: #d6e9b3;
+  background: rgba(55, 71, 40, 0.5);
+}
+
 .timer-card-meta-row {
   display: flex;
   align-items: center;
@@ -403,7 +435,8 @@ select {
 }
 
 .timer-card h3 {
-  overflow-wrap: anywhere;
+  overflow-wrap: break-word;
+  word-break: normal;
 }
 
 .timer-meta {
@@ -781,6 +814,22 @@ select {
 
 .home-coach-mode-row {
   margin: 0.15rem 0 0.8rem;
+}
+
+.home-category-filter-row {
+  display: flex;
+  align-items: center;
+  gap: 0.7rem;
+  margin-bottom: 0.8rem;
+}
+
+.home-category-filter-row span {
+  white-space: nowrap;
+}
+
+.home-category-filter-row select {
+  flex: 1 1 auto;
+  min-width: 0;
 }
 
 .timer-attribute-duration {

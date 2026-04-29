@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { TimerCard } from '../components/TimerCard';
+import { WORKOUT_CATEGORY_FILTERS, type WorkoutCategoryFilter } from '../config';
 import { randomTimerName } from '../lib/timerFactory';
 import { useSettings } from '../services/settingsContext';
 import { TimerRepository } from '../services/storage';
@@ -10,6 +11,7 @@ import steampunkGym2 from '../../media/steampunk-gym.png';
 export const TimerListPage = () => {
   const { settings, saveSettings } = useSettings();
   const [timers, setTimers] = useState<Timer[]>([]);
+  const [categoryFilter, setCategoryFilter] = useState<WorkoutCategoryFilter>('ALL');
 
   useEffect(() => {
     const loadTimers = () => {
@@ -42,6 +44,10 @@ export const TimerListPage = () => {
     setTimers((prev) => [clone, ...prev]);
   };
 
+  const visibleTimers = categoryFilter === 'ALL'
+    ? timers
+    : timers.filter((timer) => timer.category === categoryFilter);
+
   return (
     <section className="home-page">
       <div className="section-header">
@@ -62,10 +68,23 @@ export const TimerListPage = () => {
         />
       </label>
 
+      <label className="field home-category-filter-row">
+        <span>Workout Category</span>
+        <select
+          value={categoryFilter}
+          onChange={(e) => setCategoryFilter(e.target.value as WorkoutCategoryFilter)}
+          aria-label="Workout category filter"
+        >
+          {WORKOUT_CATEGORY_FILTERS.map((option) => (
+            <option key={option} value={option}>{option}</option>
+          ))}
+        </select>
+      </label>
+
       <div className="stack">
-        {timers.length === 0
+        {visibleTimers.length === 0
           ? <p className="empty">No timers yet. Create your first interval plan.</p>
-          : timers.map((timer, index) => (
+          : visibleTimers.map((timer, index) => (
             <TimerCard
               key={timer.id}
               timer={timer}

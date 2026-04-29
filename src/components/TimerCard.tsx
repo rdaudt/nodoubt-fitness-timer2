@@ -97,6 +97,7 @@ export const TimerCard = ({
         onPointerCancel={close}
       >
         <div className={featureImage ? 'timer-card timer-card-featured' : 'timer-card'}>
+          <span className="timer-card-category-badge">{timer.category}</span>
           {featureImage && (
             <div
               className="timer-card-feature-image"
@@ -106,7 +107,9 @@ export const TimerCard = ({
           )}
           <Link className="timer-card-main" to={`/timer/${timer.id}`} onClick={onCardLinkClick}>
             <div className="timer-card-copy">
-              <h3>{timer.name}</h3>
+              <div className="timer-card-head">
+                <h3>{timer.name}</h3>
+              </div>
               <div className="timer-card-meta-row">
                 {summaryItems.map((item) => (
                   <span className="timer-type-total" key={`${item.type}-${item.label}`}>

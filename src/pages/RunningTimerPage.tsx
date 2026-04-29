@@ -57,6 +57,7 @@ const emptyTimer = (): Timer => ({
   cooldownEnabled: false,
   cooldownMinutes: 0,
   cooldownSeconds: 0,
+  category: 'GENERAL',
   createdAt: new Date().toISOString(),
   updatedAt: new Date().toISOString(),
 });
@@ -182,6 +183,7 @@ export const RunningTimerPage = () => {
       stationWorkoutTypes: timer.stationWorkoutTypes ?? [],
       totalPerStationMs,
       totalWorkMs,
+      category: timer.category,
       complete,
       ranAt: nowIso,
       location: '',
@@ -368,6 +370,7 @@ export const RunningTimerPage = () => {
         <div className="run-main-column" ref={mainColumnRef}>
           <header className="run-header">
             <p className="run-name">{timer.name}</p>
+            <p className="run-remaining">Category: {timer.category}</p>
             <p className="run-remaining">Total remaining: {formatClock(runner.state.totalRemainingMs / 1000)}</p>
             {isStationStartPause && <p className="run-paused-flag run-set-start-flag pulse">Prepare to start</p>}
           </header>
