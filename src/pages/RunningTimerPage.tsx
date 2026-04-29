@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState, type CSSProperties } from 'react';
 import { Link, useParams, useSearchParams } from 'react-router-dom';
-import { formatClock } from '../lib/time';
+import { formatClock, getStationWorkoutDurationMs, getWorkDurationMs } from '../lib/time';
 import { useTimerRunner } from '../lib/useTimerRunner';
 import { useSettings } from '../services/settingsContext';
 import { TimerRepository, TimerRunRepository } from '../services/storage';
@@ -172,12 +172,16 @@ export const RunningTimerPage = () => {
     }
     runLoggedRef.current = true;
     const nowIso = new Date().toISOString();
+    const totalPerStationMs = getStationWorkoutDurationMs(timer);
+    const totalWorkMs = getWorkDurationMs(timer) * timer.roundsPerStation * timer.stationCount;
     const run: TimerRun = {
       id: crypto.randomUUID(),
       timerId: timer.id,
       timerNameAtRun: timer.name,
       timerSnapshot: timer,
       stationWorkoutTypes: timer.stationWorkoutTypes ?? [],
+      totalPerStationMs,
+      totalWorkMs,
       complete,
       ranAt: nowIso,
       location: '',

@@ -1,5 +1,6 @@
 import { openDB } from 'idb';
 import { DEFAULT_SETTINGS } from '../config';
+import { getStationWorkoutDurationMs, getWorkDurationMs } from '../lib/time';
 import { normalizeTimerFields } from '../lib/timerRules';
 import type { AppSettings, Timer, TimerRun } from '../types';
 
@@ -57,7 +58,7 @@ const isCurrentTimer = (timer: unknown): timer is Timer => (
   && typeof (timer as Timer).roundsPerStation === 'number'
 );
 
-const normalizeTimerRun = (run: TimerRun): TimerRun | null => {
+export const normalizeTimerRun = (run: TimerRun): TimerRun | null => {
   if (!run || typeof run !== 'object' || typeof run.id !== 'string' || typeof run.timerId !== 'string') {
     return null;
   }
@@ -65,6 +66,12 @@ const normalizeTimerRun = (run: TimerRun): TimerRun | null => {
   if (!snapshot) {
     return null;
   }
+  const totalPerStationMs = Number.isFinite(run.totalPerStationMs)
+    ? Math.max(0, Math.floor(run.totalPerStationMs))
+    : getStationWorkoutDurationMs(snapshot);
+  const totalWorkMs = Number.isFinite(run.totalWorkMs)
+    ? Math.max(0, Math.floor(run.totalWorkMs))
+    : getWorkDurationMs(snapshot) * snapshot.roundsPerStation * snapshot.stationCount;
   return {
     ...run,
     timerSnapshot: snapshot,
@@ -73,6 +80,8 @@ const normalizeTimerRun = (run: TimerRun): TimerRun | null => {
         .slice(0, snapshot.stationCount)
         .map((item) => (typeof item === 'string' ? item : String(item ?? '')).trim())
       : snapshot.stationWorkoutTypes ?? [],
+    totalPerStationMs,
+    totalWorkMs,
     complete: run.complete ?? true,
     location: run.location ?? '',
   };
