@@ -23,6 +23,7 @@ const demoTimer: Timer = {
   cooldownEnabled: true,
   cooldownMinutes: 0,
   cooldownSeconds: 30,
+  category: 'GENERAL',
   createdAt: '2026-01-01T00:00:00.000Z',
   updatedAt: '2026-01-01T00:00:00.000Z',
 };
@@ -49,6 +50,7 @@ describe('TimerCard', () => {
     renderCard();
 
     expect(screen.getByText('Demo HIIT')).toBeInTheDocument();
+    expect(screen.getByText('GENERAL')).toBeInTheDocument();
     expect(screen.getByText('Stations 2')).toBeInTheDocument();
     expect(screen.getByText('Rounds 3')).toBeInTheDocument();
     expect(screen.getByText('Work 30s')).toBeInTheDocument();

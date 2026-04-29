@@ -1,4 +1,5 @@
 import type { AppSettings } from './types';
+import type { WorkoutCategory } from './types';
 
 export const APP_NAME = 'HIIT Timer by NoDoubt Fitness';
 
@@ -31,3 +32,8 @@ export const TYPE_LABELS = {
   rest: 'Rest',
   cooldown: 'Cooldown',
 } as const;
+
+export const WORKOUT_CATEGORIES: readonly WorkoutCategory[] = ['GENERAL', 'FAT-LOSS', 'PERFORMANCE'] as const;
+
+export const WORKOUT_CATEGORY_FILTERS = ['ALL', ...WORKOUT_CATEGORIES] as const;
+export type WorkoutCategoryFilter = typeof WORKOUT_CATEGORY_FILTERS[number];

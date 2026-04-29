@@ -21,6 +21,7 @@ const timer: Timer = {
   cooldownEnabled: false,
   cooldownMinutes: 0,
   cooldownSeconds: 0,
+  category: 'GENERAL',
   createdAt: '2026-01-01T00:00:00.000Z',
   updatedAt: '2026-01-01T00:00:00.000Z',
 };

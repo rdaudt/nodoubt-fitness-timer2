@@ -54,6 +54,7 @@ const timer = {
   cooldownEnabled: false,
   cooldownMinutes: 0,
   cooldownSeconds: 0,
+  category: 'GENERAL',
   createdAt: '2026-01-01T00:00:00.000Z',
   updatedAt: '2026-01-01T00:00:00.000Z',
 };
@@ -322,6 +323,7 @@ describe('RunningTimerPage', () => {
     expect(createRunMock.mock.calls[0][0]).toEqual(expect.objectContaining({
       timerId: 'timer-1',
       timerNameAtRun: 'Demo Timer',
+      category: 'GENERAL',
       stationWorkoutTypes: ['Pushups'],
       totalPerStationMs: 30000,
       totalWorkMs: 30000,

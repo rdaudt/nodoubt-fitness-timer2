@@ -1,5 +1,6 @@
 import type { Timer, TimerValidationResult } from '../types';
 import { durationMs } from './time';
+import { WORKOUT_CATEGORIES } from '../config';
 
 const cleanCount = (value: number, fallback: number): number =>
   Math.max(1, Math.floor(Number.isFinite(value) ? value : fallback));
@@ -18,6 +19,9 @@ const normalizeStationWorkoutTypes = (value: unknown, stationCount: number): str
     .slice(0, stationCount)
     .map((item) => (typeof item === 'string' ? item : String(item ?? '')).trim());
 };
+
+const normalizeCategory = (value: unknown): Timer['category'] =>
+  WORKOUT_CATEGORIES.includes(value as Timer['category']) ? (value as Timer['category']) : 'GENERAL';
 
 export const normalizeTimerFields = (timer: Timer): Timer => {
   const warmupEnabled = Boolean(timer.warmupEnabled);
@@ -43,6 +47,7 @@ export const normalizeTimerFields = (timer: Timer): Timer => {
     cooldownEnabled,
     cooldownMinutes: cooldownEnabled ? cleanMinutes(timer.cooldownMinutes, 5) : 0,
     cooldownSeconds: cooldownEnabled ? cleanSeconds(timer.cooldownSeconds) : 0,
+    category: normalizeCategory(timer.category),
   };
 };
 

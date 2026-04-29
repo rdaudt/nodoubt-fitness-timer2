@@ -1,5 +1,6 @@
 export type IntervalType = 'warmup' | 'work' | 'rest' | 'cooldown';
 export type CountdownType = IntervalType | 'stationTransition';
+export type WorkoutCategory = 'GENERAL' | 'FAT-LOSS' | 'PERFORMANCE';
 
 export interface Timer {
   id: string;
@@ -20,6 +21,7 @@ export interface Timer {
   cooldownEnabled: boolean;
   cooldownMinutes: number;
   cooldownSeconds: number;
+  category: WorkoutCategory;
   createdAt: string;
   updatedAt: string;
 }
@@ -32,6 +34,7 @@ export interface TimerRun {
   stationWorkoutTypes?: string[];
   totalPerStationMs: number;
   totalWorkMs: number;
+  category: WorkoutCategory;
   complete: boolean;
   ranAt: string;
   location: string;
