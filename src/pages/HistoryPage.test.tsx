@@ -44,8 +44,13 @@ const timer = {
 };
 
 describe('HistoryPage', () => {
+  let createObjectURLSpy: ReturnType<typeof vi.spyOn>;
+  let revokeObjectURLSpy: ReturnType<typeof vi.spyOn>;
+
   beforeEach(() => {
     vi.clearAllMocks();
+    createObjectURLSpy = vi.spyOn(URL, 'createObjectURL').mockReturnValue('blob:test-url');
+    revokeObjectURLSpy = vi.spyOn(URL, 'revokeObjectURL').mockImplementation(() => undefined);
     listTimersMock.mockResolvedValue([timer]);
     listAllRunsMock.mockResolvedValue([{
       id: 'run-1',
@@ -53,6 +58,8 @@ describe('HistoryPage', () => {
       timerNameAtRun: 'Demo Timer',
       timerSnapshot: timer,
       stationWorkoutTypes: ['Burpees'],
+      totalPerStationMs: 30000,
+      totalWorkMs: 30000,
       complete: false,
       ranAt: '2026-02-01T10:00:00.000Z',
       location: '',
@@ -71,8 +78,16 @@ describe('HistoryPage', () => {
       </MemoryRouter>,
     );
 
-    expect(await screen.findByRole('link', { name: 'Demo Timer' })).toHaveAttribute('href', '/timer/timer-1');
+    expect(await screen.findByRole('link', { name: 'HIIT Session Name: Demo Timer' })).toHaveAttribute('href', '/timer/timer-1');
     expect(screen.getByText('Complete: OFF')).toBeInTheDocument();
+    expect(screen.getByText('Number of stations/sets: 1')).toBeInTheDocument();
+    expect(screen.getByText('Number of rounds per station/set: 1')).toBeInTheDocument();
+    expect(screen.getByText('Work interval time: 00:30')).toBeInTheDocument();
+    expect(screen.getByText('Rest interval time: 00:00')).toBeInTheDocument();
+    expect(screen.getByText('Station/set transition time: 00:30')).toBeInTheDocument();
+    expect(screen.getByText('Name of the workout type in each station/set: Burpees')).toBeInTheDocument();
+    expect(screen.getByText('Total time per station/set: 00:30')).toBeInTheDocument();
+    expect(screen.getByText('Total work time: 00:30')).toBeInTheDocument();
     fireEvent.click(screen.getByRole('button', { name: 'Edit' }));
     const input = screen.getByLabelText('Run location');
     fireEvent.change(input, { target: { value: 'Downtown Box' } });
@@ -82,6 +97,8 @@ describe('HistoryPage', () => {
   });
 
   afterEach(() => {
+    createObjectURLSpy.mockRestore();
+    revokeObjectURLSpy.mockRestore();
     cleanup();
   });
 
@@ -94,7 +111,7 @@ describe('HistoryPage', () => {
       </MemoryRouter>,
     );
 
-    await screen.findByRole('link', { name: 'Demo Timer' });
+    await screen.findByRole('link', { name: 'HIIT Session Name: Demo Timer' });
     fireEvent.click(screen.getByRole('button', { name: 'Edit' }));
     const stationInput = screen.getByLabelText('Run station 1 workout type');
     fireEvent.change(stationInput, { target: { value: 'Pullups' } });
@@ -107,5 +124,32 @@ describe('HistoryPage', () => {
         stationWorkoutTypes: ['Burpees'],
       }),
     }));
+  });
+
+  it('exports a run entry as JSON', async () => {
+    const clickSpy = vi.spyOn(HTMLAnchorElement.prototype, 'click').mockImplementation(() => undefined);
+    render(
+      <MemoryRouter initialEntries={['/history']}>
+        <Routes>
+          <Route path="/history" element={<HistoryPage />} />
+        </Routes>
+      </MemoryRouter>,
+    );
+
+    await screen.findByRole('link', { name: 'HIIT Session Name: Demo Timer' });
+    fireEvent.click(screen.getByRole('button', { name: 'Export JSON' }));
+
+    expect(createObjectURLSpy).toHaveBeenCalledTimes(1);
+    const exportedBlob = createObjectURLSpy.mock.calls[0][0] as Blob;
+    const exportedJson = JSON.parse(await exportedBlob.text());
+    expect(exportedJson.stationSetWorkoutTypes).toEqual([
+      {
+        stationSetNumber: 1,
+        workoutType: 'Burpees',
+      },
+    ]);
+    expect(revokeObjectURLSpy).toHaveBeenCalledWith('blob:test-url');
+    expect(clickSpy).toHaveBeenCalledTimes(1);
+    clickSpy.mockRestore();
   });
 });

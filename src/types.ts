@@ -30,6 +30,8 @@ export interface TimerRun {
   timerNameAtRun: string;
   timerSnapshot: Timer;
   stationWorkoutTypes?: string[];
+  totalPerStationMs: number;
+  totalWorkMs: number;
   complete: boolean;
   ranAt: string;
   location: string;

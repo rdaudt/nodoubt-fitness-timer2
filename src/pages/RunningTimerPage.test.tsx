@@ -323,6 +323,8 @@ describe('RunningTimerPage', () => {
       timerId: 'timer-1',
       timerNameAtRun: 'Demo Timer',
       stationWorkoutTypes: ['Pushups'],
+      totalPerStationMs: 30000,
+      totalWorkMs: 30000,
       complete: true,
       location: '',
     }));
