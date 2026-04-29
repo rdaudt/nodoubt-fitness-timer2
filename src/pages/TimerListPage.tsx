@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { TimerCard } from '../components/TimerCard';
 import { WORKOUT_CATEGORY_FILTERS, type WorkoutCategoryFilter } from '../config';
@@ -9,7 +9,7 @@ import { TimerRepository } from '../services/storage';
 import type { Timer } from '../types';
 
 const homeCardImages = Object.entries(
-  import.meta.glob('../../media/home-page-first-timer-card/*.{png,jpg,jpeg,webp,avif}', {
+  import.meta.glob('../../media/timer-card-images/*.{png,jpg,jpeg,webp,avif}', {
     eager: true,
     import: 'default',
   }),
@@ -17,32 +17,39 @@ const homeCardImages = Object.entries(
   .sort(([a], [b]) => a.localeCompare(b))
   .map(([, value]) => String(value));
 
-const HOME_CARD_IMAGE_INDEX_KEY = 'home:first-card-image-index';
-const HOME_CARD_IMAGE_SESSION_KEY = 'home:first-card-image-selected';
-
-const resolveSessionFirstCardImage = (): string | undefined => {
-  if (homeCardImages.length === 0 || typeof window === 'undefined') {
-    return undefined;
+const shuffledCopy = (values: string[]): string[] => {
+  const next = [...values];
+  for (let index = next.length - 1; index > 0; index -= 1) {
+    const swapIndex = Math.floor(Math.random() * (index + 1));
+    [next[index], next[swapIndex]] = [next[swapIndex], next[index]];
   }
-  const selectedForSession = window.sessionStorage.getItem(HOME_CARD_IMAGE_SESSION_KEY);
-  if (selectedForSession && homeCardImages.includes(selectedForSession)) {
-    return selectedForSession;
+  return next;
+};
+
+const assignCardImages = (cardCount: number): Array<string | undefined> => {
+  if (cardCount <= 0 || homeCardImages.length === 0) {
+    return [];
   }
 
-  const currentIndex = Number.parseInt(window.localStorage.getItem(HOME_CARD_IMAGE_INDEX_KEY) ?? '0', 10);
-  const safeIndex = Number.isFinite(currentIndex) && currentIndex >= 0 ? currentIndex % homeCardImages.length : 0;
-  const selected = homeCardImages[safeIndex];
-  const nextIndex = (safeIndex + 1) % homeCardImages.length;
-  window.localStorage.setItem(HOME_CARD_IMAGE_INDEX_KEY, String(nextIndex));
-  window.sessionStorage.setItem(HOME_CARD_IMAGE_SESSION_KEY, selected);
-  return selected;
+  const assignments: Array<string | undefined> = [];
+  while (assignments.length < cardCount) {
+    const shuffled = shuffledCopy(homeCardImages);
+    for (const image of shuffled) {
+      assignments.push(image);
+      if (assignments.length === cardCount) {
+        break;
+      }
+    }
+  }
+
+  return assignments;
 };
 
 export const TimerListPage = () => {
   const { settings, saveSettings } = useSettings();
   const [timers, setTimers] = useState<Timer[]>([]);
   const [categoryFilter, setCategoryFilter] = useState<WorkoutCategoryFilter>('ALL');
-  const [firstCardImage] = useState<string | undefined>(() => resolveSessionFirstCardImage());
+  const [cardImages, setCardImages] = useState<Array<string | undefined>>([]);
 
   useEffect(() => {
     const loadTimers = () => {
@@ -83,9 +90,16 @@ export const TimerListPage = () => {
     await createTemplateFromTimer(timer, nextName);
   };
 
-  const visibleTimers = categoryFilter === 'ALL'
-    ? timers
-    : timers.filter((timer) => timer.category === categoryFilter);
+  const visibleTimers = useMemo(
+    () => (categoryFilter === 'ALL'
+      ? timers
+      : timers.filter((timer) => timer.category === categoryFilter)),
+    [categoryFilter, timers],
+  );
+
+  useEffect(() => {
+    setCardImages(assignCardImages(visibleTimers.length));
+  }, [visibleTimers]);
 
   return (
     <section className="home-page">
@@ -129,7 +143,7 @@ export const TimerListPage = () => {
               timer={timer}
               intervalColors={settings.intervalColors}
               coachMode={settings.coachMode}
-              featureImage={index === 0 ? firstCardImage : undefined}
+              featureImage={cardImages[index]}
               onDelete={onDeleteTimer}
               onClone={onCloneTimer}
               onCreateTemplate={onCreateTemplate}
