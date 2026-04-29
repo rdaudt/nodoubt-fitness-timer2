@@ -257,6 +257,8 @@ select {
   background-repeat: no-repeat;
   background-color: #0b0b0b;
   opacity: 1;
+  -webkit-mask-image: linear-gradient(to bottom, #000 0%, #000 50%, rgba(0, 0, 0, 0) 100%);
+  mask-image: linear-gradient(to bottom, #000 0%, #000 50%, rgba(0, 0, 0, 0) 100%);
 }
 
 .timer-card-feature-image::after {
