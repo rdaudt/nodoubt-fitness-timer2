@@ -15,12 +15,14 @@ export const TimerCard = ({
   coachMode,
   featureImage,
   onDelete,
+  onClone,
 }: {
   timer: Timer;
   intervalColors: AppSettings['intervalColors'];
   coachMode: boolean;
   featureImage?: string;
   onDelete: (id: string) => void;
+  onClone: (timer: Timer) => void;
 }) => {
   const summaryItems = getTimerSummaryItems(timer, coachMode);
   const [translateX, setTranslateX] = useState(0);
@@ -129,8 +131,16 @@ export const TimerCard = ({
               <strong>{formatTimerTotal(timer)}</strong>
               <span>Total Time</span>
             </div>
+            <button
+              className="timer-clone-btn"
+              type="button"
+              onClick={() => onClone(timer)}
+              aria-label={`Clone ${timer.name}`}
+            >
+              Clone
+            </button>
             <Link className="timer-run-btn" to={`/timer/${timer.id}/run?from=home`} aria-label={`Run ${timer.name}`} onClick={onCardLinkClick}>
-              <span aria-hidden="true">▶</span>
+              <span aria-hidden="true">{'>'}</span>
             </Link>
           </div>
         </div>
