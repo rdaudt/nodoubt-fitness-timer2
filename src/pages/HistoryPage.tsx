@@ -1,6 +1,14 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { estimateTimerDurationMs, formatClock } from '../lib/time';
+import {
+  estimateTimerDurationMs,
+  formatClock,
+  getCooldownDurationMs,
+  getRestDurationMs,
+  getTransitionDurationMs,
+  getWarmupDurationMs,
+  getWorkDurationMs,
+} from '../lib/time';
 import { normalizeTimerFields } from '../lib/timerRules';
 import { TimerRepository, TimerRunRepository } from '../services/storage';
 import type { Timer, TimerRun } from '../types';
@@ -12,6 +20,33 @@ const toDateTimeLocal = (value: string): string => {
   }
   const pad = (n: number) => String(n).padStart(2, '0');
   return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}`;
+};
+
+const downloadRunExport = (run: TimerRun) => {
+  const snapshot = normalizeTimerFields(run.timerSnapshot);
+  const workoutTypes = (run.stationWorkoutTypes ?? snapshot.stationWorkoutTypes ?? [])
+    .slice(0, snapshot.stationCount)
+    .map((item) => item.trim());
+  const stationSetWorkoutTypes = Array.from({ length: snapshot.stationCount }, (_, index) => ({
+    stationSetNumber: index + 1,
+    workoutType: workoutTypes[index] ?? '',
+  }));
+  const payload = {
+    ...run,
+    stationSetWorkoutTypes,
+    exportedAt: new Date().toISOString(),
+  };
+  const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const safeRunId = run.id.replace(/[^a-zA-Z0-9_-]/g, '-');
+  const safeRanAt = run.ranAt.replace(/[:.]/g, '-');
+  const anchor = document.createElement('a');
+  anchor.href = url;
+  anchor.download = `hiit-run-${safeRunId}-${safeRanAt}.json`;
+  document.body.appendChild(anchor);
+  anchor.click();
+  document.body.removeChild(anchor);
+  URL.revokeObjectURL(url);
 };
 
 export const HistoryPage = () => {
@@ -82,15 +117,27 @@ export const HistoryPage = () => {
         <div className="stack">
           {runs.map((run) => {
             const activeTimer = timerById.get(run.timerId);
-            const runSeconds = Math.floor(estimateTimerDurationMs(normalizeTimerFields(run.timerSnapshot)) / 1000);
+            const normalizedSnapshot = normalizeTimerFields(run.timerSnapshot);
+            const runSeconds = Math.floor(estimateTimerDurationMs(normalizedSnapshot) / 1000);
+            const warmupSeconds = Math.floor(getWarmupDurationMs(normalizedSnapshot) / 1000);
+            const cooldownSeconds = Math.floor(getCooldownDurationMs(normalizedSnapshot) / 1000);
+            const workSeconds = Math.floor(getWorkDurationMs(normalizedSnapshot) / 1000);
+            const restSeconds = Math.floor(getRestDurationMs(normalizedSnapshot) / 1000);
+            const transitionSeconds = Math.floor(getTransitionDurationMs(normalizedSnapshot) / 1000);
+            const totalPerStationSeconds = Math.floor(run.totalPerStationMs / 1000);
+            const totalWorkSeconds = Math.floor(run.totalWorkMs / 1000);
+            const runWorkoutTypes = (run.stationWorkoutTypes ?? normalizedSnapshot.stationWorkoutTypes ?? [])
+              .slice(0, normalizedSnapshot.stationCount)
+              .map((item) => item.trim())
+              .filter((item) => item.length > 0);
             const isEditing = editingRunId === run.id;
             return (
               <article key={run.id} className="timer-run-card">
                 <p>
                   {activeTimer ? (
-                    <Link to={`/timer/${run.timerId}`}>{run.timerNameAtRun}</Link>
+                    <Link to={`/timer/${run.timerId}`}>HIIT Session Name: {run.timerNameAtRun}</Link>
                   ) : (
-                    <span>{run.timerNameAtRun} (Deleted timer)</span>
+                    <span>HIIT Session Name: {run.timerNameAtRun} (Deleted timer)</span>
                   )}
                 </p>
                 {isEditing ? (
@@ -140,11 +187,25 @@ export const HistoryPage = () => {
                   </>
                 ) : (
                   <>
-                    <p><strong>{new Date(run.ranAt).toLocaleString()}</strong></p>
+                    <p><strong>Date & start time: {new Date(run.ranAt).toLocaleString()}</strong></p>
                     <p>Complete: {run.complete ? 'ON' : 'OFF'}</p>
                     <p>Location: {run.location || 'Not set'}</p>
+                    <p>Warmup time: {formatClock(warmupSeconds)}</p>
+                    <p>Cooldown time: {formatClock(cooldownSeconds)}</p>
+                    <p>Number of stations/sets: {normalizedSnapshot.stationCount}</p>
+                    <p>Number of rounds per station/set: {normalizedSnapshot.roundsPerStation}</p>
+                    <p>Work interval time: {formatClock(workSeconds)}</p>
+                    <p>Rest interval time: {formatClock(restSeconds)}</p>
+                    <p>Station/set transition time: {formatClock(transitionSeconds)}</p>
+                    <p>
+                      Name of the workout type in each station/set:{' '}
+                      {runWorkoutTypes.length > 0 ? runWorkoutTypes.join(', ') : 'Not set'}
+                    </p>
+                    <p>Total time per station/set: {formatClock(totalPerStationSeconds)}</p>
+                    <p>Total work time: {formatClock(totalWorkSeconds)}</p>
                     <p>Snapshot total: {formatClock(runSeconds)}</p>
                     <div className="actions-row wrap">
+                      <button className="primary-btn" onClick={() => downloadRunExport(run)}>Export JSON</button>
                       <button className="secondary-btn" onClick={() => startEdit(run)}>Edit</button>
                       <button className="danger-btn" onClick={() => void deleteRun(run.id)}>Delete</button>
                     </div>
