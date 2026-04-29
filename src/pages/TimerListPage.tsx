@@ -9,7 +9,7 @@ import { TimerRepository } from '../services/storage';
 import type { Timer } from '../types';
 
 const homeCardImages = Object.entries(
-  import.meta.glob('../../media/timer-card-images/*.{png,jpg,jpeg,webp,avif}', {
+  import.meta.glob('../../media/timer-card-images/bw/*.{png,jpg,jpeg,webp,avif}', {
     eager: true,
     import: 'default',
   }),
