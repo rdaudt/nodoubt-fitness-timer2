@@ -140,6 +140,7 @@ describe('TimerDetailPage', () => {
     );
 
     const workInput = await screen.findByLabelText('Work time');
+    fireEvent.focus(workInput);
     fireEvent.change(workInput, { target: { value: '00:45' } });
     fireEvent.blur(workInput);
 

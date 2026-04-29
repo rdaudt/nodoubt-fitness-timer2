@@ -16,6 +16,7 @@ export const TimerCard = ({
   featureImage,
   onDelete,
   onClone,
+  onCreateTemplate,
 }: {
   timer: Timer;
   intervalColors: AppSettings['intervalColors'];
@@ -23,6 +24,7 @@ export const TimerCard = ({
   featureImage?: string;
   onDelete: (id: string) => void;
   onClone: (timer: Timer) => void;
+  onCreateTemplate: (timer: Timer) => void;
 }) => {
   const summaryItems = getTimerSummaryItems(timer, coachMode);
   const [translateX, setTranslateX] = useState(0);
@@ -141,6 +143,14 @@ export const TimerCard = ({
               aria-label={`Clone ${timer.name}`}
             >
               Clone
+            </button>
+            <button
+              className="timer-clone-btn"
+              type="button"
+              onClick={() => onCreateTemplate(timer)}
+              aria-label={`Create template from ${timer.name}`}
+            >
+              Template
             </button>
             <Link className="timer-run-btn" to={`/timer/${timer.id}/run?from=home`} aria-label={`Run ${timer.name}`} onClick={onCardLinkClick}>
               <span aria-hidden="true">{'>'}</span>

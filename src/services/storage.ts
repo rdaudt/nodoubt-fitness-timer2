@@ -2,7 +2,7 @@ import { openDB } from 'idb';
 import { DEFAULT_SETTINGS } from '../config';
 import { getStationWorkoutDurationMs, getWorkDurationMs } from '../lib/time';
 import { normalizeTimerFields } from '../lib/timerRules';
-import type { AppSettings, Timer, TimerRun } from '../types';
+import type { AppSettings, Template, Timer, TimerRun } from '../types';
 
 interface AppDb {
   timers: {
@@ -21,6 +21,10 @@ interface AppDb {
       'by-ran-at': string;
     };
   };
+  templates: {
+    key: string;
+    value: TemplateStoreRow;
+  };
 }
 
 interface AppSettingsRow {
@@ -29,7 +33,16 @@ interface AppSettingsRow {
 }
 
 const DB_NAME = 'nodoubt-hiit';
-const DB_VERSION = 2;
+const DB_VERSION = 3;
+const BUILTIN_DELETE_MARKER_PREFIX = '__deleted_builtin_template__:';
+
+interface DeletedBuiltinTemplateMarker {
+  id: string;
+  deletedBuiltinId: string;
+  createdAt: string;
+}
+
+type TemplateStoreRow = Template | DeletedBuiltinTemplateMarker;
 
 const dbPromise = openDB<AppDb>(DB_NAME, DB_VERSION, {
   upgrade(db) {
@@ -45,6 +58,10 @@ const dbPromise = openDB<AppDb>(DB_NAME, DB_VERSION, {
       const timerRunsStore = db.createObjectStore('timerRuns', { keyPath: 'id' });
       timerRunsStore.createIndex('by-timer-id', 'timerId');
       timerRunsStore.createIndex('by-ran-at', 'ranAt');
+    }
+
+    if (!db.objectStoreNames.contains('templates')) {
+      db.createObjectStore('templates', { keyPath: 'id' });
     }
   },
 });
@@ -96,6 +113,35 @@ export const normalizeTimer = (timer: Timer): Timer | null => {
   }
   return normalizeTimerFields(timer);
 };
+
+const isTemplateRow = (row: unknown): row is Template => (
+  Boolean(row)
+  && typeof row === 'object'
+  && typeof (row as Template).id === 'string'
+  && typeof (row as Template).name === 'string'
+  && typeof (row as Template).source === 'string'
+  && typeof (row as Template).stationCount === 'number'
+);
+
+export const normalizeTemplate = (template: Template): Template | null => {
+  if (!isTemplateRow(template)) {
+    return null;
+  }
+  const normalizedTimer = normalizeTimerFields({
+    ...template,
+    id: template.id,
+    createdAt: template.createdAt,
+    updatedAt: template.updatedAt,
+  });
+  return {
+    ...normalizedTimer,
+    source: template.source === 'builtin' ? 'builtin' : 'user',
+    builtinTemplateId: typeof template.builtinTemplateId === 'string' ? template.builtinTemplateId : undefined,
+  };
+};
+
+const isDeletedBuiltinMarker = (row: TemplateStoreRow): row is DeletedBuiltinTemplateMarker =>
+  Boolean((row as DeletedBuiltinTemplateMarker).deletedBuiltinId);
 
 export const TimerRepository = {
   async list(): Promise<Timer[]> {
@@ -155,6 +201,85 @@ export const TimerRepository = {
       await tx.store.put(normalizeTimerFields(timer));
     }
     await tx.done;
+  },
+};
+
+export const TemplateRepository = {
+  async list(): Promise<Template[]> {
+    const db = await dbPromise;
+    const rows = await db.getAll('templates');
+    const valid: Template[] = [];
+
+    await Promise.all(rows.map(async (row) => {
+      if (isDeletedBuiltinMarker(row)) {
+        return;
+      }
+      const normalized = normalizeTemplate(row);
+      if (!normalized) {
+        await db.delete('templates', row.id);
+        return;
+      }
+      valid.push(normalized);
+    }));
+
+    return valid.sort((a, b) => +new Date(b.updatedAt) - +new Date(a.updatedAt));
+  },
+  async get(id: string): Promise<Template | undefined> {
+    const db = await dbPromise;
+    const row = await db.get('templates', id);
+    if (!row || isDeletedBuiltinMarker(row)) {
+      return undefined;
+    }
+    const normalized = normalizeTemplate(row);
+    if (!normalized) {
+      await db.delete('templates', id);
+      return undefined;
+    }
+    return normalized;
+  },
+  async upsert(template: Template): Promise<void> {
+    const db = await dbPromise;
+    const normalized = normalizeTemplate(template);
+    if (!normalized) {
+      return;
+    }
+    await db.put('templates', normalized);
+  },
+  async remove(id: string): Promise<void> {
+    const db = await dbPromise;
+    await db.delete('templates', id);
+  },
+  async replaceAll(templates: Template[]): Promise<void> {
+    const db = await dbPromise;
+    const tx = db.transaction('templates', 'readwrite');
+    await tx.store.clear();
+    for (const template of templates) {
+      const normalized = normalizeTemplate(template);
+      if (normalized) {
+        await tx.store.put(normalized);
+      }
+    }
+    await tx.done;
+  },
+  async listDeletedBuiltinIds(): Promise<string[]> {
+    const db = await dbPromise;
+    const rows = await db.getAll('templates');
+    return rows
+      .filter((row): row is DeletedBuiltinTemplateMarker => isDeletedBuiltinMarker(row))
+      .map((row) => row.deletedBuiltinId);
+  },
+  async markBuiltinDeleted(builtinTemplateId: string): Promise<void> {
+    const db = await dbPromise;
+    const now = new Date().toISOString();
+    await db.put('templates', {
+      id: `${BUILTIN_DELETE_MARKER_PREFIX}${builtinTemplateId}`,
+      deletedBuiltinId: builtinTemplateId,
+      createdAt: now,
+    });
+  },
+  async clearBuiltinDeletedMark(builtinTemplateId: string): Promise<void> {
+    const db = await dbPromise;
+    await db.delete('templates', `${BUILTIN_DELETE_MARKER_PREFIX}${builtinTemplateId}`);
   },
 };
 

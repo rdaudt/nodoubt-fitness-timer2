@@ -26,6 +26,13 @@ const HistoryIcon = () => (
   </svg>
 );
 
+const TemplatesIcon = () => (
+  <svg viewBox="0 0 24 24" aria-hidden="true">
+    <path d="M5 4h14v16H5z" fill="none" stroke="currentColor" strokeWidth="2" />
+    <path d="M8 8h8M8 12h8M8 16h6" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+  </svg>
+);
+
 const SettingsIcon = () => (
   <svg viewBox="0 0 24 24" aria-hidden="true">
     <path
@@ -38,6 +45,7 @@ const SettingsIcon = () => (
 
 const navItems = [
   { to: '/', label: 'Timers', icon: TimersIcon },
+  { to: '/templates', label: 'Templates', icon: TemplatesIcon },
   { to: '/history', label: 'History', icon: HistoryIcon },
   { to: '/about', label: 'About', icon: AboutIcon },
   { to: '/settings', label: 'Settings', icon: SettingsIcon },

@@ -1,5 +1,5 @@
-import { fireEvent, render, screen, waitFor } from '@testing-library/react';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { SettingsPage } from './SettingsPage';
 import { DEFAULT_SETTINGS } from '../config';
 
@@ -28,6 +28,10 @@ describe('SettingsPage import/export', () => {
     exportTimersMock.mockResolvedValue(undefined);
     importTimersMock.mockResolvedValue(2);
     vi.spyOn(window, 'confirm').mockReturnValue(true);
+  });
+
+  afterEach(() => {
+    cleanup();
   });
 
   it('renders import/export controls', () => {
@@ -67,6 +71,6 @@ describe('SettingsPage import/export', () => {
     fireEvent.change(input, { target: { files: [file] } });
 
     await waitFor(() => expect(importTimersMock).toHaveBeenCalledWith(file));
-    expect(screen.getByText('Invalid export file format.')).toBeInTheDocument();
+    expect(await screen.findByText('Invalid export file format.')).toBeInTheDocument();
   });
 });
