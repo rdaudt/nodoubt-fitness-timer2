@@ -251,8 +251,10 @@ select {
   position: absolute;
   inset: 0;
   z-index: 0;
-  background-position: center 34%;
-  background-size: cover;
+  background-position: center top;
+  background-size: contain;
+  background-repeat: no-repeat;
+  background-color: #0b0b0b;
   opacity: 1;
 }
 
