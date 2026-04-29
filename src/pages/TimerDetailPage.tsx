@@ -5,6 +5,7 @@ import { normalizeTimerFields, validateTimer } from '../lib/timerRules';
 import { useSettings } from '../services/settingsContext';
 import { TimerRepository } from '../services/storage';
 import type { Timer } from '../types';
+import hiitWorkoutsRaw from '../../docs/hiit-workouts.txt?raw';
 
 const lockNumberInput = (e: WheelEvent<HTMLInputElement>) => {
   e.currentTarget.blur();
@@ -52,6 +53,11 @@ const toTimeDigits = (totalSeconds: number): string => {
   }
   return `${minutes}${String(seconds).padStart(2, '0')}`;
 };
+
+const HIIT_WORKOUT_TYPES = hiitWorkoutsRaw
+  .split(/\r?\n/)
+  .map((item) => item.trim())
+  .filter((item) => item.length > 0);
 
 const CountEditor = ({
   label,
@@ -265,6 +271,27 @@ export const TimerDetailPage = () => {
 
   const stationLabel = settings.coachMode ? '# Stations' : '# Sets';
   const stationWorkoutTypes = timer.stationWorkoutTypes ?? [];
+  const onLoadRandomWorkouts = () => {
+    const next = [...stationWorkoutTypes];
+    const available = [...HIIT_WORKOUT_TYPES];
+
+    for (let index = 0; index < timer.stationCount; index += 1) {
+      if ((next[index] ?? '').trim().length > 0) {
+        continue;
+      }
+      if (available.length === 0) {
+        break;
+      }
+      const pickIndex = Math.floor(Math.random() * available.length);
+      const [picked] = available.splice(pickIndex, 1);
+      if (picked) {
+        next[index] = picked;
+      }
+    }
+
+    setTimer((prev) => (prev ? { ...prev, stationWorkoutTypes: next } : prev));
+    void applyPatch({ stationWorkoutTypes: next });
+  };
 
   return (
     <section className="timer-detail-page compact-editor">
@@ -385,6 +412,9 @@ export const TimerDetailPage = () => {
       {settings.coachMode && (
         <section className="stack">
           <h3>Workout Types (Optional)</h3>
+          <button type="button" onClick={onLoadRandomWorkouts}>
+            Load random workouts
+          </button>
           {Array.from({ length: timer.stationCount }, (_, index) => (
             <label className="field" key={`station-workout-${index + 1}`}>
               <span>Station {index + 1}</span>
