@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { TimerCard } from '../components/TimerCard';
+import { randomTimerName } from '../lib/timerFactory';
 import { useSettings } from '../services/settingsContext';
 import { TimerRepository } from '../services/storage';
 import type { Timer } from '../types';
@@ -26,6 +27,19 @@ export const TimerListPage = () => {
     }
     await TimerRepository.remove(id);
     setTimers((prev) => prev.filter((timer) => timer.id !== id));
+  };
+
+  const onCloneTimer = async (timer: Timer) => {
+    const now = new Date().toISOString();
+    const clone: Timer = {
+      ...timer,
+      id: crypto.randomUUID(),
+      name: randomTimerName(),
+      createdAt: now,
+      updatedAt: now,
+    };
+    await TimerRepository.upsert(clone);
+    setTimers((prev) => [clone, ...prev]);
   };
 
   return (
@@ -59,6 +73,7 @@ export const TimerListPage = () => {
               coachMode={settings.coachMode}
               featureImage={index === 0 && settings.kobeEverywhere ? steampunkGym2 : undefined}
               onDelete={onDeleteTimer}
+              onClone={onCloneTimer}
             />
           ))}
       </div>

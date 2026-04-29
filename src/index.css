@@ -370,6 +370,18 @@ select {
   line-height: 1.1;
 }
 
+.timer-clone-btn {
+  min-width: 58px;
+  height: 32px;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  background: rgba(255, 255, 255, 0.04);
+  color: var(--text);
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  padding: 0 0.65rem;
+}
 .timer-run-btn {
   width: 44px;
   height: 44px;
@@ -1997,3 +2009,4 @@ select {
     height: 41px;
   }
 }
+
