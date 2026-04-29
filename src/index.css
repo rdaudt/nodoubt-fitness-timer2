@@ -233,8 +233,9 @@ select {
 
 .timer-card {
   position: relative;
-  display: flex;
-  align-items: center;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  align-items: stretch;
   gap: 0.85rem;
   min-height: 78px;
   padding: 0.9rem 1rem;
@@ -380,14 +381,18 @@ select {
   z-index: 1;
   display: flex;
   align-items: center;
+  justify-content: flex-end;
+  flex-wrap: nowrap;
   gap: 0.75rem;
   flex: 0 0 auto;
+  max-width: 100%;
 }
 
 .timer-card-total {
   display: grid;
   gap: 0.05rem;
-  text-align: right;
+  width: auto;
+  text-align: left;
   min-width: 58px;
 }
 
@@ -431,6 +436,16 @@ select {
   font-weight: 800;
 }
 
+.timer-card-actions .timer-clone-btn,
+.timer-card-actions .timer-run-btn {
+  margin-left: 0;
+}
+
+.timer-card-total {
+  margin-left: 0;
+  margin-right: auto;
+}
+
 .timer-card h3,
 .timer-card p {
   margin: 0;
@@ -439,6 +454,42 @@ select {
 .timer-card h3 {
   overflow-wrap: break-word;
   word-break: normal;
+}
+
+.template-card {
+  display: grid;
+  gap: 0.6rem;
+  align-items: stretch;
+}
+
+.template-card-copy {
+  padding-top: 0.2rem;
+}
+
+.template-card-footer {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto auto auto;
+  gap: 0.45rem;
+  align-items: center;
+}
+
+.template-card-total {
+  min-width: 0;
+  text-align: left;
+}
+
+.template-card-btn {
+  min-width: 54px;
+  height: 34px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.template-card-delete-btn {
+  min-height: 34px;
+  border-radius: 10px;
+  padding: 0.35rem 0.65rem;
 }
 
 .timer-meta {

@@ -1,6 +1,7 @@
 export type IntervalType = 'warmup' | 'work' | 'rest' | 'cooldown';
 export type CountdownType = IntervalType | 'stationTransition';
 export type WorkoutCategory = 'GENERAL' | 'FAT-LOSS' | 'PERFORMANCE';
+export type TemplateSource = 'builtin' | 'user';
 
 export interface Timer {
   id: string;
@@ -63,4 +64,30 @@ export interface TimerValidationResult {
   valid: boolean;
   errors: string[];
   normalized: Timer;
+}
+
+export interface Template {
+  id: string;
+  name: string;
+  stationCount: number;
+  stationWorkoutTypes?: string[];
+  roundsPerStation: number;
+  workMinutes: number;
+  workSeconds: number;
+  restMinutes: number;
+  restSeconds: number;
+  stationTransitionMinutes: number;
+  stationTransitionSeconds: number;
+  startStationWorkManually: boolean;
+  warmupEnabled: boolean;
+  warmupMinutes: number;
+  warmupSeconds: number;
+  cooldownEnabled: boolean;
+  cooldownMinutes: number;
+  cooldownSeconds: number;
+  category: WorkoutCategory;
+  createdAt: string;
+  updatedAt: string;
+  source: TemplateSource;
+  builtinTemplateId?: string;
 }

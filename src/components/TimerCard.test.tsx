@@ -37,6 +37,7 @@ const renderCard = (timer: Timer = demoTimer, featureImage?: string, coachMode =
       featureImage={featureImage}
       onDelete={vi.fn()}
       onClone={vi.fn()}
+      onCreateTemplate={vi.fn()}
     />
   </MemoryRouter>,
 );
@@ -61,6 +62,7 @@ describe('TimerCard', () => {
     expect(screen.getAllByRole('link').find((link) => link.getAttribute('href') === '/timer/timer-1')).toBeTruthy();
     expect(screen.getByRole('link', { name: /run demo hiit/i })).toHaveAttribute('href', '/timer/timer-1/run?from=home');
     expect(screen.getByRole('button', { name: /clone demo hiit/i })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /create template from demo hiit/i })).toBeInTheDocument();
   });
 
   it('uses set labels when coach mode is off', () => {
