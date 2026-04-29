@@ -10,6 +10,7 @@ import {
   getWorkDurationMs,
 } from '../lib/time';
 import { normalizeTimerFields } from '../lib/timerRules';
+import { useSettings } from '../services/settingsContext';
 import { TimerRepository, TimerRunRepository } from '../services/storage';
 import type { Timer, TimerRun } from '../types';
 
@@ -22,7 +23,24 @@ const toDateTimeLocal = (value: string): string => {
   return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}`;
 };
 
-const downloadRunExport = (run: TimerRun) => {
+type RunExportPayload = TimerRun & {
+  stationSetWorkoutTypes: Array<{
+    stationSetNumber: number;
+    workoutType: string;
+  }>;
+  exportedAt: string;
+};
+
+type GenerationState = {
+  status: 'idle' | 'generating' | 'success' | 'error';
+  error: string | null;
+  previewUrl: string | null;
+};
+
+const IG_OUTPUT_WIDTH = 1080;
+const IG_OUTPUT_HEIGHT = 1350;
+
+const toRunExportPayload = (run: TimerRun): RunExportPayload => {
   const snapshot = normalizeTimerFields(run.timerSnapshot);
   const workoutTypes = (run.stationWorkoutTypes ?? snapshot.stationWorkoutTypes ?? [])
     .slice(0, snapshot.stationCount)
@@ -36,6 +54,11 @@ const downloadRunExport = (run: TimerRun) => {
     stationSetWorkoutTypes,
     exportedAt: new Date().toISOString(),
   };
+  return payload;
+};
+
+const downloadRunExport = (run: TimerRun) => {
+  const payload = toRunExportPayload(run);
   const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
   const url = URL.createObjectURL(blob);
   const safeRunId = run.id.replace(/[^a-zA-Z0-9_-]/g, '-');
@@ -49,13 +72,52 @@ const downloadRunExport = (run: TimerRun) => {
   URL.revokeObjectURL(url);
 };
 
+const resizeImageBlob = async (source: Blob, width: number, height: number): Promise<Blob> => {
+  if (typeof navigator !== 'undefined' && /jsdom/i.test(navigator.userAgent)) {
+    return source;
+  }
+  try {
+    const sourceUrl = URL.createObjectURL(source);
+    const image = await new Promise<HTMLImageElement>((resolve, reject) => {
+      const nextImage = new Image();
+      const timerId = window.setTimeout(() => {
+        reject(new Error('Timed out while loading generated image for resizing.'));
+      }, 1500);
+      const settle = (fn: () => void) => () => {
+        window.clearTimeout(timerId);
+        fn();
+      };
+      nextImage.onload = settle(() => resolve(nextImage));
+      nextImage.onerror = settle(() => reject(new Error('Unable to load generated image for resizing.')));
+      nextImage.src = sourceUrl;
+    });
+    URL.revokeObjectURL(sourceUrl);
+    const canvas = document.createElement('canvas');
+    canvas.width = width;
+    canvas.height = height;
+    const context = canvas.getContext('2d');
+    if (!context || typeof canvas.toBlob !== 'function') {
+      return source;
+    }
+    context.drawImage(image, 0, 0, width, height);
+    const resizedBlob = await new Promise<Blob | null>((resolve) => {
+      canvas.toBlob((blob) => resolve(blob), 'image/png');
+    });
+    return resizedBlob ?? source;
+  } catch {
+    return source;
+  }
+};
+
 export const HistoryPage = () => {
+  const { settings } = useSettings();
   const [runs, setRuns] = useState<TimerRun[]>([]);
   const [timers, setTimers] = useState<Timer[]>([]);
   const [editingRunId, setEditingRunId] = useState<string | null>(null);
   const [draftDateTime, setDraftDateTime] = useState('');
   const [draftLocation, setDraftLocation] = useState('');
   const [draftStationWorkoutTypes, setDraftStationWorkoutTypes] = useState<string[]>([]);
+  const [generationByRunId, setGenerationByRunId] = useState<Record<string, GenerationState>>({});
 
   useEffect(() => {
     Promise.all([TimerRunRepository.listAll(), TimerRepository.list()]).then(([allRuns, allTimers]) => {
@@ -106,6 +168,107 @@ export const HistoryPage = () => {
     setRuns((prev) => prev.filter((run) => run.id !== runId));
   };
 
+  const hasCompleteWorkoutTypes = (run: TimerRun): boolean => {
+    const snapshot = normalizeTimerFields(run.timerSnapshot);
+    const workoutTypes = (run.stationWorkoutTypes ?? snapshot.stationWorkoutTypes ?? [])
+      .slice(0, snapshot.stationCount)
+      .map((item) => item.trim());
+    return workoutTypes.length === snapshot.stationCount && workoutTypes.every((item) => item.length > 0);
+  };
+
+  const buildImageFileName = (run: TimerRun): string => {
+    const safeRunId = run.id.replace(/[^a-zA-Z0-9_-]/g, '-');
+    const safeRanAt = run.ranAt.replace(/[:.]/g, '-');
+    return `hiit-ig-${safeRunId}-${safeRanAt}.png`;
+  };
+
+  const downloadGeneratedImage = (url: string, fileName: string) => {
+    const anchor = document.createElement('a');
+    anchor.href = url;
+    anchor.download = fileName;
+    document.body.appendChild(anchor);
+    anchor.click();
+    document.body.removeChild(anchor);
+  };
+
+  const setGenerationState = (runId: string, next: GenerationState) => {
+    setGenerationByRunId((prev) => {
+      const priorPreviewUrl = prev[runId]?.previewUrl;
+      if (priorPreviewUrl && priorPreviewUrl !== next.previewUrl) {
+        URL.revokeObjectURL(priorPreviewUrl);
+      }
+      return {
+        ...prev,
+        [runId]: next,
+      };
+    });
+  };
+
+  const generateIgImage = async (run: TimerRun) => {
+    if (!settings.coachMode) {
+      return;
+    }
+    if (!run.complete || !hasCompleteWorkoutTypes(run)) {
+      setGenerationState(run.id, {
+        status: 'error',
+        error: 'Run must be complete and all station workout types must be filled.',
+        previewUrl: null,
+      });
+      return;
+    }
+    const password = window.prompt('Enter coach password to generate IG image');
+    if (password !== 'kobetheabby') {
+      setGenerationState(run.id, {
+        status: 'error',
+        error: 'Invalid password.',
+        previewUrl: null,
+      });
+      return;
+    }
+
+    setGenerationState(run.id, { status: 'generating', error: null, previewUrl: null });
+    try {
+      const exportPayload = toRunExportPayload(run);
+      const response = await fetch('/api/generate-ig-image', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ run: exportPayload }),
+      });
+      const rawText = await response.text();
+      let body: { imageBase64?: string; error?: string } = {};
+      if (rawText.trim().length > 0) {
+        try {
+          body = JSON.parse(rawText) as { imageBase64?: string; error?: string };
+        } catch {
+          body = {};
+        }
+      }
+      if (!response.ok || !body.imageBase64) {
+        const fallback = rawText.trim().length > 0
+          ? rawText
+          : `HTTP ${response.status} ${response.statusText}`.trim();
+        throw new Error(body.error ?? fallback ?? 'Image generation failed.');
+      }
+      const mimeType = 'image/png';
+      const imageBytes = atob(body.imageBase64);
+      const byteArray = Uint8Array.from(imageBytes, (char) => char.charCodeAt(0));
+      const sourceBlob = new Blob([byteArray], { type: mimeType });
+      const blob = await resizeImageBlob(sourceBlob, IG_OUTPUT_WIDTH, IG_OUTPUT_HEIGHT);
+      const previewUrl = URL.createObjectURL(blob);
+      const fileName = buildImageFileName(run);
+      setGenerationState(run.id, { status: 'success', error: null, previewUrl });
+      downloadGeneratedImage(previewUrl, fileName);
+    } catch (error) {
+      setGenerationState(run.id, {
+        status: 'error',
+        error: error instanceof Error ? error.message : 'Image generation failed.',
+        previewUrl: null,
+      });
+    }
+  };
+
   return (
     <section className="history-page">
       <div className="section-header">
@@ -131,6 +294,12 @@ export const HistoryPage = () => {
               .map((item) => item.trim())
               .filter((item) => item.length > 0);
             const isEditing = editingRunId === run.id;
+            const generation = generationByRunId[run.id] ?? {
+              status: 'idle',
+              error: null,
+              previewUrl: null,
+            };
+            const canGenerate = settings.coachMode && run.complete && hasCompleteWorkoutTypes(run);
             return (
               <article key={run.id} className="timer-run-card">
                 <p>
@@ -206,9 +375,29 @@ export const HistoryPage = () => {
                     <p>Snapshot total: {formatClock(runSeconds)}</p>
                     <div className="actions-row wrap">
                       <button className="primary-btn" onClick={() => downloadRunExport(run)}>Export JSON</button>
+                      {settings.coachMode && (
+                        <button
+                          className="primary-btn"
+                          onClick={() => void generateIgImage(run)}
+                          disabled={!canGenerate || generation.status === 'generating'}
+                        >
+                          {generation.status === 'generating' ? 'Generating...' : 'Generate IG Image'}
+                        </button>
+                      )}
                       <button className="secondary-btn" onClick={() => startEdit(run)}>Edit</button>
                       <button className="danger-btn" onClick={() => void deleteRun(run.id)}>Delete</button>
                     </div>
+                    {settings.coachMode && !canGenerate && (
+                      <p>IG generation requires a complete run and workout type set for every station.</p>
+                    )}
+                    {generation.error && <p role="alert">IG generation error: {generation.error}</p>}
+                    {generation.previewUrl && (
+                      <img
+                        src={generation.previewUrl}
+                        alt={`Generated IG preview for ${run.timerNameAtRun}`}
+                        className="about-kobe-ai-image"
+                      />
+                    )}
                   </>
                 )}
               </article>
