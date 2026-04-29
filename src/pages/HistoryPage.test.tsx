@@ -111,7 +111,7 @@ describe('HistoryPage', () => {
     updateRunMock.mockResolvedValue(undefined);
   });
 
-  it('renders run history and updates location', async () => {
+  it('renders compact run history card and updates location', async () => {
     render(
       <MemoryRouter initialEntries={['/history']}>
         <Routes>
@@ -120,20 +120,16 @@ describe('HistoryPage', () => {
       </MemoryRouter>,
     );
 
-    expect(await screen.findByRole('link', { name: 'HIIT Session Name: Demo Timer' })).toHaveAttribute('href', '/timer/timer-1');
-    expect(screen.getByText('Complete: OFF')).toBeInTheDocument();
-    expect(screen.getByText('Number of stations/sets: 1')).toBeInTheDocument();
-    expect(screen.getByText('Number of rounds per station/set: 1')).toBeInTheDocument();
-    expect(screen.getByText('Work interval time: 00:30')).toBeInTheDocument();
-    expect(screen.getByText('Rest interval time: 00:00')).toBeInTheDocument();
-    expect(screen.getByText('Station/set transition time: 00:30')).toBeInTheDocument();
-    expect(screen.getByText('Name of the workout type in each station/set: Burpees')).toBeInTheDocument();
-    expect(screen.getByText('Total time per station/set: 00:30')).toBeInTheDocument();
-    expect(screen.getByText('Total work time: 00:30')).toBeInTheDocument();
+    expect(await screen.findByRole('link', { name: 'Demo Timer' })).toHaveAttribute('href', '/timer/timer-1');
+    expect(screen.getByText('Incomplete')).toBeInTheDocument();
+    expect(screen.getByText('Total Time')).toBeInTheDocument();
+    expect(screen.getByText('Work/Rest')).toBeInTheDocument();
+    expect(screen.getByText('Rounds')).toBeInTheDocument();
+    expect(screen.getByText('Stations')).toBeInTheDocument();
     fireEvent.click(screen.getByRole('button', { name: 'Edit' }));
     const input = screen.getByLabelText('Run location');
     fireEvent.change(input, { target: { value: 'Downtown Box' } });
-    fireEvent.click(screen.getByRole('button', { name: 'Save' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Save Session' }));
     await waitFor(() => expect(updateRunMock).toHaveBeenCalledTimes(1));
     expect(updateRunMock.mock.calls[0][0]).toEqual(expect.objectContaining({ location: 'Downtown Box' }));
   });
@@ -155,11 +151,11 @@ describe('HistoryPage', () => {
       </MemoryRouter>,
     );
 
-    await screen.findByRole('link', { name: 'HIIT Session Name: Demo Timer' });
+    await screen.findByRole('link', { name: 'Demo Timer' });
     fireEvent.click(screen.getByRole('button', { name: 'Edit' }));
     const stationInput = screen.getByLabelText('Run station 1 workout type');
     fireEvent.change(stationInput, { target: { value: 'Pullups' } });
-    fireEvent.click(screen.getByRole('button', { name: 'Save' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Save Session' }));
 
     await waitFor(() => expect(updateRunMock).toHaveBeenCalledTimes(1));
     expect(updateRunMock.mock.calls[0][0]).toEqual(expect.objectContaining({
@@ -179,17 +175,32 @@ describe('HistoryPage', () => {
       </MemoryRouter>,
     );
 
-    await screen.findByRole('link', { name: 'HIIT Session Name: Demo Timer' });
+    await screen.findByRole('link', { name: 'Demo Timer' });
     fireEvent.click(screen.getByRole('button', { name: 'Edit' }));
     const runTimerNameInput = screen.getByLabelText('Run timer name');
     fireEvent.change(runTimerNameInput, { target: { value: 'Saturday Burner' } });
-    fireEvent.click(screen.getByRole('button', { name: 'Save' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Save Session' }));
 
     await waitFor(() => expect(updateRunMock).toHaveBeenCalledTimes(1));
     expect(updateRunMock.mock.calls[0][0]).toEqual(expect.objectContaining({
       timerNameAtRun: 'Saturday Burner',
     }));
-    expect(await screen.findByRole('link', { name: 'HIIT Session Name: Saturday Burner' })).toBeInTheDocument();
+    expect(await screen.findByRole('link', { name: 'Saturday Burner' })).toBeInTheDocument();
+  });
+
+  it('cancels inline edit without saving', async () => {
+    render(
+      <MemoryRouter initialEntries={['/history']}>
+        <Routes>
+          <Route path="/history" element={<HistoryPage />} />
+        </Routes>
+      </MemoryRouter>,
+    );
+
+    await screen.findByRole('link', { name: 'Demo Timer' });
+    fireEvent.click(screen.getByRole('button', { name: 'Edit' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Cancel' }));
+    expect(updateRunMock).not.toHaveBeenCalled();
   });
 
   it('exports a run entry as JSON', async () => {
@@ -202,7 +213,7 @@ describe('HistoryPage', () => {
       </MemoryRouter>,
     );
 
-    await screen.findByRole('link', { name: 'HIIT Session Name: Demo Timer' });
+    await screen.findByRole('link', { name: 'Demo Timer' });
     fireEvent.click(screen.getByRole('button', { name: 'Export JSON' }));
 
     expect(createObjectURLSpy).toHaveBeenCalledTimes(1);
@@ -219,7 +230,7 @@ describe('HistoryPage', () => {
     clickSpy.mockRestore();
   });
 
-  it('hides IG generation button when coach mode is off', async () => {
+  it('hides share button when coach mode is off', async () => {
     settingsMock.mockReturnValue({
       coachMode: false,
       kobeEverywhere: true,
@@ -241,11 +252,11 @@ describe('HistoryPage', () => {
       </MemoryRouter>,
     );
 
-    await screen.findByRole('link', { name: 'HIIT Session Name: Demo Timer' });
-    expect(screen.queryByRole('button', { name: 'Generate IG Image' })).toBeNull();
+    await screen.findByRole('link', { name: 'Demo Timer' });
+    expect(screen.queryByRole('button', { name: 'Share' })).toBeNull();
   });
 
-  it('blocks IG generation for ineligible runs', async () => {
+  it('blocks share for ineligible runs', async () => {
     listAllRunsMock.mockResolvedValue([{
       id: 'run-1',
       timerId: 'timer-1',
@@ -268,7 +279,7 @@ describe('HistoryPage', () => {
       </MemoryRouter>,
     );
 
-    const button = await screen.findByRole('button', { name: 'Generate IG Image' });
+    const button = await screen.findByRole('button', { name: 'Share' });
     expect(button).toBeDisabled();
     expect(screen.getByText('IG generation requires a complete run and workout type set for every station.')).toBeInTheDocument();
   });
@@ -284,14 +295,14 @@ describe('HistoryPage', () => {
       </MemoryRouter>,
     );
 
-    await screen.findByRole('link', { name: 'HIIT Session Name: Demo Timer' });
-    fireEvent.click(screen.getByRole('button', { name: 'Generate IG Image' }));
+    await screen.findByRole('link', { name: 'Demo Timer' });
+    fireEvent.click(screen.getByRole('button', { name: 'Share' }));
 
     expect(await screen.findByRole('alert')).toHaveTextContent('IG generation error: Invalid password.');
     expect(fetchSpy).not.toHaveBeenCalled();
   });
 
-  it('generates image, previews it, and auto-downloads', async () => {
+  it('shares image, previews it, and auto-downloads', async () => {
     listAllRunsMock.mockResolvedValue([completeRun]);
     const clickSpy = vi.spyOn(HTMLAnchorElement.prototype, 'click').mockImplementation(() => undefined);
 
@@ -303,8 +314,8 @@ describe('HistoryPage', () => {
       </MemoryRouter>,
     );
 
-    await screen.findByRole('link', { name: 'HIIT Session Name: Demo Timer' });
-    fireEvent.click(screen.getByRole('button', { name: 'Generate IG Image' }));
+    await screen.findByRole('link', { name: 'Demo Timer' });
+    fireEvent.click(screen.getByRole('button', { name: 'Share' }));
 
     await waitFor(() => expect(fetchSpy).toHaveBeenCalledTimes(1));
     expect(fetchSpy.mock.calls[0][0]).toBe('/api/generate-ig-image');
@@ -325,11 +336,11 @@ describe('HistoryPage', () => {
       </MemoryRouter>,
     );
 
-    await screen.findByRole('link', { name: 'HIIT Session Name: Demo Timer' });
-    fireEvent.click(screen.getByRole('button', { name: 'Generate IG Image' }));
+    await screen.findByRole('link', { name: 'Demo Timer' });
+    fireEvent.click(screen.getByRole('button', { name: 'Share' }));
 
     expect(await screen.findByRole('alert')).toHaveTextContent('IG generation error: bad gateway');
-    fireEvent.click(screen.getByRole('button', { name: 'Generate IG Image' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Share' }));
     await waitFor(() => expect(fetchSpy).toHaveBeenCalledTimes(2));
   });
 });
