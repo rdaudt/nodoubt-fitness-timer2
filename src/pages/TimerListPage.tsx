@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { TimerCard } from '../components/TimerCard';
 import { WORKOUT_CATEGORY_FILTERS, type WorkoutCategoryFilter } from '../config';
 import { randomTimerName } from '../lib/timerFactory';
+import { createTemplateFromTimer } from '../services/templateService';
 import { useSettings } from '../services/settingsContext';
 import { TimerRepository } from '../services/storage';
 import type { Timer } from '../types';
@@ -74,6 +75,14 @@ export const TimerListPage = () => {
     setTimers((prev) => [clone, ...prev]);
   };
 
+  const onCreateTemplate = async (timer: Timer) => {
+    const nextName = window.prompt('Template name', timer.name)?.trim();
+    if (!nextName) {
+      return;
+    }
+    await createTemplateFromTimer(timer, nextName);
+  };
+
   const visibleTimers = categoryFilter === 'ALL'
     ? timers
     : timers.filter((timer) => timer.category === categoryFilter);
@@ -123,6 +132,7 @@ export const TimerListPage = () => {
               featureImage={index === 0 ? firstCardImage : undefined}
               onDelete={onDeleteTimer}
               onClone={onCloneTimer}
+              onCreateTemplate={onCreateTemplate}
             />
           ))}
       </div>

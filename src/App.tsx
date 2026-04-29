@@ -5,6 +5,8 @@ import { HistoryPage } from './pages/HistoryPage';
 import { NewTimerPage } from './pages/NewTimerPage';
 import { RunningTimerPage } from './pages/RunningTimerPage';
 import { SettingsPage } from './pages/SettingsPage';
+import { TemplateDetailPage } from './pages/TemplateDetailPage';
+import { TemplatesPage } from './pages/TemplatesPage';
 import { TimerDetailPage } from './pages/TimerDetailPage';
 import { TimerListPage } from './pages/TimerListPage';
 import { SettingsProvider } from './services/settingsContext';
@@ -23,6 +25,8 @@ function App() {
             <Route path="/" element={<TimerListPage />} />
             <Route path="/history" element={<HistoryPage />} />
             <Route path="/about" element={<AboutPage />} />
+            <Route path="/templates" element={<TemplatesPage />} />
+            <Route path="/template/:id" element={<TemplateDetailPage />} />
             <Route path="/settings" element={<SettingsPage />} />
             <Route path="/timer/new" element={<NewTimerPage />} />
             <Route path="/timer/:id" element={<TimerDetailPage />} />

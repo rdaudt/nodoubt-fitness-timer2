@@ -3,6 +3,7 @@ import { Link, useNavigate, useParams } from 'react-router-dom';
 import { WORKOUT_CATEGORIES } from '../config';
 import { estimateTimerDurationMs, formatClock } from '../lib/time';
 import { normalizeTimerFields, validateTimer } from '../lib/timerRules';
+import { createTemplateFromTimer } from '../services/templateService';
 import { useSettings } from '../services/settingsContext';
 import { TimerRepository } from '../services/storage';
 import type { Timer } from '../types';
@@ -266,6 +267,17 @@ export const TimerDetailPage = () => {
     navigate('/');
   };
 
+  const onCreateTemplate = async () => {
+    if (!timer) {
+      return;
+    }
+    const nextName = window.prompt('Template name', timer.name)?.trim();
+    if (!nextName) {
+      return;
+    }
+    await createTemplateFromTimer(timer, nextName);
+  };
+
   if (!timer) {
     return <p className="empty">Timer not found.</p>;
   }
@@ -324,6 +336,7 @@ export const TimerDetailPage = () => {
         <div />
         <div className="detail-toolbar-actions">
           <button className="danger-btn detail-top-icon-btn" aria-label="Delete timer" onClick={onDeleteTimer}>Delete</button>
+          <button className="timer-clone-btn" type="button" onClick={onCreateTemplate}>Create Template</button>
           <Link to={`/timer/${timer.id}/run`} className="primary-btn detail-top-btn selected">
             <span className="detail-run-icon" aria-hidden="true">▶</span>
             <span>RUN</span>
