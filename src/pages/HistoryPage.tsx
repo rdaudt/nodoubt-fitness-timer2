@@ -114,6 +114,7 @@ export const HistoryPage = () => {
   const [runs, setRuns] = useState<TimerRun[]>([]);
   const [timers, setTimers] = useState<Timer[]>([]);
   const [editingRunId, setEditingRunId] = useState<string | null>(null);
+  const [draftTimerName, setDraftTimerName] = useState('');
   const [draftDateTime, setDraftDateTime] = useState('');
   const [draftLocation, setDraftLocation] = useState('');
   const [draftStationWorkoutTypes, setDraftStationWorkoutTypes] = useState<string[]>([]);
@@ -133,6 +134,7 @@ export const HistoryPage = () => {
 
   const startEdit = (run: TimerRun) => {
     setEditingRunId(run.id);
+    setDraftTimerName(run.timerNameAtRun);
     setDraftDateTime(toDateTimeLocal(run.ranAt));
     setDraftLocation(run.location ?? '');
     setDraftStationWorkoutTypes((run.stationWorkoutTypes ?? run.timerSnapshot.stationWorkoutTypes ?? []).slice(0, run.timerSnapshot.stationCount));
@@ -145,6 +147,7 @@ export const HistoryPage = () => {
     }
     const next: TimerRun = {
       ...run,
+      timerNameAtRun: draftTimerName.trim() || run.timerNameAtRun,
       ranAt: parsed.toISOString(),
       location: draftLocation.trim(),
       stationWorkoutTypes: draftStationWorkoutTypes
@@ -311,6 +314,17 @@ export const HistoryPage = () => {
                 </p>
                 {isEditing ? (
                   <>
+                    <label className="field">
+                      <span>Timer name</span>
+                      <input
+                        type="text"
+                        value={draftTimerName}
+                        maxLength={25}
+                        onChange={(e) => setDraftTimerName(e.target.value)}
+                        aria-label="Run timer name"
+                        placeholder="Timer name"
+                      />
+                    </label>
                     <label className="field">
                       <span>Date & time</span>
                       <input

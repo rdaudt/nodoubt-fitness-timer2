@@ -170,6 +170,28 @@ describe('HistoryPage', () => {
     }));
   });
 
+  it('allows editing timer name in run history', async () => {
+    render(
+      <MemoryRouter initialEntries={['/history']}>
+        <Routes>
+          <Route path="/history" element={<HistoryPage />} />
+        </Routes>
+      </MemoryRouter>,
+    );
+
+    await screen.findByRole('link', { name: 'HIIT Session Name: Demo Timer' });
+    fireEvent.click(screen.getByRole('button', { name: 'Edit' }));
+    const runTimerNameInput = screen.getByLabelText('Run timer name');
+    fireEvent.change(runTimerNameInput, { target: { value: 'Saturday Burner' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Save' }));
+
+    await waitFor(() => expect(updateRunMock).toHaveBeenCalledTimes(1));
+    expect(updateRunMock.mock.calls[0][0]).toEqual(expect.objectContaining({
+      timerNameAtRun: 'Saturday Burner',
+    }));
+    expect(await screen.findByRole('link', { name: 'HIIT Session Name: Saturday Burner' })).toBeInTheDocument();
+  });
+
   it('exports a run entry as JSON', async () => {
     const clickSpy = vi.spyOn(HTMLAnchorElement.prototype, 'click').mockImplementation(() => undefined);
     render(
