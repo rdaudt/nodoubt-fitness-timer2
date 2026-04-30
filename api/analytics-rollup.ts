@@ -54,6 +54,11 @@ export default async function handler(request: NodeReq, response: NodeRes): Prom
     await createTablesIfNeeded();
     const db = getAnalyticsDb();
     await db.execute({
+      sql: 'DELETE FROM analytics_rollup_daily WHERE day_utc = ?',
+      args: [`${day}`],
+    });
+
+    await db.execute({
       sql: `
         INSERT INTO analytics_rollup_daily (
           day_utc,
@@ -111,28 +116,6 @@ export default async function handler(request: NodeReq, response: NodeRes): Prom
           SUM(CASE WHEN event_name = 'timer_run_completed' AND CAST(json_extract(payload_json, '$.cooldownEnabled') AS INTEGER) = 1 THEN CAST(json_extract(payload_json, '$.cooldownSec') AS INTEGER) ELSE 0 END)
         FROM analytics_events
         WHERE occurred_at >= ? AND occurred_at < ?
-        ON CONFLICT(day_utc) DO UPDATE SET
-          app_opened_count = excluded.app_opened_count,
-          timer_created_count = excluded.timer_created_count,
-          timer_cloned_count = excluded.timer_cloned_count,
-          template_created_from_timer_count = excluded.template_created_from_timer_count,
-          timer_created_from_template_count = excluded.timer_created_from_template_count,
-          timer_run_completed_count = excluded.timer_run_completed_count,
-          timer_run_incomplete_count = excluded.timer_run_incomplete_count,
-          timer_run_coach_mode_count = excluded.timer_run_coach_mode_count,
-          timers_exported_count = excluded.timers_exported_count,
-          timers_imported_count = excluded.timers_imported_count,
-          timers_exported_total = excluded.timers_exported_total,
-          timers_imported_total = excluded.timers_imported_total,
-          total_timer_duration_sec_sum = excluded.total_timer_duration_sec_sum,
-          station_count_sum = excluded.station_count_sum,
-          rounds_per_station_sum = excluded.rounds_per_station_sum,
-          work_sec_sum = excluded.work_sec_sum,
-          rest_sec_sum = excluded.rest_sec_sum,
-          warmup_enabled_count = excluded.warmup_enabled_count,
-          warmup_sec_sum = excluded.warmup_sec_sum,
-          cooldown_enabled_count = excluded.cooldown_enabled_count,
-          cooldown_sec_sum = excluded.cooldown_sec_sum
       `,
       args: [`${day}`, `${day}T00:00:00.000Z`, `${nextDay}T00:00:00.000Z`],
     });
@@ -145,6 +128,7 @@ export default async function handler(request: NodeReq, response: NodeRes): Prom
     response.status(200).json({ ok: true, dayRolledUp: day });
   } catch (error) {
     console.error('analytics-rollup failed', error);
-    response.status(500).json({ error: 'Analytics rollup failed.' });
+    const reason = error instanceof Error ? error.message : String(error);
+    response.status(500).json({ error: 'Analytics rollup failed.', reason });
   }
 }
