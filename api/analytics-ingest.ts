@@ -59,7 +59,8 @@ export default async function handler(request: NodeReq, response: NodeRes): Prom
       ],
     });
     response.status(202).json({ ok: true });
-  } catch {
+  } catch (error) {
+    console.error('analytics-ingest failed', error);
     response.status(500).json({ error: 'Analytics ingest failed.' });
   }
 }

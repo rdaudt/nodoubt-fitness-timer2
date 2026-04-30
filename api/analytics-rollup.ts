@@ -143,7 +143,8 @@ export default async function handler(request: NodeReq, response: NodeRes): Prom
     });
 
     response.status(200).json({ ok: true, dayRolledUp: day });
-  } catch {
+  } catch (error) {
+    console.error('analytics-rollup failed', error);
     response.status(500).json({ error: 'Analytics rollup failed.' });
   }
 }
