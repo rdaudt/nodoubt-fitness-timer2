@@ -1,5 +1,6 @@
 import { NavLink, Outlet, useLocation } from 'react-router-dom';
 import { APP_NAME, BRAND } from '../config';
+import coachGabeHeader from '../../media/coach-gabe-header.jpeg';
 
 const TimersIcon = () => (
   <svg viewBox="0 0 24 24" aria-hidden="true">
@@ -70,7 +71,7 @@ export const AppLayout = () => {
           </a>
           {!isAboutPage && (
             <a href={brandUrl} target="_blank" rel="noreferrer" className="coach-wrap" aria-label="Coach Gabe">
-              <img src="/assets/coach-gabe-transparent-cropped.png" alt="Coach Gabe" className="coach-photo" />
+              <img src={coachGabeHeader} alt="Coach Gabe" className="coach-photo" />
               <p className="coach-name">Coach Gabe</p>
             </a>
           )}
