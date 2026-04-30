@@ -86,34 +86,34 @@ export default async function handler(request: NodeReq, response: NodeRes): Prom
         )
         SELECT
           ? AS day_utc,
-          SUM(CASE WHEN event_name = 'app_opened' THEN 1 ELSE 0 END),
-          SUM(CASE WHEN event_name = 'timer_created' THEN 1 ELSE 0 END),
-          SUM(CASE WHEN event_name = 'timer_cloned' THEN 1 ELSE 0 END),
-          SUM(CASE WHEN event_name = 'template_created_from_timer' THEN 1 ELSE 0 END),
-          SUM(CASE WHEN event_name = 'timer_created_from_template' THEN 1 ELSE 0 END),
-          SUM(CASE WHEN event_name = 'timer_run_completed' THEN 1 ELSE 0 END),
-          SUM(CASE WHEN event_name = 'timer_run_incomplete' THEN 1 ELSE 0 END),
-          SUM(CASE WHEN event_name = 'timer_run_coach_mode' THEN 1 ELSE 0 END),
-          SUM(CASE WHEN event_name = 'timers_exported' THEN 1 ELSE 0 END),
-          SUM(CASE WHEN event_name = 'timers_imported' THEN 1 ELSE 0 END),
-          SUM(CASE WHEN event_name = 'timers_exported' THEN CAST(json_extract(payload_json, '$.timerCount') AS INTEGER) ELSE 0 END),
-          SUM(CASE WHEN event_name = 'timers_imported' THEN CAST(json_extract(payload_json, '$.timerCount') AS INTEGER) ELSE 0 END),
-          SUM(CASE WHEN event_name = 'timer_run_completed' THEN
+          COALESCE(SUM(CASE WHEN event_name = 'app_opened' THEN 1 ELSE 0 END), 0),
+          COALESCE(SUM(CASE WHEN event_name = 'timer_created' THEN 1 ELSE 0 END), 0),
+          COALESCE(SUM(CASE WHEN event_name = 'timer_cloned' THEN 1 ELSE 0 END), 0),
+          COALESCE(SUM(CASE WHEN event_name = 'template_created_from_timer' THEN 1 ELSE 0 END), 0),
+          COALESCE(SUM(CASE WHEN event_name = 'timer_created_from_template' THEN 1 ELSE 0 END), 0),
+          COALESCE(SUM(CASE WHEN event_name = 'timer_run_completed' THEN 1 ELSE 0 END), 0),
+          COALESCE(SUM(CASE WHEN event_name = 'timer_run_incomplete' THEN 1 ELSE 0 END), 0),
+          COALESCE(SUM(CASE WHEN event_name = 'timer_run_coach_mode' THEN 1 ELSE 0 END), 0),
+          COALESCE(SUM(CASE WHEN event_name = 'timers_exported' THEN 1 ELSE 0 END), 0),
+          COALESCE(SUM(CASE WHEN event_name = 'timers_imported' THEN 1 ELSE 0 END), 0),
+          COALESCE(SUM(CASE WHEN event_name = 'timers_exported' THEN CAST(json_extract(payload_json, '$.timerCount') AS INTEGER) ELSE 0 END), 0),
+          COALESCE(SUM(CASE WHEN event_name = 'timers_imported' THEN CAST(json_extract(payload_json, '$.timerCount') AS INTEGER) ELSE 0 END), 0),
+          COALESCE(SUM(CASE WHEN event_name = 'timer_run_completed' THEN
             CAST(json_extract(payload_json, '$.stationCount') AS INTEGER)
             * CAST(json_extract(payload_json, '$.roundsPerStation') AS INTEGER)
             * (CAST(json_extract(payload_json, '$.workSec') AS INTEGER) + CAST(json_extract(payload_json, '$.restSec') AS INTEGER))
             + ((CAST(json_extract(payload_json, '$.stationCount') AS INTEGER) - 1) * CAST(json_extract(payload_json, '$.transitionSec') AS INTEGER))
             + (CASE WHEN CAST(json_extract(payload_json, '$.warmupEnabled') AS INTEGER) = 1 THEN CAST(json_extract(payload_json, '$.warmupSec') AS INTEGER) ELSE 0 END)
             + (CASE WHEN CAST(json_extract(payload_json, '$.cooldownEnabled') AS INTEGER) = 1 THEN CAST(json_extract(payload_json, '$.cooldownSec') AS INTEGER) ELSE 0 END)
-          ELSE 0 END),
-          SUM(CASE WHEN event_name = 'timer_run_completed' THEN CAST(json_extract(payload_json, '$.stationCount') AS INTEGER) ELSE 0 END),
-          SUM(CASE WHEN event_name = 'timer_run_completed' THEN CAST(json_extract(payload_json, '$.roundsPerStation') AS INTEGER) ELSE 0 END),
-          SUM(CASE WHEN event_name = 'timer_run_completed' THEN CAST(json_extract(payload_json, '$.workSec') AS INTEGER) ELSE 0 END),
-          SUM(CASE WHEN event_name = 'timer_run_completed' THEN CAST(json_extract(payload_json, '$.restSec') AS INTEGER) ELSE 0 END),
-          SUM(CASE WHEN event_name = 'timer_run_completed' AND CAST(json_extract(payload_json, '$.warmupEnabled') AS INTEGER) = 1 THEN 1 ELSE 0 END),
-          SUM(CASE WHEN event_name = 'timer_run_completed' AND CAST(json_extract(payload_json, '$.warmupEnabled') AS INTEGER) = 1 THEN CAST(json_extract(payload_json, '$.warmupSec') AS INTEGER) ELSE 0 END),
-          SUM(CASE WHEN event_name = 'timer_run_completed' AND CAST(json_extract(payload_json, '$.cooldownEnabled') AS INTEGER) = 1 THEN 1 ELSE 0 END),
-          SUM(CASE WHEN event_name = 'timer_run_completed' AND CAST(json_extract(payload_json, '$.cooldownEnabled') AS INTEGER) = 1 THEN CAST(json_extract(payload_json, '$.cooldownSec') AS INTEGER) ELSE 0 END)
+          ELSE 0 END), 0),
+          COALESCE(SUM(CASE WHEN event_name = 'timer_run_completed' THEN CAST(json_extract(payload_json, '$.stationCount') AS INTEGER) ELSE 0 END), 0),
+          COALESCE(SUM(CASE WHEN event_name = 'timer_run_completed' THEN CAST(json_extract(payload_json, '$.roundsPerStation') AS INTEGER) ELSE 0 END), 0),
+          COALESCE(SUM(CASE WHEN event_name = 'timer_run_completed' THEN CAST(json_extract(payload_json, '$.workSec') AS INTEGER) ELSE 0 END), 0),
+          COALESCE(SUM(CASE WHEN event_name = 'timer_run_completed' THEN CAST(json_extract(payload_json, '$.restSec') AS INTEGER) ELSE 0 END), 0),
+          COALESCE(SUM(CASE WHEN event_name = 'timer_run_completed' AND CAST(json_extract(payload_json, '$.warmupEnabled') AS INTEGER) = 1 THEN 1 ELSE 0 END), 0),
+          COALESCE(SUM(CASE WHEN event_name = 'timer_run_completed' AND CAST(json_extract(payload_json, '$.warmupEnabled') AS INTEGER) = 1 THEN CAST(json_extract(payload_json, '$.warmupSec') AS INTEGER) ELSE 0 END), 0),
+          COALESCE(SUM(CASE WHEN event_name = 'timer_run_completed' AND CAST(json_extract(payload_json, '$.cooldownEnabled') AS INTEGER) = 1 THEN 1 ELSE 0 END), 0),
+          COALESCE(SUM(CASE WHEN event_name = 'timer_run_completed' AND CAST(json_extract(payload_json, '$.cooldownEnabled') AS INTEGER) = 1 THEN CAST(json_extract(payload_json, '$.cooldownSec') AS INTEGER) ELSE 0 END), 0)
         FROM analytics_events
         WHERE occurred_at >= ? AND occurred_at < ?
       `,
