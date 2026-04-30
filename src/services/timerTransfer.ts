@@ -72,7 +72,7 @@ const validateTimers = (timers: Timer[]): Timer[] => {
   return normalized as Timer[];
 };
 
-export const exportTimersToDevice = async (): Promise<void> => {
+export const exportTimersToDevice = async (): Promise<number> => {
   const payload = await buildTimerExportPayload();
   const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
   const link = document.createElement('a');
@@ -81,6 +81,7 @@ export const exportTimersToDevice = async (): Promise<void> => {
   link.download = buildTimerExportFilename();
   link.click();
   URL.revokeObjectURL(url);
+  return payload.timers.length;
 };
 
 export const importTimersFromFile = async (file: File): Promise<number> => {

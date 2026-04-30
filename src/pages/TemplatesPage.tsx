@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { WORKOUT_CATEGORY_FILTERS, type WorkoutCategoryFilter } from '../config';
 import { formatTimerTotal, getTimerSummaryItems } from '../lib/time';
+import { trackAnalyticsEvent } from '../services/analytics';
 import { createTimerFromTemplate, deleteTemplate, listTemplates } from '../services/templateService';
 import { TimerRepository } from '../services/storage';
 import { useSettings } from '../services/settingsContext';
@@ -25,6 +26,9 @@ export const TemplatesPage = () => {
   const onUseTemplate = async (template: Template) => {
     const timer = await createTimerFromTemplate(template);
     await TimerRepository.upsert(timer);
+    trackAnalyticsEvent('timer_created_from_template', {
+      category: timer.category,
+    });
     window.dispatchEvent(new Event('timers:changed'));
     navigate(`/timer/${timer.id}`);
   };

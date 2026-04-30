@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { newTimer } from '../lib/timerFactory';
+import { trackAnalyticsEvent } from '../services/analytics';
 import { TimerRepository } from '../services/storage';
 import type { Timer } from '../types';
 
@@ -29,6 +30,9 @@ const createTimerOnce = async (): Promise<Timer> => {
     pendingTimerCreation = (async () => {
       const timer = newTimer();
       await TimerRepository.upsert(timer);
+      trackAnalyticsEvent('timer_created', {
+        category: timer.category,
+      });
       return timer;
     })();
   }
