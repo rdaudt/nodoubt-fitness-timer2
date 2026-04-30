@@ -214,7 +214,7 @@ describe('HistoryPage', () => {
     );
 
     await screen.findByRole('link', { name: 'Demo Timer' });
-    fireEvent.click(screen.getByRole('button', { name: 'Export JSON' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Data Export' }));
 
     expect(createObjectURLSpy).toHaveBeenCalledTimes(1);
     const exportedBlob = createObjectURLSpy.mock.calls[0][0] as Blob;
@@ -253,7 +253,7 @@ describe('HistoryPage', () => {
     );
 
     await screen.findByRole('link', { name: 'Demo Timer' });
-    expect(screen.queryByRole('button', { name: 'Share' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Create Content' })).toBeNull();
   });
 
   it('blocks share for ineligible runs', async () => {
@@ -279,7 +279,7 @@ describe('HistoryPage', () => {
       </MemoryRouter>,
     );
 
-    const button = await screen.findByRole('button', { name: 'Share' });
+    const button = await screen.findByRole('button', { name: 'Create Content' });
     expect(button).toBeDisabled();
     expect(screen.getByText('IG generation requires a complete run and workout type set for every station.')).toBeInTheDocument();
   });
@@ -296,7 +296,7 @@ describe('HistoryPage', () => {
     );
 
     await screen.findByRole('link', { name: 'Demo Timer' });
-    fireEvent.click(screen.getByRole('button', { name: 'Share' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Create Content' }));
 
     expect(await screen.findByRole('alert')).toHaveTextContent('IG generation error: Invalid password.');
     expect(fetchSpy).not.toHaveBeenCalled();
@@ -315,7 +315,7 @@ describe('HistoryPage', () => {
     );
 
     await screen.findByRole('link', { name: 'Demo Timer' });
-    fireEvent.click(screen.getByRole('button', { name: 'Share' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Create Content' }));
 
     await waitFor(() => expect(fetchSpy).toHaveBeenCalledTimes(1));
     expect(fetchSpy.mock.calls[0][0]).toBe('/api/generate-ig-image');
@@ -337,10 +337,10 @@ describe('HistoryPage', () => {
     );
 
     await screen.findByRole('link', { name: 'Demo Timer' });
-    fireEvent.click(screen.getByRole('button', { name: 'Share' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Create Content' }));
 
     expect(await screen.findByRole('alert')).toHaveTextContent('IG generation error: bad gateway');
-    fireEvent.click(screen.getByRole('button', { name: 'Share' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Create Content' }));
     await waitFor(() => expect(fetchSpy).toHaveBeenCalledTimes(2));
   });
 });

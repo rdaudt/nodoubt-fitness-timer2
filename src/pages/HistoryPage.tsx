@@ -343,14 +343,14 @@ export const HistoryPage = () => {
                     </div>
                     <p className="history-run-location">Location: {run.location || 'Not set'}</p>
                     <div className="history-card-actions" aria-label="Run actions">
-                      <button className="secondary-btn history-action-btn" onClick={() => downloadRunExport(run)}>Export JSON</button>
+                      <button className="secondary-btn history-action-btn" onClick={() => downloadRunExport(run)}>Data Export</button>
                       {settings.coachMode && (
                         <button
                           className="primary-btn history-action-btn"
                           onClick={() => void generateIgImage(run)}
                           disabled={!canGenerate || generation.status === 'generating'}
                         >
-                          {generation.status === 'generating' ? 'Sharing...' : 'Share'}
+                          {generation.status === 'generating' ? 'Creating...' : 'Create Content'}
                         </button>
                       )}
                       <button className="secondary-btn history-action-icon" onClick={() => startEdit(run)} aria-label="Edit">✎</button>
