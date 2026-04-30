@@ -46,6 +46,8 @@ export interface TimerRun {
 export interface AppSettings {
   coachMode: boolean;
   kobeEverywhere: boolean;
+  imagesInAllTimers: boolean;
+  bwTimerImages: boolean;
   endIntervalLongBeep: boolean;
   countdownLast5Beeps: boolean;
   intervalColors: Record<IntervalType, string>;

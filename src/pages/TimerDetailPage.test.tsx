@@ -59,6 +59,8 @@ describe('TimerDetailPage', () => {
     settingsMock.mockReturnValue({
       coachMode: true,
       kobeEverywhere: true,
+      imagesInAllTimers: false,
+      bwTimerImages: true,
       endIntervalLongBeep: true,
       countdownLast5Beeps: true,
       intervalColors: {
@@ -245,6 +247,8 @@ describe('TimerDetailPage', () => {
     settingsMock.mockReturnValue({
       coachMode: false,
       kobeEverywhere: true,
+      imagesInAllTimers: false,
+      bwTimerImages: true,
       endIntervalLongBeep: true,
       countdownLast5Beeps: true,
       intervalColors: {

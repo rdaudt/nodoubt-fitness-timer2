@@ -36,9 +36,34 @@ describe('SettingsPage import/export', () => {
 
   it('renders import/export controls', () => {
     render(<SettingsPage />);
+    expect(screen.getByLabelText('Images in all Timers')).toBeInTheDocument();
+    expect(screen.getByLabelText('B&W Timer Images')).toBeInTheDocument();
     expect(screen.getByText('Import / Export Timers')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Export Timers' })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Import Timers' })).toBeInTheDocument();
+  });
+
+  it('persists image toggles through saveSettings', () => {
+    render(<SettingsPage />);
+    fireEvent.click(screen.getByLabelText('Images in all Timers'));
+    fireEvent.click(screen.getByLabelText('B&W Timer Images'));
+
+    expect(saveSettingsMock).toHaveBeenCalledWith(expect.objectContaining({
+      imagesInAllTimers: true,
+      bwTimerImages: false,
+    }));
+  });
+
+  it('reset defaults restores image toggle defaults', () => {
+    render(<SettingsPage />);
+    fireEvent.click(screen.getByLabelText('Images in all Timers'));
+    fireEvent.click(screen.getByLabelText('B&W Timer Images'));
+    fireEvent.click(screen.getByRole('button', { name: 'Reset Defaults' }));
+
+    expect(saveSettingsMock).toHaveBeenLastCalledWith(expect.objectContaining({
+      imagesInAllTimers: false,
+      bwTimerImages: true,
+    }));
   });
 
   it('exports and shows success message', async () => {

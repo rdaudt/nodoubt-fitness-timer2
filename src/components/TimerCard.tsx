@@ -14,6 +14,7 @@ export const TimerCard = ({
   intervalColors,
   coachMode,
   featureImage,
+  imageGrayscale = false,
   onDelete,
   onClone,
   onCreateTemplate,
@@ -22,6 +23,7 @@ export const TimerCard = ({
   intervalColors: AppSettings['intervalColors'];
   coachMode: boolean;
   featureImage?: string;
+  imageGrayscale?: boolean;
   onDelete: (id: string) => void;
   onClone: (timer: Timer) => void;
   onCreateTemplate: (timer: Timer) => void;
@@ -103,7 +105,7 @@ export const TimerCard = ({
           {featureImage && (
             <div
               className="timer-card-feature-image"
-              style={{ backgroundImage: `url(${featureImage})` }}
+              style={{ backgroundImage: `url(${featureImage})`, filter: imageGrayscale ? 'grayscale(100%)' : 'none' }}
               aria-hidden="true"
             />
           )}
