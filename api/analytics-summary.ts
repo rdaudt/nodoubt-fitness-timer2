@@ -106,7 +106,8 @@ export default async function handler(request: NodeReq, response: NodeRes): Prom
         count: asNumber(item.count),
       })),
     });
-  } catch {
+  } catch (error) {
+    console.error('analytics-summary failed', error);
     response.status(500).json({ error: 'Failed to fetch analytics summary.' });
   }
 }
