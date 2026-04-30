@@ -1,4 +1,4 @@
-import { createClient } from '@libsql/client';
+import { createClient } from '@libsql/client/web';
 
 const requireEnv = (name) => {
   const value = process.env[name]?.trim();
