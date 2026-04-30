@@ -3,6 +3,7 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { WORKOUT_CATEGORIES } from '../config';
 import { estimateTimerDurationMs, formatClock } from '../lib/time';
 import { normalizeTimerFields, validateTimer } from '../lib/timerRules';
+import { trackAnalyticsEvent } from '../services/analytics';
 import { createTimerFromTemplate, deleteTemplate, getTemplateById, listTemplates, saveTemplate } from '../services/templateService';
 import { TimerRepository } from '../services/storage';
 import type { Template, Timer } from '../types';
@@ -227,6 +228,9 @@ export const TemplateDetailPage = () => {
   const onUseTemplate = async () => {
     const timer = await createTimerFromTemplate(template);
     await TimerRepository.upsert(timer);
+    trackAnalyticsEvent('timer_created_from_template', {
+      category: timer.category,
+    });
     window.dispatchEvent(new Event('timers:changed'));
     navigate(`/timer/${timer.id}`);
   };

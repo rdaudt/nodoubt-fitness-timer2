@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState, type CSSProperties } from 'react'
 import { Link, useParams, useSearchParams } from 'react-router-dom';
 import { formatClock, getStationWorkoutDurationMs, getWorkDurationMs } from '../lib/time';
 import { useTimerRunner } from '../lib/useTimerRunner';
+import { trackAnalyticsEvent } from '../services/analytics';
 import { useSettings } from '../services/settingsContext';
 import { TimerRepository, TimerRunRepository } from '../services/storage';
 import type { AppSettings, CountdownType, Timer, TimerRun, TimelineEntry } from '../types';
@@ -191,6 +192,23 @@ export const RunningTimerPage = () => {
       updatedAt: nowIso,
     };
     await TimerRunRepository.create(run);
+    const runPayload = {
+      stationCount: timer.stationCount,
+      roundsPerStation: timer.roundsPerStation,
+      workSec: timer.workMinutes * 60 + timer.workSeconds,
+      restSec: timer.restMinutes * 60 + timer.restSeconds,
+      transitionSec: timer.stationTransitionMinutes * 60 + timer.stationTransitionSeconds,
+      warmupEnabled: timer.warmupEnabled,
+      warmupSec: timer.warmupMinutes * 60 + timer.warmupSeconds,
+      cooldownEnabled: timer.cooldownEnabled,
+      cooldownSec: timer.cooldownMinutes * 60 + timer.cooldownSeconds,
+      category: timer.category,
+      coachModeAtRun: settings.coachMode,
+    } as const;
+    trackAnalyticsEvent(complete ? 'timer_run_completed' : 'timer_run_incomplete', runPayload);
+    if (settings.coachMode) {
+      trackAnalyticsEvent('timer_run_coach_mode', runPayload);
+    }
   };
 
   useEffect(() => {

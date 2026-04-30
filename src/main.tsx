@@ -2,6 +2,7 @@ import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
 import './index.css';
 import App from './App';
+import { startAnalyticsSession } from './services/analytics';
 
 const registerServiceWorker = async () => {
   if (!('serviceWorker' in navigator)) {
@@ -18,6 +19,7 @@ const registerServiceWorker = async () => {
 };
 
 registerServiceWorker();
+startAnalyticsSession();
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>

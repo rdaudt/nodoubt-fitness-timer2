@@ -1,5 +1,6 @@
 import { normalizeTimerFields } from '../lib/timerRules';
 import { TemplateRepository } from './storage';
+import { trackAnalyticsEvent } from './analytics';
 import type { Template, Timer, WorkoutCategory } from '../types';
 
 const BUILTIN_TEMPLATE_FORMAT = 'nodoubt-timers-template';
@@ -88,6 +89,9 @@ export const createTemplateFromTimer = async (timer: Timer, name: string): Promi
     source: 'user',
   };
   await TemplateRepository.upsert(template);
+  trackAnalyticsEvent('template_created_from_timer', {
+    category: template.category,
+  });
   window.dispatchEvent(new Event('templates:changed'));
   return template;
 };
