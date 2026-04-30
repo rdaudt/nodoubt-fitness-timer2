@@ -321,7 +321,7 @@ describe('RunningTimerPage', () => {
   it('logs one run when timer completes', async () => {
     renderRunningPage('/timer/timer-1/run');
     await screen.findByRole('link', { name: 'Done' });
-    expect(createRunMock).toHaveBeenCalledTimes(1);
+    await waitFor(() => expect(createRunMock).toHaveBeenCalledTimes(1));
     expect(createRunMock.mock.calls[0][0]).toEqual(expect.objectContaining({
       timerId: 'timer-1',
       timerNameAtRun: 'Demo Timer',
@@ -947,5 +947,47 @@ describe('RunningTimerPage', () => {
     expect(screen.getByRole('button', { name: 'Confirm Stop' })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Cancel' })).toBeInTheDocument();
     expect(container.querySelector('.run-bottom-toggles')).toBeNull();
+  });
+
+  it('toggles run options visibility from Hide Options to Show Options', async () => {
+    const timeline: TimelineEntry[] = [
+      {
+        id: 'work-1-1',
+        type: 'work',
+        name: 'Work',
+        durationMs: 30000,
+        stationNumber: 1,
+        roundNumber: 1,
+      },
+    ];
+
+    runnerMock.mockReturnValue({
+      timeline,
+      state: {
+        status: 'running',
+        pauseReason: null,
+        currentIndex: 0,
+        currentRemainingMs: 16000,
+        totalRemainingMs: 30000,
+      },
+      start: startMock,
+      pause: vi.fn(),
+      resume: vi.fn(),
+      stop: vi.fn(),
+    });
+
+    const { container } = renderRunningPage('/timer/timer-1/run');
+    await screen.findByText('Work');
+
+    const toggleBtn = screen.getByRole('button', { name: 'Hide Options' });
+    expect(container.querySelector('.run-bottom-toggles')).toBeTruthy();
+
+    fireEvent.click(toggleBtn);
+    expect(screen.getByRole('button', { name: 'Show Options' })).toBeInTheDocument();
+    expect(container.querySelector('.run-bottom-toggles')).toBeNull();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Show Options' }));
+    expect(screen.getByRole('button', { name: 'Hide Options' })).toBeInTheDocument();
+    expect(container.querySelector('.run-bottom-toggles')).toBeTruthy();
   });
 });
