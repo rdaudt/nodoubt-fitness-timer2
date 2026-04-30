@@ -76,6 +76,8 @@ describe('RunningTimerPage', () => {
     settingsMock.mockReturnValue({
       coachMode: true,
       kobeEverywhere: true,
+      imagesInAllTimers: false,
+      bwTimerImages: true,
       endIntervalLongBeep: true,
       countdownLast5Beeps: true,
       intervalColors: {
@@ -447,6 +449,8 @@ describe('RunningTimerPage', () => {
     settingsMock.mockReturnValue({
       coachMode: true,
       kobeEverywhere: false,
+      imagesInAllTimers: false,
+      bwTimerImages: true,
       endIntervalLongBeep: true,
       countdownLast5Beeps: true,
       intervalColors: {
@@ -756,6 +760,8 @@ describe('RunningTimerPage', () => {
     settingsMock.mockReturnValue({
       coachMode: true,
       kobeEverywhere: true,
+      imagesInAllTimers: false,
+      bwTimerImages: true,
       endIntervalLongBeep: true,
       countdownLast5Beeps: true,
       intervalColors: {
@@ -815,6 +821,8 @@ describe('RunningTimerPage', () => {
     expect(saveSettingsMock).toHaveBeenCalledWith({
       coachMode: true,
       kobeEverywhere: false,
+      imagesInAllTimers: false,
+      bwTimerImages: true,
       endIntervalLongBeep: true,
       countdownLast5Beeps: true,
       intervalColors: {
@@ -836,6 +844,8 @@ describe('RunningTimerPage', () => {
     expect(saveSettingsMock).toHaveBeenCalledWith({
       coachMode: true,
       kobeEverywhere: true,
+      imagesInAllTimers: false,
+      bwTimerImages: true,
       endIntervalLongBeep: false,
       countdownLast5Beeps: true,
       intervalColors: {

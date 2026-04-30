@@ -10,7 +10,7 @@ import { TimerRepository } from '../services/storage';
 import type { Timer } from '../types';
 
 const homeCardImages = Object.entries(
-  import.meta.glob('../../media/timer-card-images/bw/*.{png,PNG,jpg,JPG,jpeg,JPEG,webp,WEBP,avif,AVIF}', {
+  import.meta.glob('../../media/timer-card-images/color/*.{png,PNG,jpg,JPG,jpeg,JPEG,webp,WEBP,avif,AVIF}', {
     eager: true,
     import: 'default',
   }),
@@ -27,9 +27,14 @@ const shuffledCopy = (values: string[]): string[] => {
   return next;
 };
 
-const assignCardImages = (cardCount: number): Array<string | undefined> => {
+const assignCardImages = (cardCount: number, imagesInAllTimers: boolean): Array<string | undefined> => {
   if (cardCount <= 0 || homeCardImages.length === 0) {
     return [];
+  }
+
+  if (!imagesInAllTimers) {
+    const shuffled = shuffledCopy(homeCardImages);
+    return [shuffled[0], ...Array.from({ length: Math.max(0, cardCount - 1) }, () => undefined)];
   }
 
   const assignments: Array<string | undefined> = [];
@@ -102,8 +107,8 @@ export const TimerListPage = () => {
   );
 
   useEffect(() => {
-    setCardImages(assignCardImages(visibleTimers.length));
-  }, [visibleTimers]);
+    setCardImages(assignCardImages(visibleTimers.length, settings.imagesInAllTimers));
+  }, [settings.imagesInAllTimers, visibleTimers]);
 
   return (
     <section className="home-page">
@@ -148,6 +153,7 @@ export const TimerListPage = () => {
               intervalColors={settings.intervalColors}
               coachMode={settings.coachMode}
               featureImage={cardImages[index]}
+              imageGrayscale={settings.bwTimerImages}
               onDelete={onDeleteTimer}
               onClone={onCloneTimer}
               onCreateTemplate={onCreateTemplate}

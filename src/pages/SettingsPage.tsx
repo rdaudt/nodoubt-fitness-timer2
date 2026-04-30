@@ -101,6 +101,28 @@ export const SettingsPage = () => {
       </label>
 
       <label className="field settings-toggle-row">
+        <span>Images in all Timers</span>
+        <input
+          className="settings-toggle-input"
+          type="checkbox"
+          checked={draft.imagesInAllTimers}
+          onChange={(e) => updateDraft({ ...draft, imagesInAllTimers: e.target.checked })}
+          aria-label="Images in all Timers"
+        />
+      </label>
+
+      <label className="field settings-toggle-row">
+        <span>B&W Timer Images</span>
+        <input
+          className="settings-toggle-input"
+          type="checkbox"
+          checked={draft.bwTimerImages}
+          onChange={(e) => updateDraft({ ...draft, bwTimerImages: e.target.checked })}
+          aria-label="B&W Timer Images"
+        />
+      </label>
+
+      <label className="field settings-toggle-row">
         <span>5-second beeps at end of interval</span>
         <input
           className="settings-toggle-input"

@@ -295,6 +295,8 @@ export const SettingsRepository = {
       ...row.value,
       coachMode: row.value.coachMode ?? DEFAULT_SETTINGS.coachMode,
       kobeEverywhere: row.value.kobeEverywhere ?? DEFAULT_SETTINGS.kobeEverywhere,
+      imagesInAllTimers: row.value.imagesInAllTimers ?? DEFAULT_SETTINGS.imagesInAllTimers,
+      bwTimerImages: row.value.bwTimerImages ?? DEFAULT_SETTINGS.bwTimerImages,
       endIntervalLongBeep: row.value.endIntervalLongBeep ?? DEFAULT_SETTINGS.endIntervalLongBeep,
       countdownLast5Beeps: row.value.countdownLast5Beeps ?? DEFAULT_SETTINGS.countdownLast5Beeps,
       intervalColors: {

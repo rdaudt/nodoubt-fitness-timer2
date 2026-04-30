@@ -28,13 +28,19 @@ const demoTimer: Timer = {
   updatedAt: '2026-01-01T00:00:00.000Z',
 };
 
-const renderCard = (timer: Timer = demoTimer, featureImage?: string, coachMode = true) => render(
+const renderCard = (
+  timer: Timer = demoTimer,
+  featureImage?: string,
+  coachMode = true,
+  imageGrayscale = false,
+) => render(
   <MemoryRouter>
     <TimerCard
       timer={timer}
       intervalColors={DEFAULT_SETTINGS.intervalColors}
       coachMode={coachMode}
       featureImage={featureImage}
+      imageGrayscale={imageGrayscale}
       onDelete={vi.fn()}
       onClone={vi.fn()}
       onCreateTemplate={vi.fn()}
@@ -77,6 +83,13 @@ describe('TimerCard', () => {
 
     expect(container.querySelector('.timer-card-feature-image')).toHaveStyle({
       backgroundImage: 'url(/assets/feature.png)',
+    });
+  });
+
+  it('applies grayscale filter when imageGrayscale is enabled', () => {
+    const { container } = renderCard(demoTimer, '/assets/feature.png', true, true);
+    expect(container.querySelector('.timer-card-feature-image')).toHaveStyle({
+      filter: 'grayscale(100%)',
     });
   });
 });

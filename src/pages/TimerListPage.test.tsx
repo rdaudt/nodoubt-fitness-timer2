@@ -4,24 +4,27 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { TimerListPage } from './TimerListPage';
 import type { Timer } from '../types';
 
-const { listMock } = vi.hoisted(() => ({
+const { listMock, settingsMock } = vi.hoisted(() => ({
   listMock: vi.fn(),
+  settingsMock: {
+    coachMode: true,
+    kobeEverywhere: true,
+    imagesInAllTimers: true,
+    bwTimerImages: true,
+    endIntervalLongBeep: true,
+    countdownLast5Beeps: true,
+    intervalColors: {
+      warmup: '#ff8c00',
+      work: '#ff4444',
+      rest: '#2ecc71',
+      cooldown: '#3b82f6',
+    },
+  },
 }));
 
 vi.mock('../services/settingsContext', () => ({
   useSettings: () => ({
-    settings: {
-      coachMode: true,
-      kobeEverywhere: true,
-      endIntervalLongBeep: true,
-      countdownLast5Beeps: true,
-      intervalColors: {
-        warmup: '#ff8c00',
-        work: '#ff4444',
-        rest: '#2ecc71',
-        cooldown: '#3b82f6',
-      },
-    },
+    settings: settingsMock,
     saveSettings: vi.fn(),
   }),
 }));
@@ -69,6 +72,8 @@ const getImageUrls = (container: HTMLElement): string[] =>
 describe('TimerListPage', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    settingsMock.imagesInAllTimers = true;
+    settingsMock.bwTimerImages = true;
   });
 
   afterEach(() => {
@@ -93,6 +98,24 @@ describe('TimerListPage', () => {
     const imageUrls = getImageUrls(container);
     expect(imageUrls).toHaveLength(3);
     expect(imageUrls.every(Boolean)).toBe(true);
+  });
+
+  it('assigns an image only to the first visible timer card when images in all timers is off', async () => {
+    settingsMock.imagesInAllTimers = false;
+    listMock.mockResolvedValue([
+      buildTimer('timer-1', 'Timer 1', 'GENERAL'),
+      buildTimer('timer-2', 'Timer 2', 'FAT-LOSS'),
+      buildTimer('timer-3', 'Timer 3', 'PERFORMANCE'),
+    ]);
+
+    const { container } = render(
+      <MemoryRouter>
+        <TimerListPage />
+      </MemoryRouter>,
+    );
+
+    await screen.findByText('Timer 1');
+    await waitFor(() => expect(getImageUrls(container)).toHaveLength(1));
   });
 
   it('does not repeat images when visible card count is within image pool size', async () => {
@@ -127,6 +150,39 @@ describe('TimerListPage', () => {
       0, 0, 0, 0, 0, 0, 0,
       0.999, 0.999, 0.999, 0.999, 0.999, 0.999, 0.999,
     ];
+    const randomSpy = vi.spyOn(Math, 'random').mockImplementation(() => randomValues.shift() ?? 0.5);
+
+    const { container } = render(
+      <MemoryRouter>
+        <TimerListPage />
+      </MemoryRouter>,
+    );
+
+    await screen.findByText('General Timer A');
+    const initialGeneralImage = getImageUrls(container)[0];
+
+    fireEvent.change(screen.getByLabelText('Workout category filter'), {
+      target: { value: 'GENERAL' },
+    });
+
+    await waitFor(() => {
+      const filteredImage = getImageUrls(container)[0];
+      expect(filteredImage).toBeTruthy();
+      expect(filteredImage).not.toBe(initialGeneralImage);
+    });
+
+    randomSpy.mockRestore();
+  });
+
+  it('reassigns the first-card image when filter changes and images in all timers is off', async () => {
+    settingsMock.imagesInAllTimers = false;
+    listMock.mockResolvedValue([
+      buildTimer('timer-1', 'General Timer A', 'GENERAL'),
+      buildTimer('timer-2', 'General Timer B', 'GENERAL'),
+      buildTimer('timer-3', 'Fat Loss Timer', 'FAT-LOSS'),
+    ]);
+
+    const randomValues = [0, 0, 0.999, 0.999];
     const randomSpy = vi.spyOn(Math, 'random').mockImplementation(() => randomValues.shift() ?? 0.5);
 
     const { container } = render(

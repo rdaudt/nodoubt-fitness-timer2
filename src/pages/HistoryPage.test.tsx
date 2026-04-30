@@ -84,6 +84,8 @@ describe('HistoryPage', () => {
     settingsMock.mockReturnValue({
       coachMode: true,
       kobeEverywhere: true,
+      imagesInAllTimers: false,
+      bwTimerImages: true,
       endIntervalLongBeep: true,
       countdownLast5Beeps: true,
       intervalColors: {
@@ -234,6 +236,8 @@ describe('HistoryPage', () => {
     settingsMock.mockReturnValue({
       coachMode: false,
       kobeEverywhere: true,
+      imagesInAllTimers: false,
+      bwTimerImages: true,
       endIntervalLongBeep: true,
       countdownLast5Beeps: true,
       intervalColors: {

@@ -17,6 +17,8 @@ vi.mock('../services/settingsContext', () => ({
     settings: {
       coachMode: true,
       kobeEverywhere: true,
+      imagesInAllTimers: false,
+      bwTimerImages: true,
       endIntervalLongBeep: true,
       countdownLast5Beeps: true,
       intervalColors: {
