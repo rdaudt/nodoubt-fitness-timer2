@@ -1,4 +1,4 @@
-import { createTablesIfNeeded, getAnalyticsDb } from './_analyticsDb';
+import { createTablesIfNeeded, getAnalyticsDb } from './_analyticsDb.js';
 
 type NodeReq = {
   method?: string;
