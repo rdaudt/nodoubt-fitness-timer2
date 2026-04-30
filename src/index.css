@@ -1542,7 +1542,10 @@ select {
 .detail-toolbar-actions {
   display: flex;
   align-items: center;
+  flex-wrap: wrap;
+  justify-content: flex-end;
   gap: 0.42rem;
+  min-width: 0;
 }
 
 .detail-toolbar.repeat-mode {
@@ -1581,7 +1584,7 @@ select {
 
 .detail-top-icon-btn {
   min-height: 50px;
-  min-width: 62px;
+  min-width: 0;
   border-radius: 14px;
   padding: 0.5rem 0.68rem;
   background: #2f2825;
@@ -2245,8 +2248,48 @@ select {
     padding: 0.24rem 0.18rem;
   }
 
-  .detail-toolbar.repeat-mode .detail-total-label {
-    visibility: hidden;
+.detail-toolbar.repeat-mode .detail-total-label {
+  visibility: hidden;
+}
+}
+
+@media (max-width: 430px) {
+  .detail-toolbar {
+    grid-template-columns: minmax(0, 1fr);
+    row-gap: 0.35rem;
+  }
+
+  .detail-toolbar > div:nth-child(2) {
+    display: none;
+  }
+
+  .detail-total-label {
+    justify-self: start;
+  }
+
+  .detail-toolbar-actions {
+    justify-self: end;
+  }
+
+  .detail-top-btn {
+    min-height: 44px;
+    border-radius: 12px;
+    padding: 0.42rem 0.7rem;
+    font-size: 1.35rem;
+  }
+
+  .detail-top-icon-btn {
+    min-height: 44px;
+    border-radius: 12px;
+    padding: 0.42rem 0.58rem;
+    font-size: 1.1rem;
+  }
+
+  .detail-toolbar-actions .timer-clone-btn {
+    min-width: 0;
+    height: 44px;
+    padding: 0 0.55rem;
+    font-size: 0.68rem;
   }
 }
 
