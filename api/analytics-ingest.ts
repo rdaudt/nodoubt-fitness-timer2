@@ -1,5 +1,5 @@
-import { createTablesIfNeeded, getAnalyticsDb } from './_analyticsDb';
-import { validateIngestBody } from './_analyticsSchema';
+import { createTablesIfNeeded, getAnalyticsDb } from './_analyticsDb.js';
+import { validateIngestBody } from './_analyticsSchema.js';
 
 type NodeReq = {
   method?: string;
