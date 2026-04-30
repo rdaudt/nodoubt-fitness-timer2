@@ -19,6 +19,10 @@
 - `POST /api/analytics-ingest`
   - Accepts allowlisted event names and strict payload schemas only.
   - Stores anonymized events in `analytics_events`.
+- `GET /api/analytics-health`
+  - Verifies required analytics env vars are present.
+  - Verifies Turso connectivity with a simple DB query.
+  - Returns `ok: true` when healthy, otherwise returns failure reason.
 - `GET|POST /api/analytics-rollup`
   - Vercel Cron uses `GET`.
   - Auth supports `Authorization: Bearer <CRON_SECRET>` (Vercel Cron standard).
@@ -40,3 +44,27 @@
 - `templatesCreatedFromScratch` is currently always `0` because the app has no "create template from scratch" flow yet.
 - `mostUsedWorkoutTypes` is intentionally not collected in v1 to avoid free-text PII risk.
 - Cron runs in Vercel infrastructure (not your desktop). Local machine only runs dev/test/init commands.
+
+## Vercel UI Runbook
+
+Use these exact click paths when diagnosing analytics issues in production.
+
+1. Confirm the right deployment is live:
+   - Vercel Project -> `Deployments` -> open newest production deployment from `main` -> ensure status is `Ready`.
+2. Check health endpoint first:
+   - Open `https://hiit-timer-green.vercel.app/api/analytics-health`.
+   - Expect `ok: true` and `checks.dbConnection: true`.
+3. Verify environment variables:
+   - Vercel Project -> `Settings` -> `Environment Variables`.
+   - Confirm `TURSO_DATABASE_URL`, `TURSO_AUTH_TOKEN`, and `CRON_SECRET` are set for `Production`.
+   - If you changed any variable, redeploy: `Deployments` -> newest deployment -> `...` -> `Redeploy`.
+4. Manually trigger rollup:
+   - Run from terminal:
+     - `curl.exe -i -X POST "https://hiit-timer-green.vercel.app/api/analytics-rollup" -H "Authorization: Bearer <CRON_SECRET>"`
+   - Expect `HTTP/1.1 200` and `{ "ok": true, ... }`.
+5. Validate summary output:
+   - Open `https://hiit-timer-green.vercel.app/api/analytics-summary`.
+   - If no events were ingested yet, zero values are expected.
+6. View runtime logs for a specific deployment:
+   - Vercel Project -> `Deployments` -> open deployment -> `Runtime Logs`.
+   - Trigger endpoint again, then look for newest log lines at the same timestamp.
