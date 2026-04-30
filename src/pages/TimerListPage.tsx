@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { TimerCard } from '../components/TimerCard';
 import { WORKOUT_CATEGORY_FILTERS, type WorkoutCategoryFilter } from '../config';
 import { randomTimerName } from '../lib/timerFactory';
+import { trackAnalyticsEvent } from '../services/analytics';
 import { createTemplateFromTimer } from '../services/templateService';
 import { useSettings } from '../services/settingsContext';
 import { TimerRepository } from '../services/storage';
@@ -79,6 +80,9 @@ export const TimerListPage = () => {
       updatedAt: now,
     };
     await TimerRepository.upsert(clone);
+    trackAnalyticsEvent('timer_cloned', {
+      category: clone.category,
+    });
     setTimers((prev) => [clone, ...prev]);
   };
 

@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { DEFAULT_SETTINGS, TYPE_LABELS } from '../config';
 import { intervalColorsAreUnique } from '../lib/settingsRules';
+import { trackAnalyticsEvent } from '../services/analytics';
 import { exportTimersToDevice, importTimersFromFile } from '../services/timerTransfer';
 import { useSettings } from '../services/settingsContext';
 import type { AppSettings, IntervalType } from '../types';
@@ -31,7 +32,8 @@ export const SettingsPage = () => {
 
   const onExport = async () => {
     try {
-      await exportTimersToDevice();
+      const timerCount = await exportTimersToDevice();
+      trackAnalyticsEvent('timers_exported', { timerCount });
       setTransferMessage({ type: 'success', text: 'Timers exported to your device.' });
     } catch {
       setTransferMessage({ type: 'error', text: 'Failed to export timers. Please try again.' });
@@ -54,6 +56,7 @@ export const SettingsPage = () => {
     }
     try {
       const importedCount = await importTimersFromFile(file);
+      trackAnalyticsEvent('timers_imported', { timerCount: importedCount });
       setTransferMessage({ type: 'success', text: `Imported ${importedCount} timer${importedCount === 1 ? '' : 's'}.` });
       window.dispatchEvent(new Event('timers:changed'));
     } catch (error) {
