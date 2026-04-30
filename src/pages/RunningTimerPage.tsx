@@ -144,6 +144,7 @@ export const RunningTimerPage = () => {
   const { settings, saveSettings } = useSettings();
   const [timer, setTimer] = useState<Timer | null>(null);
   const [showSessionMap, setShowSessionMap] = useState(true);
+  const [showOptions, setShowOptions] = useState(true);
   const [confirmAction, setConfirmAction] = useState<'stop' | null>(null);
   const autoStartedRef = useRef(false);
   const runLoggedRef = useRef(false);
@@ -412,7 +413,7 @@ export const RunningTimerPage = () => {
             {nextEntry && <p>{entryContext(nextEntry, settings.coachMode)} ({formatClock(nextEntry.durationMs / 1000)})</p>}
           </article>
 
-          <div className="actions-row wrap run-actions">
+          <div className={`actions-row run-actions ${confirmAction ? 'run-actions-confirm' : 'run-actions-main'}`}>
             {confirmAction === 'stop' ? (
               <>
                 <p className="run-confirm-inline-text">Stop the timer?</p>
@@ -430,12 +431,17 @@ export const RunningTimerPage = () => {
                 {(runner.state.status === 'running' || runner.state.status === 'paused') && (
                   <button className="danger-btn" onClick={requestStop}>{isStationStartPause ? 'Cancel' : 'Stop Timer'}</button>
                 )}
+                {(runner.state.status === 'running' || runner.state.status === 'paused') && (
+                  <button className="secondary-btn" onClick={() => setShowOptions((prev) => !prev)}>
+                    {showOptions ? 'Hide Options' : 'Show Options'}
+                  </button>
+                )}
                 {runner.state.status === 'completed' && <Link className="primary-btn" to={donePath}>Done</Link>}
               </>
             )}
           </div>
 
-          {!confirmAction && (
+          {!confirmAction && showOptions && (
             <div className="run-bottom-toggles" aria-label="Running page controls">
             <label className="run-map-toggle-row">
               <span>Kobe Everywhere</span>
