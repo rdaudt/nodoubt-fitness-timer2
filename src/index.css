@@ -11,6 +11,7 @@
   --text: #ffffff;
   --muted: #8a8a8a;
   --danger: #ff4444;
+  --mobile-shell-max-width: 430px;
 }
 
 * {
@@ -46,13 +47,17 @@ select {
 }
 
 #root {
-  min-height: 100vh;
+  min-height: 100dvh;
+  display: flex;
+  justify-content: center;
 }
 
 .app-shell {
-  min-height: 100vh;
+  width: min(100%, var(--mobile-shell-max-width));
+  min-height: 100dvh;
   display: flex;
   flex-direction: column;
+  position: relative;
 }
 
 .topbar {
@@ -139,8 +144,8 @@ select {
 .screen {
   flex: 1;
   padding: 1rem 1rem 5.5rem;
-  width: min(860px, 100%);
-  margin: 0 auto;
+  width: 100%;
+  margin: 0;
 }
 
 .running-screen {
@@ -149,9 +154,10 @@ select {
 
 .bottom-nav {
   position: fixed;
-  left: 0;
-  right: 0;
+  left: 50%;
   bottom: 0;
+  transform: translateX(-50%);
+  width: min(100%, var(--mobile-shell-max-width));
   z-index: 40;
   display: flex;
   align-items: center;
@@ -512,7 +518,7 @@ select {
 }
 
 .home-page {
-  min-height: calc(100vh - 170px);
+  min-height: calc(100dvh - 170px);
   display: flex;
   flex-direction: column;
 }
@@ -783,7 +789,7 @@ select {
 }
 
 .about-page {
-  min-height: calc(100vh - 170px);
+  min-height: calc(100dvh - 170px);
   display: flex;
   flex-direction: column;
 }
@@ -1837,7 +1843,7 @@ select {
   left: 50%;
   transform: translateX(-50%);
   bottom: calc(3.95rem + env(safe-area-inset-bottom));
-  width: min(860px, 100%);
+  width: min(100%, var(--mobile-shell-max-width));
   padding: 0 1rem;
   z-index: 9;
   pointer-events: none;
