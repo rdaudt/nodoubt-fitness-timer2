@@ -54,6 +54,8 @@ export interface AnalyticsPayloadByEvent {
 }
 
 type BrowserFamily = 'chrome' | 'safari' | 'firefox' | 'edge' | 'other';
+type OsFamily = 'ios' | 'android' | 'windows' | 'macos' | 'other';
+type DeviceType = 'mobile' | 'tablet' | 'desktop';
 
 const nowMs = () => Date.now();
 
@@ -98,6 +100,87 @@ export const detectBrowserFamily = (userAgent: string): BrowserFamily => {
   return 'other';
 };
 
+type UaNavigatorData = {
+  userAgentData?: {
+    mobile?: boolean;
+    platform?: string;
+    platformVersion?: string;
+  };
+};
+
+const getUaPlatform = (navigatorValue: Navigator): string => (
+  (navigatorValue as Navigator & UaNavigatorData).userAgentData?.platform
+  ?? navigatorValue.platform
+  ?? ''
+);
+
+const getUaPlatformVersion = (navigatorValue: Navigator): string => (
+  (navigatorValue as Navigator & UaNavigatorData).userAgentData?.platformVersion
+  ?? ''
+);
+
+export const detectOsFamily = (userAgent: string, platform: string): OsFamily => {
+  const ua = userAgent.toLowerCase();
+  const p = platform.toLowerCase();
+  if (ua.includes('iphone') || ua.includes('ipad') || ua.includes('ipod') || p.includes('iphone') || p.includes('ipad')) {
+    return 'ios';
+  }
+  if (ua.includes('android') || p.includes('android')) {
+    return 'android';
+  }
+  if (ua.includes('windows') || p.includes('win')) {
+    return 'windows';
+  }
+  if (ua.includes('mac os x') || p.includes('mac')) {
+    return 'macos';
+  }
+  return 'other';
+};
+
+export const detectOsVersionMajor = (userAgent: string, osFamily: OsFamily, platformVersion?: string): string => {
+  const ua = userAgent.toLowerCase();
+  const platformVersionMajor = platformVersion?.match(/^(\d+)/)?.[1];
+  if (platformVersionMajor) {
+    return platformVersionMajor;
+  }
+  if (osFamily === 'ios') {
+    return ua.match(/(?:iphone )?os (\d+)[._]/)?.[1]
+      ?? ua.match(/cpu (?:iphone )?os (\d+)[._]/)?.[1]
+      ?? 'unknown';
+  }
+  if (osFamily === 'android') {
+    return ua.match(/android (\d+)(?:[._]\d+)?/)?.[1] ?? 'unknown';
+  }
+  if (osFamily === 'windows') {
+    return ua.match(/windows nt (\d+)\./)?.[1] ?? 'unknown';
+  }
+  if (osFamily === 'macos') {
+    return ua.match(/mac os x (\d+)[._]/)?.[1] ?? 'unknown';
+  }
+  return 'unknown';
+};
+
+export const detectDeviceType = (
+  userAgent: string,
+  osFamily: OsFamily,
+  userAgentDataMobile?: boolean,
+): DeviceType => {
+  if (typeof userAgentDataMobile === 'boolean') {
+    return userAgentDataMobile ? 'mobile' : 'desktop';
+  }
+  const ua = userAgent.toLowerCase();
+  if (ua.includes('ipad') || ua.includes('tablet')) {
+    return 'tablet';
+  }
+  if (osFamily === 'android' && !ua.includes('mobile')) {
+    return 'tablet';
+  }
+  if (ua.includes('mobi') || ua.includes('iphone') || ua.includes('ipod') || ua.includes('android')) {
+    return 'mobile';
+  }
+  return 'desktop';
+};
+
 const sendBeaconPayload = (body: string): boolean => {
   if (!('sendBeacon' in navigator) || typeof navigator.sendBeacon !== 'function') {
     return false;
@@ -114,10 +197,15 @@ export const trackAnalyticsEvent = <TEvent extends AnalyticsEventName>(
   eventName: TEvent,
   payload: AnalyticsPayloadByEvent[TEvent],
 ) => {
+  const osFamily = detectOsFamily(navigator.userAgent, getUaPlatform(navigator));
+  const uaDataMobile = (navigator as Navigator & UaNavigatorData).userAgentData?.mobile;
   const requestBody = JSON.stringify({
     eventName,
     occurredAt: new Date().toISOString(),
     browserFamily: detectBrowserFamily(navigator.userAgent),
+    osFamily,
+    osVersion: detectOsVersionMajor(navigator.userAgent, osFamily, getUaPlatformVersion(navigator)),
+    deviceType: detectDeviceType(navigator.userAgent, osFamily, uaDataMobile),
     payload,
   });
 

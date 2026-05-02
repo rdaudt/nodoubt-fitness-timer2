@@ -27,7 +27,7 @@ export default async function handler(request: NodeReq, response: NodeRes): Prom
     await createTablesIfNeeded();
     const db = getAnalyticsDb();
 
-    const [totalsResult, browserResult, categoryResult] = await Promise.all([
+    const [totalsResult, browserResult, osFamilyResult, osVersionResult, deviceTypeResult, categoryResult] = await Promise.all([
       db.execute(`
         SELECT
           SUM(app_opened_count) AS app_opened_count,
@@ -57,6 +57,21 @@ export default async function handler(request: NodeReq, response: NodeRes): Prom
         GROUP BY browser_family
       `),
       db.execute(`
+        SELECT os_family, COUNT(*) AS count
+        FROM analytics_events
+        GROUP BY os_family
+      `),
+      db.execute(`
+        SELECT os_version, COUNT(*) AS count
+        FROM analytics_events
+        GROUP BY os_version
+      `),
+      db.execute(`
+        SELECT device_type, COUNT(*) AS count
+        FROM analytics_events
+        GROUP BY device_type
+      `),
+      db.execute(`
         SELECT json_extract(payload_json, '$.category') AS category, COUNT(*) AS count
         FROM analytics_events
         WHERE event_name = 'timer_run_completed'
@@ -82,6 +97,18 @@ export default async function handler(request: NodeReq, response: NodeRes): Prom
       },
       browserFamilyCounts: browserResult.rows.map((item) => ({
         browserFamily: String(item.browser_family),
+        count: asNumber(item.count),
+      })),
+      osFamilyCounts: osFamilyResult.rows.map((item) => ({
+        osFamily: String(item.os_family),
+        count: asNumber(item.count),
+      })),
+      osVersionCounts: osVersionResult.rows.map((item) => ({
+        osVersion: String(item.os_version),
+        count: asNumber(item.count),
+      })),
+      deviceTypeCounts: deviceTypeResult.rows.map((item) => ({
+        deviceType: String(item.device_type),
         count: asNumber(item.count),
       })),
       averages: {

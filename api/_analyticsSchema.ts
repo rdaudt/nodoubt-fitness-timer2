@@ -12,15 +12,22 @@ const EVENT_NAMES = [
 ] as const;
 
 const BROWSER_FAMILIES = ['chrome', 'safari', 'firefox', 'edge', 'other'] as const;
+const OS_FAMILIES = ['ios', 'android', 'windows', 'macos', 'other'] as const;
+const DEVICE_TYPES = ['mobile', 'tablet', 'desktop'] as const;
 const CATEGORIES = ['GENERAL', 'FAT-LOSS', 'PERFORMANCE'] as const;
 
 export type AnalyticsEventName = typeof EVENT_NAMES[number];
 export type BrowserFamily = typeof BROWSER_FAMILIES[number];
+export type OsFamily = typeof OS_FAMILIES[number];
+export type DeviceType = typeof DEVICE_TYPES[number];
 
 type ParsedIngestBody = {
   eventName: AnalyticsEventName;
   occurredAt: string;
   browserFamily: BrowserFamily;
+  osFamily: OsFamily;
+  osVersion: string;
+  deviceType: DeviceType;
   payload: Record<string, unknown>;
 };
 
@@ -32,6 +39,9 @@ const isCategory = (value: unknown): value is (typeof CATEGORIES)[number] =>
 
 const isFiniteNonNegativeInt = (value: unknown): value is number =>
   typeof value === 'number' && Number.isFinite(value) && Number.isInteger(value) && value >= 0;
+
+const isMajorVersion = (value: unknown): boolean =>
+  value === 'unknown' || (typeof value === 'string' && /^\d+$/.test(value));
 
 const hasOnlyKeys = (value: Record<string, unknown>, keys: string[]): boolean => {
   const actual = Object.keys(value).sort();
@@ -99,6 +109,15 @@ export const validateIngestBody = (value: unknown): ParsedIngestBody | null => {
   if (!BROWSER_FAMILIES.includes(value.browserFamily as BrowserFamily)) {
     return null;
   }
+  if (!OS_FAMILIES.includes(value.osFamily as OsFamily)) {
+    return null;
+  }
+  if (!isMajorVersion(value.osVersion)) {
+    return null;
+  }
+  if (!DEVICE_TYPES.includes(value.deviceType as DeviceType)) {
+    return null;
+  }
   if (typeof value.occurredAt !== 'string' || Number.isNaN(new Date(value.occurredAt).getTime())) {
     return null;
   }
@@ -113,6 +132,9 @@ export const validateIngestBody = (value: unknown): ParsedIngestBody | null => {
     eventName,
     occurredAt: value.occurredAt,
     browserFamily: value.browserFamily as BrowserFamily,
+    osFamily: value.osFamily as OsFamily,
+    osVersion: value.osVersion as string,
+    deviceType: value.deviceType as DeviceType,
     payload: value.payload,
   };
 };
