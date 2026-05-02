@@ -8,7 +8,7 @@ export const AboutPage = () => {
 
   return (
     <section className="about-page">
-      <h1 className="screen-title">About NoDoubt Fitness</h1>
+      <h1 className="screen-title">About {BRAND.businessName}</h1>
       <img src={coachGabeAndKobe} alt="Coach Gabe with Kobe the Abby" className="owner-photo about-coach-photo" />
       <p className="about-coach-name">Coach Gabe</p>
       <p className="about-coach-subname">(and Kobe the Abby)</p>

@@ -1,12 +1,12 @@
 import type { AppSettings } from './types';
 import type { WorkoutCategory } from './types';
 
-export const APP_NAME = 'HIIT Timer by NoDoubt Fitness';
+export const APP_NAME = 'HIIT Timer by NoDoubt Training Co.';
 
 export const BRAND = {
-  businessName: 'NoDoubt Fitness',
+  businessName: 'NoDoubt Training Co.',
   tagline: 'Results. Confidence. No Doubt.',
-  coachName: 'NoDoubt Fitness Coach',
+  coachName: 'NoDoubt Training Co. Coach',
   ctaLabel: 'DM me for coaching',
   instagramUrl: 'https://www.instagram.com/nodoubt.fitness/',
   aboutBio:

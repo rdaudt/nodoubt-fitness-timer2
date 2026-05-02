@@ -63,7 +63,7 @@ export const AppLayout = () => {
       <header className={isRunningView ? 'topbar topbar-compact' : 'topbar'}>
         <div className="topbar-inner">
           <a href={brandUrl} target="_blank" rel="noreferrer" className="brand-logo-link" aria-label={APP_NAME}>
-            <img src="/assets/nodoubt-fitness-logo-transparent-white-cropped.png" alt="NoDoubt Fitness logo" className="brand-logo" />
+            <img src="/assets/nodoubt-training-logo.png" alt="NoDoubt Training Co. logo" className="brand-logo" />
           </a>
           <a href={brandUrl} target="_blank" rel="noreferrer" className="brand-text-wrap" aria-label={APP_NAME}>
             <p className="brand-name">{BRAND.businessName}</p>

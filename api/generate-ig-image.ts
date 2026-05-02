@@ -2,7 +2,7 @@ import { readFile } from 'node:fs/promises';
 import path from 'node:path';
 
 const PROMPT_PATH = path.join(process.cwd(), 'docs', 'nodoubt_hiit_prompt_production.md');
-const LOGO_PATH = path.join(process.cwd(), 'media', 'nodoubt-fitness-logo-transparent.png');
+const LOGO_PATH = path.join(process.cwd(), 'media', 'nodoubt-training-logo.png');
 const COACH_PATH = path.join(process.cwd(), 'media', 'coach-gabe-and-kobe-poster.png');
 
 const MODEL = 'gpt-image-2';
@@ -131,7 +131,7 @@ export default async function handler(request: NodeReq, response: NodeRes): Prom
     form.set('size', OUTPUT_SIZE);
     form.set('output_format', OUTPUT_FORMAT);
     form.set('prompt', buildPrompt(promptDoc, payload.run));
-    form.append('image[]', new Blob([logoBytes], { type: 'image/png' }), 'nodoubt-fitness-logo-transparent.png');
+    form.append('image[]', new Blob([logoBytes], { type: 'image/png' }), 'nodoubt-training-logo.png');
     form.append('image[]', new Blob([coachBytes], { type: 'image/png' }), 'coach-gabe-and-kobe-poster.png');
 
     const openAiResponse = await fetch('https://api.openai.com/v1/images/edits', {
