@@ -33,13 +33,18 @@ type RunExportPayload = TimerRun & {
 };
 
 type GenerationState = {
-  status: 'idle' | 'generating' | 'success' | 'error';
+  status: 'idle' | 'queued' | 'running' | 'success' | 'error';
   error: string | null;
-  previewUrl: string | null;
+  imageUrl: string | null;
+  jobId: string | null;
 };
 
-const IG_OUTPUT_WIDTH = 1080;
-const IG_OUTPUT_HEIGHT = 1350;
+type StoredJobInfo = {
+  jobId: string;
+  token: string;
+};
+
+const JOBS_STORAGE_KEY = 'nodoubt_content_jobs_v1';
 
 const toRunExportPayload = (run: TimerRun): RunExportPayload => {
   const snapshot = normalizeTimerFields(run.timerSnapshot);
@@ -73,49 +78,47 @@ const downloadRunExport = (run: TimerRun) => {
   URL.revokeObjectURL(url);
 };
 
-const resizeImageBlob = async (source: Blob, width: number, height: number): Promise<Blob> => {
-  if (typeof navigator !== 'undefined' && /jsdom/i.test(navigator.userAgent)) {
-    return source;
-  }
-  try {
-    const sourceUrl = URL.createObjectURL(source);
-    const image = await new Promise<HTMLImageElement>((resolve, reject) => {
-      const nextImage = new Image();
-      const timerId = window.setTimeout(() => {
-        reject(new Error('Timed out while loading generated image for resizing.'));
-      }, 1500);
-      const settle = (fn: () => void) => () => {
-        window.clearTimeout(timerId);
-        fn();
-      };
-      nextImage.onload = settle(() => resolve(nextImage));
-      nextImage.onerror = settle(() => reject(new Error('Unable to load generated image for resizing.')));
-      nextImage.src = sourceUrl;
-    });
-    URL.revokeObjectURL(sourceUrl);
-    const canvas = document.createElement('canvas');
-    canvas.width = width;
-    canvas.height = height;
-    const context = canvas.getContext('2d');
-    if (!context || typeof canvas.toBlob !== 'function') {
-      return source;
-    }
-    context.drawImage(image, 0, 0, width, height);
-    const resizedBlob = await new Promise<Blob | null>((resolve) => {
-      canvas.toBlob((blob) => resolve(blob), 'image/png');
-    });
-    return resizedBlob ?? source;
-  } catch {
-    return source;
-  }
-};
-
 const StatCard = ({ label, value }: { label: string; value: string }) => (
   <div className="history-stat-card">
     <span className="history-stat-label">{label}</span>
     <strong className="history-stat-value">{value}</strong>
   </div>
 );
+
+const buildImageFileName = (run: TimerRun): string => {
+  const safeRunId = run.id.replace(/[^a-zA-Z0-9_-]/g, '-');
+  const safeRanAt = run.ranAt.replace(/[:.]/g, '-');
+  return `hiit-ig-${safeRunId}-${safeRanAt}.png`;
+};
+
+const downloadGeneratedImage = (url: string, fileName: string) => {
+  const anchor = document.createElement('a');
+  anchor.href = url;
+  anchor.download = fileName;
+  document.body.appendChild(anchor);
+  anchor.click();
+  document.body.removeChild(anchor);
+};
+
+const loadStoredJobs = (): Record<string, StoredJobInfo> => {
+  try {
+    const raw = window.localStorage.getItem(JOBS_STORAGE_KEY);
+    if (!raw) {
+      return {};
+    }
+    const parsed = JSON.parse(raw) as unknown;
+    if (!parsed || typeof parsed !== 'object') {
+      return {};
+    }
+    return parsed as Record<string, StoredJobInfo>;
+  } catch {
+    return {};
+  }
+};
+
+const saveStoredJobs = (jobs: Record<string, StoredJobInfo>) => {
+  window.localStorage.setItem(JOBS_STORAGE_KEY, JSON.stringify(jobs));
+};
 
 export const HistoryPage = () => {
   const { settings } = useSettings();
@@ -140,6 +143,73 @@ export const HistoryPage = () => {
     () => new Map(timers.map((timer) => [timer.id, timer])),
     [timers],
   );
+
+  const setGenerationState = (runId: string, next: GenerationState) => {
+    setGenerationByRunId((prev) => ({
+      ...prev,
+      [runId]: next,
+    }));
+  };
+
+  useEffect(() => {
+    let isCancelled = false;
+
+    const syncJobs = async () => {
+      const jobs = loadStoredJobs();
+      const runIds = Object.keys(jobs);
+      if (runIds.length === 0) {
+        return;
+      }
+
+      await Promise.all(runIds.map(async (runId) => {
+        const jobInfo = jobs[runId];
+        if (!jobInfo) {
+          return;
+        }
+        try {
+          const search = new URLSearchParams({ jobId: jobInfo.jobId, token: jobInfo.token });
+          const response = await fetch(`/api/content-jobs-status?${search.toString()}`);
+          const body = await response.json() as { status?: string; imageUrl?: string | null; error?: string | null };
+          if (!response.ok) {
+            throw new Error(typeof body.error === 'string' ? body.error : 'Failed to load generation status.');
+          }
+          if (isCancelled) {
+            return;
+          }
+
+          if (body.status === 'completed' && body.imageUrl) {
+            setGenerationState(runId, { status: 'success', error: null, imageUrl: body.imageUrl, jobId: jobInfo.jobId });
+          } else if (body.status === 'failed') {
+            setGenerationState(runId, { status: 'error', error: body.error ?? 'Generation failed.', imageUrl: null, jobId: jobInfo.jobId });
+          } else if (body.status === 'running') {
+            setGenerationState(runId, { status: 'running', error: null, imageUrl: null, jobId: jobInfo.jobId });
+          } else if (body.status === 'queued') {
+            setGenerationState(runId, { status: 'queued', error: null, imageUrl: null, jobId: jobInfo.jobId });
+          }
+        } catch (error) {
+          if (isCancelled) {
+            return;
+          }
+          setGenerationState(runId, {
+            status: 'error',
+            error: error instanceof Error ? error.message : 'Failed to load generation status.',
+            imageUrl: null,
+            jobId: jobInfo.jobId,
+          });
+        }
+      }));
+    };
+
+    void syncJobs();
+    const intervalId = window.setInterval(() => {
+      void syncJobs();
+    }, 10000);
+
+    return () => {
+      isCancelled = true;
+      window.clearInterval(intervalId);
+    };
+  }, []);
 
   const startEdit = (run: TimerRun) => {
     setEditingRunId(run.id);
@@ -190,34 +260,6 @@ export const HistoryPage = () => {
     return workoutTypes.length === snapshot.stationCount && workoutTypes.every((item) => item.length > 0);
   };
 
-  const buildImageFileName = (run: TimerRun): string => {
-    const safeRunId = run.id.replace(/[^a-zA-Z0-9_-]/g, '-');
-    const safeRanAt = run.ranAt.replace(/[:.]/g, '-');
-    return `hiit-ig-${safeRunId}-${safeRanAt}.png`;
-  };
-
-  const downloadGeneratedImage = (url: string, fileName: string) => {
-    const anchor = document.createElement('a');
-    anchor.href = url;
-    anchor.download = fileName;
-    document.body.appendChild(anchor);
-    anchor.click();
-    document.body.removeChild(anchor);
-  };
-
-  const setGenerationState = (runId: string, next: GenerationState) => {
-    setGenerationByRunId((prev) => {
-      const priorPreviewUrl = prev[runId]?.previewUrl;
-      if (priorPreviewUrl && priorPreviewUrl !== next.previewUrl) {
-        URL.revokeObjectURL(priorPreviewUrl);
-      }
-      return {
-        ...prev,
-        [runId]: next,
-      };
-    });
-  };
-
   const generateIgImage = async (run: TimerRun) => {
     if (!settings.coachMode) {
       return;
@@ -226,7 +268,8 @@ export const HistoryPage = () => {
       setGenerationState(run.id, {
         status: 'error',
         error: 'Run must be complete and all station workout types must be filled.',
-        previewUrl: null,
+        imageUrl: null,
+        jobId: null,
       });
       return;
     }
@@ -235,15 +278,16 @@ export const HistoryPage = () => {
       setGenerationState(run.id, {
         status: 'error',
         error: 'Invalid password.',
-        previewUrl: null,
+        imageUrl: null,
+        jobId: null,
       });
       return;
     }
 
-    setGenerationState(run.id, { status: 'generating', error: null, previewUrl: null });
+    setGenerationState(run.id, { status: 'queued', error: null, imageUrl: null, jobId: null });
     try {
       const exportPayload = toRunExportPayload(run);
-      const response = await fetch('/api/generate-ig-image', {
+      const response = await fetch('/api/content-jobs-create', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -251,34 +295,59 @@ export const HistoryPage = () => {
         body: JSON.stringify({ run: exportPayload }),
       });
       const rawText = await response.text();
-      let body: { imageBase64?: string; error?: string } = {};
+      let body: { jobId?: string; token?: string; error?: string } = {};
       if (rawText.trim().length > 0) {
         try {
-          body = JSON.parse(rawText) as { imageBase64?: string; error?: string };
+          body = JSON.parse(rawText) as { jobId?: string; token?: string; error?: string };
         } catch {
           body = {};
         }
       }
-      if (!response.ok || !body.imageBase64) {
+      if (!response.ok || !body.jobId || !body.token) {
         const fallback = rawText.trim().length > 0
           ? rawText
           : `HTTP ${response.status} ${response.statusText}`.trim();
-        throw new Error(body.error ?? fallback ?? 'Image generation failed.');
+        throw new Error(body.error ?? fallback ?? 'Image job creation failed.');
       }
-      const mimeType = 'image/png';
-      const imageBytes = atob(body.imageBase64);
-      const byteArray = Uint8Array.from(imageBytes, (char) => char.charCodeAt(0));
-      const sourceBlob = new Blob([byteArray], { type: mimeType });
-      const blob = await resizeImageBlob(sourceBlob, IG_OUTPUT_WIDTH, IG_OUTPUT_HEIGHT);
-      const previewUrl = URL.createObjectURL(blob);
-      const fileName = buildImageFileName(run);
-      setGenerationState(run.id, { status: 'success', error: null, previewUrl });
-      downloadGeneratedImage(previewUrl, fileName);
+      const jobs = loadStoredJobs();
+      jobs[run.id] = {
+        jobId: body.jobId,
+        token: body.token,
+      };
+      saveStoredJobs(jobs);
+      setGenerationState(run.id, { status: 'queued', error: null, imageUrl: null, jobId: body.jobId });
     } catch (error) {
       setGenerationState(run.id, {
         status: 'error',
-        error: error instanceof Error ? error.message : 'Image generation failed.',
-        previewUrl: null,
+        error: error instanceof Error ? error.message : 'Image job creation failed.',
+        imageUrl: null,
+        jobId: null,
+      });
+    }
+  };
+
+  const deleteGeneratedImage = async (run: TimerRun) => {
+    const jobs = loadStoredJobs();
+    const jobInfo = jobs[run.id];
+    if (!jobInfo) {
+      return;
+    }
+    try {
+      const search = new URLSearchParams({ jobId: jobInfo.jobId, token: jobInfo.token });
+      const response = await fetch(`/api/content-jobs-delete?${search.toString()}`, { method: 'DELETE' });
+      if (!response.ok) {
+        const text = await response.text();
+        throw new Error(text || 'Failed to delete generated media.');
+      }
+      delete jobs[run.id];
+      saveStoredJobs(jobs);
+      setGenerationState(run.id, { status: 'idle', error: null, imageUrl: null, jobId: null });
+    } catch (error) {
+      setGenerationState(run.id, {
+        status: 'error',
+        error: error instanceof Error ? error.message : 'Failed to delete generated media.',
+        imageUrl: null,
+        jobId: jobInfo.jobId,
       });
     }
   };
@@ -311,7 +380,8 @@ export const HistoryPage = () => {
             const generation = generationByRunId[run.id] ?? {
               status: 'idle',
               error: null,
-              previewUrl: null,
+              imageUrl: null,
+              jobId: null,
             };
             const canGenerate = settings.coachMode && run.complete && hasCompleteWorkoutTypes(run);
             return (
@@ -348,9 +418,9 @@ export const HistoryPage = () => {
                         <button
                           className="primary-btn history-action-btn"
                           onClick={() => void generateIgImage(run)}
-                          disabled={!canGenerate || generation.status === 'generating'}
+                          disabled={!canGenerate || generation.status === 'queued' || generation.status === 'running'}
                         >
-                          {generation.status === 'generating' ? 'Creating...' : 'Create Content'}
+                          {(generation.status === 'queued' || generation.status === 'running') ? 'Creating...' : 'Create Content'}
                         </button>
                       )}
                       <button className="secondary-btn history-action-icon" onClick={() => startEdit(run)} aria-label="Edit">✎</button>
@@ -360,13 +430,31 @@ export const HistoryPage = () => {
                     {settings.coachMode && !canGenerate && (
                       <p className="history-share-note">IG generation requires a complete run and workout type set for every station.</p>
                     )}
+                    {generation.status === 'queued' && <p>Content generation queued.</p>}
+                    {generation.status === 'running' && <p>Content generation in progress.</p>}
                     {generation.error && <p role="alert">IG generation error: {generation.error}</p>}
-                    {generation.previewUrl && (
-                      <img
-                        src={generation.previewUrl}
-                        alt={`Generated IG preview for ${run.timerNameAtRun}`}
-                        className="about-kobe-ai-image"
-                      />
+                    {generation.imageUrl && (
+                      <>
+                        <div className="history-card-actions" aria-label="Generated media actions">
+                          <button
+                            className="secondary-btn history-action-btn"
+                            onClick={() => downloadGeneratedImage(generation.imageUrl ?? '', buildImageFileName(run))}
+                          >
+                            Download Content
+                          </button>
+                          <button
+                            className="danger-btn history-action-btn"
+                            onClick={() => void deleteGeneratedImage(run)}
+                          >
+                            Delete Content
+                          </button>
+                        </div>
+                        <img
+                          src={generation.imageUrl}
+                          alt={`Generated IG preview for ${run.timerNameAtRun}`}
+                          className="about-kobe-ai-image"
+                        />
+                      </>
                     )}
                   </>
                 ) : (
