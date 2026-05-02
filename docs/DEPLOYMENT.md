@@ -12,11 +12,18 @@
 
 ## 2. Architecture Fit
 
-This app is primarily a client-side PWA with IndexedDB persistence, plus one serverless API endpoint for IG image generation.
+This app is primarily a client-side PWA with IndexedDB persistence, plus serverless API endpoints for IG image generation and async media jobs.
 
 - Static frontend bundle served by Vercel CDN
-- One server-side API route: `/api/generate-ig-image`
-- No app-managed database backend
+- Server-side API routes:
+  - `/api/generate-ig-image` (legacy synchronous path)
+  - `/api/content-jobs-create`
+  - `/api/content-jobs-status`
+  - `/api/content-jobs-delete`
+  - `/api/content-jobs-process` (manual/admin worker endpoint)
+- App-managed backend services for async media:
+  - Turso (job metadata)
+  - Vercel Blob (generated images)
 
 This remains a lightweight fit for Vercel.
 
@@ -72,9 +79,13 @@ The Vercel Hobby plan is restricted to non-commercial, personal use only. If thi
 
 ## 6. Environment Variables
 
-Required for IG generation API:
+Required for IG generation and async media APIs:
 
 - `OPENAI_API_KEY` - used only on the server by `/api/generate-ig-image`
+- `TURSO_DATABASE_URL` - Turso database URL for async job metadata
+- `TURSO_AUTH_TOKEN` - Turso auth token
+- `BLOB_READ_WRITE_TOKEN` - Vercel Blob read/write token for generated images
+- `CRON_SECRET` - protects `/api/content-jobs-process` when invoked manually
 
 Set in:
 **Vercel Dashboard -> Project -> Settings -> Environment Variables**

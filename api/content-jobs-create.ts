@@ -1,4 +1,6 @@
-import { generateImageBase64, MODEL, OUTPUT_SIZE, validatePayload } from './_igGeneration.js';
+import { createContentJob, createTablesIfNeeded } from './_contentJobsDb.js';
+import { processPendingJobs } from './content-jobs-process.js';
+import { validatePayload } from './_igGeneration.js';
 
 type NodeReq = {
   method?: string;
@@ -36,19 +38,16 @@ export default async function handler(request: NodeReq, response: NodeRes): Prom
   }
 
   try {
-    const imageBase64 = await generateImageBase64(payload.run);
+    await createTablesIfNeeded();
+    const job = await createContentJob(payload.run.id, payload.run);
+    void processPendingJobs(1).catch(() => undefined);
     response.status(200).json({
-      imageBase64,
-      mimeType: 'image/png',
-      model: MODEL,
-      size: OUTPUT_SIZE,
+      jobId: job.id,
+      token: job.viewToken,
+      status: 'queued',
     });
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Unknown server error';
     response.status(500).json({ error: message });
   }
 }
-
-export {
-  validatePayload,
-};

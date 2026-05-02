@@ -75,11 +75,14 @@ describe('HistoryPage', () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
+    window.localStorage.clear();
     createObjectURLSpy = vi.spyOn(URL, 'createObjectURL').mockReturnValue('blob:test-url');
     revokeObjectURLSpy = vi.spyOn(URL, 'revokeObjectURL').mockImplementation(() => undefined);
     promptSpy = vi.spyOn(window, 'prompt').mockReturnValue('kobetheabby');
     fetchSpy = vi.spyOn(window, 'fetch').mockResolvedValue(new Response(JSON.stringify({
-      imageBase64: btoa('image-bytes'),
+      jobId: 'job-1',
+      token: 'token-1',
+      status: 'queued',
     }), { status: 200 }));
     settingsMock.mockReturnValue({
       coachMode: true,
@@ -306,9 +309,8 @@ describe('HistoryPage', () => {
     expect(fetchSpy).not.toHaveBeenCalled();
   });
 
-  it('shares image, previews it, and auto-downloads', async () => {
+  it('creates async content job and shows queued state', async () => {
     listAllRunsMock.mockResolvedValue([completeRun]);
-    const clickSpy = vi.spyOn(HTMLAnchorElement.prototype, 'click').mockImplementation(() => undefined);
 
     render(
       <MemoryRouter initialEntries={['/history']}>
@@ -322,10 +324,8 @@ describe('HistoryPage', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Create Content' }));
 
     await waitFor(() => expect(fetchSpy).toHaveBeenCalledTimes(1));
-    expect(fetchSpy.mock.calls[0][0]).toBe('/api/generate-ig-image');
-    expect(await screen.findByAltText('Generated IG preview for Demo Timer')).toBeInTheDocument();
-    expect(clickSpy).toHaveBeenCalled();
-    clickSpy.mockRestore();
+    expect(fetchSpy.mock.calls[0][0]).toBe('/api/content-jobs-create');
+    expect(await screen.findByText('Content generation queued.')).toBeInTheDocument();
   });
 
   it('shows retryable inline error on API failure', async () => {
