@@ -46,8 +46,11 @@ export default async function handler(request: NodeReq, response: NodeRes): Prom
           occurred_at,
           received_at,
           browser_family,
+          os_family,
+          os_version,
+          device_type,
           payload_json
-        ) VALUES (?, ?, ?, ?, ?, ?)
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
       `,
       args: [
         crypto.randomUUID(),
@@ -55,6 +58,9 @@ export default async function handler(request: NodeReq, response: NodeRes): Prom
         parsed.occurredAt,
         new Date().toISOString(),
         parsed.browserFamily,
+        parsed.osFamily,
+        parsed.osVersion,
+        parsed.deviceType,
         JSON.stringify(parsed.payload),
       ],
     });

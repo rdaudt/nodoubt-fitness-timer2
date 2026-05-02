@@ -30,7 +30,7 @@
   - Aggregates the previous UTC day into `analytics_rollup_daily`.
   - Deletes raw events older than 30 days.
 - `GET /api/analytics-summary`
-  - Returns aggregate counts, browser family usage, averages, and percentages.
+  - Returns aggregate counts, browser/OS/device usage, averages, and percentages.
 
 ## Privacy Guarantees
 
@@ -38,11 +38,15 @@
 - No stable device/install ID.
 - No timer names, location text, or raw user agent strings in analytics payloads.
 - Browser captured as coarse family only (`chrome`, `safari`, `firefox`, `edge`, `other`).
+- OS captured as coarse family only (`ios`, `android`, `windows`, `macos`, `other`).
+- OS version captured as major version only (for example `17`, `14`, `10`) or `unknown`.
+- Device type captured as coarse class only (`mobile`, `tablet`, `desktop`).
 
 ## Notes
 
 - `templatesCreatedFromScratch` is currently always `0` because the app has no "create template from scratch" flow yet.
 - `mostUsedWorkoutTypes` is intentionally not collected in v1 to avoid free-text PII risk.
+- When platform detection is ambiguous, OS is stored as `other` and version as `unknown`.
 - Cron runs in Vercel infrastructure (not your desktop). Local machine only runs dev/test/init commands.
 
 ## Vercel UI Runbook
