@@ -151,6 +151,19 @@ export const findQueuedJobs = async (limit: number): Promise<ContentJobRow[]> =>
   return result.rows.map((row) => mapRow(row as Record<string, unknown>));
 };
 
+export const requeueStaleRunningJobs = async (staleBeforeIso: string): Promise<number> => {
+  const db = getContentJobsDb();
+  const result = await db.execute({
+    sql: `
+      UPDATE content_jobs
+      SET status = 'queued', updated_at = ?
+      WHERE status = 'running' AND updated_at < ?
+    `,
+    args: [new Date().toISOString(), staleBeforeIso],
+  });
+  return Number(result.rowsAffected ?? 0);
+};
+
 export const claimJob = async (jobId: string): Promise<boolean> => {
   const db = getContentJobsDb();
   const now = new Date().toISOString();

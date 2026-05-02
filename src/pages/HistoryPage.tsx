@@ -42,6 +42,9 @@ type GenerationState = {
 type StoredJobInfo = {
   jobId: string;
   token: string;
+  terminalStatus?: 'success' | 'error';
+  imageUrl?: string | null;
+  error?: string | null;
 };
 
 const JOBS_STORAGE_KEY = 'nodoubt_content_jobs_v1';
@@ -156,7 +159,10 @@ export const HistoryPage = () => {
 
     const syncJobs = async () => {
       const jobs = loadStoredJobs();
-      const runIds = Object.keys(jobs);
+      const runIds = Object.keys(jobs).filter((runId) => {
+        const stored = jobs[runId];
+        return stored?.terminalStatus !== 'success' && stored?.terminalStatus !== 'error';
+      });
       if (runIds.length === 0) {
         return;
       }
@@ -178,8 +184,22 @@ export const HistoryPage = () => {
           }
 
           if (body.status === 'completed' && body.imageUrl) {
+            jobs[runId] = {
+              ...jobInfo,
+              terminalStatus: 'success',
+              imageUrl: body.imageUrl,
+              error: null,
+            };
+            saveStoredJobs(jobs);
             setGenerationState(runId, { status: 'success', error: null, imageUrl: body.imageUrl, jobId: jobInfo.jobId });
           } else if (body.status === 'failed') {
+            jobs[runId] = {
+              ...jobInfo,
+              terminalStatus: 'error',
+              imageUrl: null,
+              error: body.error ?? 'Generation failed.',
+            };
+            saveStoredJobs(jobs);
             setGenerationState(runId, { status: 'error', error: body.error ?? 'Generation failed.', imageUrl: null, jobId: jobInfo.jobId });
           } else if (body.status === 'running') {
             setGenerationState(runId, { status: 'running', error: null, imageUrl: null, jobId: jobInfo.jobId });
@@ -190,6 +210,13 @@ export const HistoryPage = () => {
           if (isCancelled) {
             return;
           }
+          jobs[runId] = {
+            ...jobInfo,
+            terminalStatus: 'error',
+            imageUrl: null,
+            error: error instanceof Error ? error.message : 'Failed to load generation status.',
+          };
+          saveStoredJobs(jobs);
           setGenerationState(runId, {
             status: 'error',
             error: error instanceof Error ? error.message : 'Failed to load generation status.',
@@ -209,6 +236,23 @@ export const HistoryPage = () => {
       isCancelled = true;
       window.clearInterval(intervalId);
     };
+  }, []);
+
+  useEffect(() => {
+    const jobs = loadStoredJobs();
+    Object.entries(jobs).forEach(([runId, info]) => {
+      if (info.terminalStatus === 'success' && info.imageUrl) {
+        setGenerationState(runId, { status: 'success', error: null, imageUrl: info.imageUrl, jobId: info.jobId });
+      }
+      if (info.terminalStatus === 'error') {
+        setGenerationState(runId, {
+          status: 'error',
+          error: info.error ?? 'Generation failed.',
+          imageUrl: null,
+          jobId: info.jobId,
+        });
+      }
+    });
   }, []);
 
   const startEdit = (run: TimerRun) => {
@@ -313,6 +357,9 @@ export const HistoryPage = () => {
       jobs[run.id] = {
         jobId: body.jobId,
         token: body.token,
+        terminalStatus: undefined,
+        imageUrl: null,
+        error: null,
       };
       saveStoredJobs(jobs);
       setGenerationState(run.id, { status: 'queued', error: null, imageUrl: null, jobId: body.jobId });

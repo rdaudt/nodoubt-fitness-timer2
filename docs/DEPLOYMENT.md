@@ -20,7 +20,7 @@ This app is primarily a client-side PWA with IndexedDB persistence, plus serverl
   - `/api/content-jobs-create`
   - `/api/content-jobs-status`
   - `/api/content-jobs-delete`
-  - `/api/content-jobs-process` (cron worker)
+  - `/api/content-jobs-process` (manual/admin worker endpoint)
 - App-managed backend services for async media:
   - Turso (job metadata)
   - Vercel Blob (generated images)
@@ -85,7 +85,7 @@ Required for IG generation and async media APIs:
 - `TURSO_DATABASE_URL` - Turso database URL for async job metadata
 - `TURSO_AUTH_TOKEN` - Turso auth token
 - `BLOB_READ_WRITE_TOKEN` - Vercel Blob read/write token for generated images
-- `CRON_SECRET` - protects cron-triggered `/api/content-jobs-process`
+- `CRON_SECRET` - protects `/api/content-jobs-process` when invoked manually
 
 Set in:
 **Vercel Dashboard -> Project -> Settings -> Environment Variables**

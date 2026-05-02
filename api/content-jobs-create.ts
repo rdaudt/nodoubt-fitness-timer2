@@ -1,4 +1,5 @@
 import { createContentJob, createTablesIfNeeded } from './_contentJobsDb.js';
+import { processPendingJobs } from './content-jobs-process.js';
 import { validatePayload } from './_igGeneration.js';
 
 type NodeReq = {
@@ -39,6 +40,7 @@ export default async function handler(request: NodeReq, response: NodeRes): Prom
   try {
     await createTablesIfNeeded();
     const job = await createContentJob(payload.run.id, payload.run);
+    void processPendingJobs(1).catch(() => undefined);
     response.status(200).json({
       jobId: job.id,
       token: job.viewToken,

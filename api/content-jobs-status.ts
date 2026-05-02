@@ -1,4 +1,5 @@
 import { createTablesIfNeeded, getContentJobById, verifyJobAccess } from './_contentJobsDb.js';
+import { processPendingJobs } from './content-jobs-process.js';
 
 type NodeReq = {
   method?: string;
@@ -39,14 +40,22 @@ export default async function handler(request: NodeReq, response: NodeRes): Prom
       response.status(404).json({ error: 'Job not found.' });
       return;
     }
+    if (job.status === 'queued' || job.status === 'running') {
+      await processPendingJobs(1);
+    }
+    const latestJob = await getContentJobById(jobId);
+    if (!latestJob || !verifyJobAccess(latestJob, token)) {
+      response.status(404).json({ error: 'Job not found.' });
+      return;
+    }
     response.status(200).json({
-      jobId: job.id,
-      status: job.status,
-      error: job.errorMessage,
-      imageUrl: job.blobUrl,
-      createdAt: job.createdAt,
-      updatedAt: job.updatedAt,
-      completedAt: job.completedAt,
+      jobId: latestJob.id,
+      status: latestJob.status,
+      error: latestJob.errorMessage,
+      imageUrl: latestJob.blobUrl,
+      createdAt: latestJob.createdAt,
+      updatedAt: latestJob.updatedAt,
+      completedAt: latestJob.completedAt,
     });
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Unknown server error';

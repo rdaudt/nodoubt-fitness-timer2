@@ -5,6 +5,7 @@ import {
   createTablesIfNeeded,
   failJobAttempt,
   findQueuedJobs,
+  requeueStaleRunningJobs,
 } from './_contentJobsDb.js';
 import { generateImageBase64 } from './_igGeneration.js';
 
@@ -20,6 +21,7 @@ type NodeRes = {
 };
 
 const MAX_BATCH = 2;
+const STALE_RUNNING_MINUTES = 10;
 
 const getHeader = (headers: NodeReq['headers'], name: string): string | null => {
   if (!headers) {
@@ -32,13 +34,46 @@ const getHeader = (headers: NodeReq['headers'], name: string): string | null => 
   return value ?? null;
 };
 
-const isAuthorized = (request: NodeReq): boolean => {
+export const isAuthorized = (request: NodeReq): boolean => {
   const expected = process.env.CRON_SECRET ?? process.env.ANALYTICS_CRON_SECRET;
   if (!expected) {
     return false;
   }
   const authHeader = getHeader(request.headers, 'authorization');
   return authHeader === `Bearer ${expected}`;
+};
+
+export const processPendingJobs = async (limit = MAX_BATCH): Promise<{ queued: number; processed: number; requeued: number }> => {
+  await createTablesIfNeeded();
+  const staleBefore = new Date(Date.now() - STALE_RUNNING_MINUTES * 60 * 1000).toISOString();
+  const requeued = await requeueStaleRunningJobs(staleBefore);
+  const queuedJobs = await findQueuedJobs(limit);
+  let processed = 0;
+
+  for (const job of queuedJobs) {
+    const acquired = await claimJob(job.id);
+    if (!acquired) {
+      continue;
+    }
+    processed += 1;
+    try {
+      const runPayload = JSON.parse(job.payloadJson) as Parameters<typeof generateImageBase64>[0];
+      const imageBase64 = await generateImageBase64(runPayload);
+      const imageBytes = Buffer.from(imageBase64, 'base64');
+      const pathname = `generated/ig/${job.id}.png`;
+      const blob = await put(pathname, imageBytes, {
+        access: 'public',
+        contentType: 'image/png',
+        addRandomSuffix: false,
+      });
+      await completeJob(job.id, blob.url, pathname);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Generation failed.';
+      await failJobAttempt(job.id, job.attemptCount, job.maxAttempts, message);
+    }
+  }
+
+  return { queued: queuedJobs.length, processed, requeued };
 };
 
 export default async function handler(request: NodeReq, response: NodeRes): Promise<void> {
@@ -52,37 +87,13 @@ export default async function handler(request: NodeReq, response: NodeRes): Prom
   }
 
   try {
-    await createTablesIfNeeded();
-    const queuedJobs = await findQueuedJobs(MAX_BATCH);
-    let processed = 0;
-
-    for (const job of queuedJobs) {
-      const acquired = await claimJob(job.id);
-      if (!acquired) {
-        continue;
-      }
-      processed += 1;
-      try {
-        const runPayload = JSON.parse(job.payloadJson) as Parameters<typeof generateImageBase64>[0];
-        const imageBase64 = await generateImageBase64(runPayload);
-        const imageBytes = Buffer.from(imageBase64, 'base64');
-        const pathname = `generated/ig/${job.id}.png`;
-        const blob = await put(pathname, imageBytes, {
-          access: 'public',
-          contentType: 'image/png',
-          addRandomSuffix: false,
-        });
-        await completeJob(job.id, blob.url, pathname);
-      } catch (error) {
-        const message = error instanceof Error ? error.message : 'Generation failed.';
-        await failJobAttempt(job.id, job.attemptCount, job.maxAttempts, message);
-      }
-    }
+    const result = await processPendingJobs(MAX_BATCH);
 
     response.status(200).json({
       ok: true,
-      queued: queuedJobs.length,
-      processed,
+      queued: result.queued,
+      processed: result.processed,
+      requeued: result.requeued,
     });
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Unknown server error';
