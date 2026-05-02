@@ -1,9 +1,9 @@
-# 🧠 NoDoubt Fitness – Production-Grade HIIT Poster Generation Prompt
+# 🧠 NoDoubt Training Co. – Production-Grade HIIT Poster Generation Prompt
 
 ## 🎯 PURPOSE
 Generate a high-quality, Instagram-ready (4:5 portrait) fitness poster summarizing a completed HIIT session. The poster must combine:
 - Accurate session data (from JSON input)
-- Strong branding (NoDoubt Fitness)
+- Strong branding (NoDoubt Training Co.)
 - Motivational storytelling (Coach Gabe + Kobe the Abby, CMO)
 - Clean infographic structure
 
@@ -40,7 +40,7 @@ Key fields:
 ---
 
 ### 3. Logo (MANDATORY)
-- Use provided NoDoubt Fitness logo only
+- Use provided NoDoubt Training Co. logo only
 - No recreation or variation
 
 ---
@@ -160,7 +160,7 @@ Calorie burn estimates are based on general averages and may vary depending on a
 ---
 
 ### 10. FOOTER
-Powered by Coach Gabe’s NoDoubt Fitness
+Powered by Coach Gabe’s NoDoubt Training Co.
 
 ---
 
