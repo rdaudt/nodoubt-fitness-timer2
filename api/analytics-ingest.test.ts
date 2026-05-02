@@ -59,6 +59,9 @@ describe('analytics-ingest API', () => {
         eventName: 'timer_created',
         occurredAt: '2026-04-29T12:00:00.000Z',
         browserFamily: 'chrome',
+        osFamily: 'android',
+        osVersion: '14',
+        deviceType: 'mobile',
         payload: { category: 'GENERAL' },
       },
     }, res);
@@ -67,5 +70,26 @@ describe('analytics-ingest API', () => {
     expect(executeMock).toHaveBeenCalledTimes(1);
     const args = executeMock.mock.calls[0][0] as { args: unknown[] };
     expect(args.args[1]).toBe('timer_created');
+  });
+
+  it('rejects payload with invalid device metadata', async () => {
+    const { default: handler } = await import('./analytics-ingest');
+    const { res, store } = createMockRes();
+
+    await handler({
+      method: 'POST',
+      body: {
+        eventName: 'timer_created',
+        occurredAt: '2026-04-29T12:00:00.000Z',
+        browserFamily: 'chrome',
+        osFamily: 'linux',
+        osVersion: '14.2',
+        deviceType: 'console',
+        payload: { category: 'GENERAL' },
+      },
+    }, res);
+
+    expect(store.statusCode).toBe(400);
+    expect(executeMock).not.toHaveBeenCalled();
   });
 });

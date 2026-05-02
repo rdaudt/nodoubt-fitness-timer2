@@ -30,6 +30,9 @@ export const createTablesIfNeeded = async () => {
         occurred_at TEXT NOT NULL,
         received_at TEXT NOT NULL,
         browser_family TEXT NOT NULL,
+        os_family TEXT NOT NULL,
+        os_version TEXT NOT NULL,
+        device_type TEXT NOT NULL,
         payload_json TEXT NOT NULL
       );
     `,
@@ -85,9 +88,26 @@ export const createTablesIfNeeded = async () => {
     `cooldown_sec_sum INTEGER NOT NULL DEFAULT 0`,
   ];
 
+  const requiredEventColumns = [
+    `os_family TEXT NOT NULL DEFAULT 'other'`,
+    `os_version TEXT NOT NULL DEFAULT 'unknown'`,
+    `device_type TEXT NOT NULL DEFAULT 'desktop'`,
+  ];
+
   for (const columnDef of requiredRollupColumns) {
     try {
       await db.execute(`ALTER TABLE analytics_rollup_daily ADD COLUMN ${columnDef}`);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      if (!message.toLowerCase().includes('duplicate column name')) {
+        throw error;
+      }
+    }
+  }
+
+  for (const columnDef of requiredEventColumns) {
+    try {
+      await db.execute(`ALTER TABLE analytics_events ADD COLUMN ${columnDef}`);
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);
       if (!message.toLowerCase().includes('duplicate column name')) {

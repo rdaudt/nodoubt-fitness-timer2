@@ -21,6 +21,9 @@ const statements = [
       occurred_at TEXT NOT NULL,
       received_at TEXT NOT NULL,
       browser_family TEXT NOT NULL,
+      os_family TEXT NOT NULL,
+      os_version TEXT NOT NULL,
+      device_type TEXT NOT NULL,
       payload_json TEXT NOT NULL
     );
   `,
