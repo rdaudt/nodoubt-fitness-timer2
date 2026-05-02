@@ -32,6 +32,7 @@ export const TimerCard = ({
   const [translateX, setTranslateX] = useState(0);
   const [open, setOpen] = useState(false);
   const pointerIdRef = useRef<number | null>(null);
+  const swipePointerTypeRef = useRef<string | null>(null);
   const startXRef = useRef(0);
   const startOffsetRef = useRef(0);
   const movedRef = useRef(false);
@@ -43,7 +44,11 @@ export const TimerCard = ({
   };
 
   const onPointerDown: PointerEventHandler<HTMLDivElement> = (e) => {
+    if (e.pointerType === 'mouse') {
+      return;
+    }
     pointerIdRef.current = e.pointerId;
+    swipePointerTypeRef.current = e.pointerType;
     startXRef.current = e.clientX;
     startOffsetRef.current = translateX;
     movedRef.current = false;
@@ -63,10 +68,11 @@ export const TimerCard = ({
   };
 
   const onPointerUp: PointerEventHandler<HTMLDivElement> = (e) => {
-    if (pointerIdRef.current !== e.pointerId) {
+    if (pointerIdRef.current !== e.pointerId || swipePointerTypeRef.current !== e.pointerType) {
       return;
     }
     pointerIdRef.current = null;
+    swipePointerTypeRef.current = null;
     if (movedRef.current) {
       suppressClickRef.current = true;
     }
@@ -98,7 +104,11 @@ export const TimerCard = ({
         onPointerDown={onPointerDown}
         onPointerMove={onPointerMove}
         onPointerUp={onPointerUp}
-        onPointerCancel={close}
+        onPointerCancel={() => {
+          pointerIdRef.current = null;
+          swipePointerTypeRef.current = null;
+          close();
+        }}
       >
         <div className={featureImage ? 'timer-card timer-card-featured' : 'timer-card'}>
           <span className="timer-card-category-badge">{timer.category}</span>
