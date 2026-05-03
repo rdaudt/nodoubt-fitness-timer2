@@ -129,6 +129,19 @@ Initialize analytics tables once:
 npm run analytics:db:init
 ```
 
+### Windows + WSL note (Turso local setup)
+This project is developed on Windows, but some Turso local setup steps may be easier or required in WSL.
+
+- If your Turso CLI/auth flow is configured in WSL, run Turso login/database/token commands there.
+- Then mirror the resulting values into project `.env.local` on Windows:
+  - `TURSO_DATABASE_URL`
+  - `TURSO_AUTH_TOKEN`
+- After env vars are set, run app commands from your normal project shell:
+  - `npm run analytics:db:init`
+  - `npx vercel dev --listen 3000`
+
+If the API still cannot connect to Turso, confirm the same credentials are available in the shell session where `vercel dev` is running.
+
 Vercel cron schedule is defined in `vercel.json` and calls:
 - `GET /api/analytics-rollup`
 
