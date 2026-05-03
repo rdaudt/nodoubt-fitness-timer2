@@ -58,7 +58,6 @@ src/
   services/          storage, settings context, analytics, audio, transfer
 api/                 Vercel serverless functions
 public/              static assets + service worker + manifest
-docs/                product, business rules, analytics, deployment docs
 templates/           built-in timer template JSON files
 scripts/             maintenance scripts (analytics DB init)
 ```
