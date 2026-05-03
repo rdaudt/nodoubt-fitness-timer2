@@ -1,230 +1,147 @@
-# HIIT Timer — Product Requirements Document
-> Status: **Draft v0.3** — Brand context and marketing screens added
-
----
+﻿# HIIT Timer - Product Requirements Document
+> Status: **Current as of May 3, 2026**
 
 ## 1. Product Overview
+HIIT Timer by NoDoubt Training Co. is a mobile-first PWA for creating and running station-based HIIT sessions.
 
-A mobile-optimized Progressive Web App (PWA) that allows users to create, manage, and run fully customizable HIIT (High-Intensity Interval Training) timers. The app is free to use and serves as a marketing vehicle for **NoDoubt Fitness**, a personal training business. The UI reflects the NoDoubt Fitness brand throughout and includes a call to action and an About page to drive coaching inquiries.
+The app serves two goals:
+- Give athletes/coaches a fast, offline-capable interval timer.
+- Support NoDoubt Training Co. brand and coaching lead generation.
 
-No authentication is required. All timer data is persisted locally on the device.
+The app is account-free. Core data is local to the browser (IndexedDB).
 
----
-
-## 2. Business Context
-
-| Attribute | Detail |
-|---|---|
-| App name | HIIT Timer by NoDoubt Fitness (working title) |
-| Business | NoDoubt Fitness — personal training |
-| App purpose | Free utility tool; primary goal is to generate coaching leads |
-| Monetization | None (free app) |
-| Call to action | Persistent prompt to contact the trainer for coaching (e.g., "Train with me" / "Message me for coaching") |
-| Instagram | Link to NoDoubt Fitness IG account (URL TBD) |
-
----
+## 2. Current Product Scope
+Implemented capabilities:
+- Timer CRUD using a station/round timing model.
+- Timer execution with warmup, work/rest rounds, station transitions, and cooldown.
+- Coach mode controls (including optional manual start before each station's first work interval).
+- Template system (built-in + user templates) with template-to-timer creation.
+- Run history with completion state, metadata edits, and export.
+- Timer import/export for backup/transfer of timer definitions.
+- Global settings for audio behavior, visual preferences, and interval colors.
+- Brand/coach presence via topbar, About page, and Instagram CTAs.
+- Lightweight backend endpoints for analytics ingestion and coach content-generation jobs.
 
 ## 3. Data Model
-
 ### 3.1 Timer
+A timer contains:
+- `id` (UUID)
+- `name` (required, <= 25 chars, unique among timers)
+- `stationCount` (integer >= 1)
+- `roundsPerStation` (integer >= 1)
+- `workMinutes`, `workSeconds`
+- `restMinutes`, `restSeconds`
+- `stationTransitionMinutes`, `stationTransitionSeconds`
+- `startStationWorkManually` (boolean)
+- `warmupEnabled`, `warmupMinutes`, `warmupSeconds`
+- `cooldownEnabled`, `cooldownMinutes`, `cooldownSeconds`
+- `category` (`GENERAL` | `FAT-LOSS` | `PERFORMANCE`)
+- Optional `stationWorkoutTypes[]` (free-text labels, max 40 chars in UI)
+- `createdAt`, `updatedAt`
 
-| Field | Type | Constraints |
-|---|---|---|
-| `id` | string (UUID) | Auto-generated |
-| `name` | string | Required, non-empty |
-| `sets` | integer | Min: 1, no upper limit, default: 1 |
-| `intervals` | Interval[] | Min: 1 work interval required |
-| `created_at` | datetime | Auto-set on creation |
-| `updated_at` | datetime | Updated on every save |
+### 3.2 Template
+Template mirrors timer timing fields and category with:
+- `source` (`builtin` | `user`)
+- Optional `builtinTemplateId` for user override of built-ins
 
-### 3.2 Interval
+### 3.3 Timer Run
+Run history record includes:
+- `timerId`, `timerNameAtRun`, full `timerSnapshot`
+- `complete` (completed vs stopped early)
+- `ranAt`, `location`, `category`
+- Derived totals (`totalPerStationMs`, `totalWorkMs`)
+- Optional `stationWorkoutTypes[]`
 
-| Field | Type | Constraints |
-|---|---|---|
-| `sequence` | integer | 1-based, auto-assigned, sequential |
-| `name` | string | Required, non-empty |
-| `type` | enum | `warmup` \| `work` \| `rest` \| `cooldown` |
-| `duration_minutes` | integer | ≥ 0; combined with seconds must be > 0 |
-| `duration_seconds` | integer | 0–59; combined with minutes must be > 0 |
-| `color` | string (hex/CSS) | Derived from type; see Section 3.3 |
+### 3.4 App Settings
+- `coachMode`
+- `kobeEverywhere`
+- `imagesInAllTimers`
+- `bwTimerImages`
+- `endIntervalLongBeep`
+- `countdownLast5Beeps`
+- `intervalColors` for `warmup`, `work`, `rest`, `cooldown` (must be unique)
 
-### 3.3 Interval Type Colors
+## 4. Timer Execution Model
+Execution order:
+1. Optional warmup (once)
+2. For each station 1..N:
+   - Work for round 1..R
+   - Rest after each round except the last round in that station
+   - Station transition between stations
+3. Optional cooldown (once)
 
-Colors are assigned per interval type and are globally configurable from the Settings page. Each type must have a unique color.
+Formal sequence:
+`[Warmup] -> (Station1[Rounds] -> Transition -> Station2[Rounds] ... StationN[Rounds]) -> [Cooldown]`
 
-| Type | Default Color |
-|---|---|
-| `warmup` | Orange |
-| `work` | Red |
-| `rest` | Green |
-| `cooldown` | Blue |
+Coach-mode manual-start pause rule:
+- If `coachMode = true` and `startStationWorkManually = true`, the timer auto-pauses:
+  - After warmup before first work interval
+  - After each station transition before next station work interval
 
----
+## 5. Validation & Business Constraints
+- Timer name required, <= 25 chars, unique (case-insensitive) within timer list.
+- `stationCount` and `roundsPerStation` normalized to integers >= 1.
+- Work duration must be >= 1 second.
+- Rest duration must be >= 1 second when rounds per station > 1.
+- Station transition must be >= 1 second.
+- Warmup/cooldown must be >= 1 second when their toggle is enabled.
+- Warmup/cooldown durations are forced to `00:00` when disabled.
+- Seconds are normalized to `0..59`; minutes are integers >= 0.
+- Interval colors must be unique across warmup/work/rest/cooldown.
 
-## 4. Business Rules
+## 6. Audio & Wake Lock
+- Web Audio API is unlocked on first pointer interaction.
+- Optional short countdown beep for last 5 seconds of each active interval.
+- Optional long beep at each interval boundary and completion.
+- Screen Wake Lock is requested while running and released on pause/stop/completion/unmount.
 
-### 4.1 Interval Structure Rules
+## 7. Storage & Sync
+Primary persistence:
+- IndexedDB (`nodoubt-hiit`, schema v3): timers, settings, templates, timerRuns.
 
-1. A timer **must** contain at least one `work` interval.
-2. Every `work` interval **must** be immediately followed by a `rest` interval — no exceptions.
-3. When the user adds a `work` interval and no `rest` follows it, the app **automatically inserts** a default `rest` interval after it.
-4. A `warmup` interval is optional. If present, it **must** be the **first** interval.
-5. A `cooldown` interval is optional. If present, it **must** be the **last** interval.
-6. Interval duration **cannot be zero** (0 min 0 sec is invalid).
-7. Duration has **no upper limit**.
+Other local persistence:
+- `localStorage` tracks analytics session activity and content job status cache.
 
-### 4.2 Timer Execution Order
+Import/export:
+- Timers can be exported/imported via JSON (`nodoubt-timers-export` v1).
+- Import replaces all existing timers in current browser profile.
+- Run history is intentionally excluded from timer import/export.
 
-```
-[warmup] → (work1 → rest1 → work2 → rest2 → ... → workN → restN) × sets → [cooldown]
-```
+## 8. Screens & Routes
+- `/` Timers list (category filter, coach mode toggle, create/clone/delete/template actions)
+- `/timer/new` creates a default timer then redirects to detail
+- `/timer/:id` Timer detail/editor
+- `/timer/:id/run` Active running screen
+- `/templates` Templates list
+- `/template/:id` Template detail/editor
+- `/history` Run history and coach content workflow
+- `/about` Coach/brand/about page
+- `/settings` Global app settings + import/export actions
 
-- `warmup` runs **once** at the start, if present.
-- The complete ordered sequence of all `work` and `rest` intervals repeats for the configured number of `sets`.
-- `cooldown` runs **once** at the end, if present.
-- `warmup` and `cooldown` are **never** repeated across sets.
+Bottom nav (non-running screens): Timers, Templates, History, About, Settings.
 
-**Example:** Warmup → Work1 → Rest1 → Work2 → Rest2, 3 sets:
+## 9. Analytics & Backend Endpoints
+Frontend emits events to `/api/analytics-ingest`:
+- `app_opened`
+- `timer_created`, `timer_cloned`
+- `timer_created_from_template`, `template_created_from_timer`
+- `timer_run_completed`, `timer_run_incomplete`, `timer_run_coach_mode`
+- `timers_exported`, `timers_imported`
 
-```
-Warmup → [Work1 → Rest1 → Work2 → Rest2] × 3 → Cooldown
-```
+Additional backend routes exist for:
+- Analytics health/summary/rollup
+- Coach content generation job lifecycle (`content-jobs-*`, IG image generation)
 
----
+## 10. Non-Functional Characteristics
+- PWA with service worker caching and offline support.
+- Mobile-first interaction patterns and bottom navigation.
+- Local-first architecture for core workout flows.
+- No authentication for timer usage.
 
-## 5. Storage & PWA
+## 11. Explicitly Not Included (Current Build)
+- User accounts and multi-device sync
+- Real-time collaboration
+- Payment/subscription flows
+- In-app booking/CRM
 
-- All timers are persisted locally using **IndexedDB**.
-- No backend, no authentication, no sync.
-- Built as a **Progressive Web App (PWA)**:
-  - Service worker for full **offline support**
-  - Web App Manifest for **Add to Home Screen**
-  - **Screen Wake Lock API** — requested on timer start, released on pause/stop
 
----
-
-## 6. Audio
-
-- Audio cue plays at every **interval transition** via the Web Audio API.
-- Audio context is initialized on first user interaction to comply with mobile browser autoplay policies.
-
----
-
-## 7. Screen Inventory
-
-| Screen | Route | Description |
-|---|---|---|
-| Timer List | `/` | Home screen; lists saved timers; persistent CTA |
-| Timer Detail | `/timer/:id` | Read-only timer summary; run/edit/delete entry point |
-| Timer Editor | `/timer/new` or `/timer/:id/edit` | Create or edit a timer |
-| Running Timer | `/timer/:id/run` | Active execution view |
-| About | `/about` | NoDoubt Fitness profile, owner bio, IG link, CTA |
-| App Settings | `/settings` | Interval type color configuration |
-
----
-
-## 8. Screen Specifications
-
-### 8.1 Timer List (Home Screen)
-
-- Lists all saved timers ordered by **most recently edited or created** (descending).
-- Each timer card shows: timer name, number of sets, number of intervals, total estimated duration.
-- **"New Timer"** action (button or FAB) prominently available.
-- Tapping a timer navigates to the Timer Detail screen.
-- **Persistent CTA banner or element** visible on this screen directing users to the About page or coaching contact (e.g., "Train with NoDoubt Fitness →").
-
-### 8.2 Timer Detail Screen
-
-- **Header:** Timer name, number of sets.
-- **Interval list:** One visual block per interval showing sequence number, name, type (with color indicator), duration (`mm:ss`).
-- **Actions:** ▶ Run, ✏️ Edit, 🗑️ Delete (with confirmation).
-
-### 8.3 Timer Editor Screen
-
-#### Timer-Level Fields
-- Timer name (text input)
-- Number of sets (numeric input, min: 1)
-
-#### Interval Management
-- Add, edit, remove, reorder intervals.
-- Duration entered as minutes + seconds (two inputs).
-- Business rules enforced in real-time:
-  - Auto-insert `rest` after a `work` interval if none follows.
-  - `warmup` locked to position 1; `cooldown` locked to last.
-  - Save blocked if any duration is zero.
-
-### 8.4 App Settings Screen
-
-- One color picker per interval type (warmup, work, rest, cooldown).
-- Enforces unique colors per type; warns and blocks save on conflict.
-- Changes apply globally and immediately.
-
-### 8.5 Running Timer Screen
-
-#### Layout
-- **Sticky header:** Timer name, set progress (e.g., "Set 2 of 4"), total remaining time.
-- **Interval list:**
-  - Completed intervals: visible, dimmed, marked done.
-  - Current interval: highlighted, live countdown (`mm:ss`).
-  - Upcoming intervals: normal/muted style.
-  - Auto-scrolls to keep current interval visible.
-- Audio cue at each transition; screen wake lock active.
-
-#### Playback Controls
-
-| Action | State | Requires Confirmation |
-|---|---|---|
-| Pause | Running | ✅ Yes |
-| Stop | Running | ✅ Yes |
-| Resume | Paused | ❌ No |
-| Stop | Paused | ❌ No |
-
-### 8.6 About Screen
-
-The primary brand and lead generation screen.
-
-- **Business branding:** NoDoubt Fitness name and logo (if available).
-- **Owner profile:** Photo, name, short bio describing training philosophy and offer.
-- **Instagram link:** Prominent link/button to the NoDoubt Fitness IG account (opens in new tab).
-- **Primary CTA:** Bold, prominent call-to-action button — e.g., *"Message me for coaching"* — linking to a contact method (IG DM, WhatsApp, email — TBD with owner).
-- **Tone:** Motivational, personal, confident — consistent with the NoDoubt Fitness brand voice.
-- Accessible from the main navigation on all screens.
-
----
-
-## 9. Navigation & Brand Presence
-
-- A **bottom navigation bar** (mobile-native pattern) provides access to: Timer List, About, Settings.
-- The **NoDoubt Fitness brand** (wordmark or logo) appears in the app header/navigation — not as a distraction during active timer use, but visible on all non-running screens.
-- The **CTA** (coaching prompt) is present on the Timer List and About screens. It is hidden during active timer execution to avoid distraction.
-
----
-
-## 10. Non-Functional Requirements
-
-| Requirement | Detail |
-|---|---|
-| Platform | PWA; mobile-first (touch-optimized, responsive) |
-| Authentication | None |
-| Data persistence | IndexedDB, local device only |
-| Offline support | Full offline via service worker |
-| Wake lock | On timer start; released on pause/stop |
-| Audio | Web Audio API; unlocked on first user gesture |
-| Timer accuracy | Date-based delta for drift correction |
-| Accessibility | Tap targets ≥ 44×44px; color contrast compliance |
-| Brand | See `BRAND.md` for visual identity, aesthetic direction, and design tokens |
-
----
-
-## 11. Out of Scope (v1)
-
-- User accounts or cloud sync
-- Timer sharing or export
-- In-app messaging or booking system
-- Pre-built timer templates
-- Audio customization
-- Wearable / smartwatch integration
-
----
-
-*Maintain alongside `BRAND.md` and `DEPLOYMENT.md`. Advance to v0.4 when implementation begins.*

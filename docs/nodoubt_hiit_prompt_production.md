@@ -1,6 +1,6 @@
-# 🧠 NoDoubt Training Co. – Production-Grade HIIT Poster Generation Prompt
+﻿# ðŸ§  NoDoubt Training Co. â€“ Production-Grade HIIT Poster Generation Prompt
 
-## 🎯 PURPOSE
+## ðŸŽ¯ PURPOSE
 Generate a high-quality, Instagram-ready (4:5 portrait) fitness poster summarizing a completed HIIT session. The poster must combine:
 - Accurate session data (from JSON input)
 - Strong branding (NoDoubt Training Co.)
@@ -9,15 +9,15 @@ Generate a high-quality, Instagram-ready (4:5 portrait) fitness poster summarizi
 
 ---
 
-## 📥 INPUTS
+## ðŸ“¥ INPUTS
 
 ### 1. Session JSON (SOURCE OF TRUTH)
 You MUST extract all session data strictly from this file.
 
 Key fields:
-- timerNameAtRun → Session name
-- ranAt → Date & time
-- location → Location (optional)
+- timerNameAtRun â†’ Session name
+- ranAt â†’ Date & time
+- location â†’ Location (optional)
 - timerSnapshot:
   - stationCount
   - roundsPerStation
@@ -28,7 +28,7 @@ Key fields:
   - stationSetNumber
   - workoutType
 
-⚠️ NEVER use sample poster data.
+âš ï¸ NEVER use sample poster data.
 
 ---
 
@@ -45,7 +45,7 @@ Key fields:
 
 ---
 
-## 🚫 HARD CONSTRAINTS
+## ðŸš« HARD CONSTRAINTS
 - Do NOT modify coach image
 - Do NOT invent workouts
 - Do NOT include warmup/cooldown
@@ -54,14 +54,14 @@ Key fields:
 
 ---
 
-## 🧩 POSTER STRUCTURE
+## ðŸ§© POSTER STRUCTURE
 
 ### 1. HEADER
 - Logo (top-left)
 - Title: HIIT WORKOUT
 - Session Name (from JSON, large font)
 - Tagline:
-  NO EXCUSES. YOU DON’T FIND MOTIVATION. YOU BUILD IT.
+  NO EXCUSES. YOU DONâ€™T FIND MOTIVATION. YOU BUILD IT.
 - Coach + Kobe image (top-right)
 - Text:
   Kobe the Abby
@@ -90,9 +90,9 @@ Populate from stationSetWorkoutTypes.
 #### Data Augmentation Rules:
 
 Focus:
-- Pushups → Chest, Shoulders, Core
-- Pullups → Back, Biceps
-- Squats → Quads, Glutes
+- Pushups â†’ Chest, Shoulders, Core
+- Pullups â†’ Back, Biceps
+- Squats â†’ Quads, Glutes
 
 Illustration:
 - Show person performing exercise
@@ -102,12 +102,12 @@ Illustration:
   - skin tone
 
 MET:
-- Moderate: 6–8
-- Vigorous: 9–11
-- Very Vigorous: 12–15
+- Moderate: 6â€“8
+- Vigorous: 9â€“11
+- Very Vigorous: 12â€“15
 
 Calories:
-- Provide realistic ranges (e.g. 40–60 cal)
+- Provide realistic ranges (e.g. 40â€“60 cal)
 
 ---
 
@@ -119,18 +119,18 @@ Tone:
 - high energy
 
 Example:
-"You don’t wait for results. You earn them."
-— Kobe the Abby, CMO
+"You donâ€™t wait for results. You earn them."
+â€” Kobe the Abby, CMO
 
 ---
 
 ### 5. TOTAL CALORIES
 Estimate:
-- Sum all station ranges × rounds
+- Sum all station ranges Ã— rounds
 
 Display:
 Estimated Total Calorie Burn
-XXX–XXX Calories
+XXXâ€“XXX Calories
 
 ---
 
@@ -160,11 +160,11 @@ Calorie burn estimates are based on general averages and may vary depending on a
 ---
 
 ### 10. FOOTER
-Powered by Coach Gabe’s NoDoubt Training Co.
+Powered by Coach Gabeâ€™s NoDoubt Training Co.
 
 ---
 
-## 🎨 DESIGN RULES
+## ðŸŽ¨ DESIGN RULES
 - Background: pure black
 - Colors: yellow, white, orange
 - Typography: bold, athletic
@@ -173,7 +173,7 @@ Powered by Coach Gabe’s NoDoubt Training Co.
 
 ---
 
-## 🧠 CREATIVE DIRECTION
+## ðŸ§  CREATIVE DIRECTION
 Narrative:
 Kobe is the playful but authoritative CMO.
 Gabe is the disciplined coach.
@@ -181,7 +181,9 @@ Tone: intense + motivational + slightly fun
 
 ---
 
-## ✅ OUTPUT
+## âœ… OUTPUT
 - Single image
 - Instagram-ready
 - Infographic layout
+
+
