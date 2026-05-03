@@ -1,73 +1,188 @@
-# React + TypeScript + Vite
+﻿# HIIT Timer by NoDoubt Training Co.
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+Mobile-first, offline-capable HIIT timer PWA with coach-focused workflows.
 
-Currently, two official plugins are available:
+## Overview
+This app lets users create and run station-based HIIT workouts with warmup, work/rest rounds, station transitions, and cooldown. It also includes templates, run history, timer import/export, and optional coach content-generation workflows.
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+Core timer usage is local-first and stored in IndexedDB. Optional backend APIs (Vercel serverless) support analytics and async image generation jobs.
 
-## React Compiler
+## Key Features
+- Timer CRUD with station/round model
+- Run engine with:
+  - warmup/work/rest/transition/cooldown timeline
+  - coach-mode manual station start
+  - optional countdown beeps and interval-end long beep
+  - screen wake lock while running
+- Templates:
+  - built-in templates from `templates/*.json`
+  - user templates created from timers
+- Run history:
+  - complete vs incomplete run tracking
+  - editable run metadata
+  - run JSON export
+- App settings:
+  - coach mode, interval colors, audio toggles, card imagery toggles
+- Timer transfer:
+  - export/import timers as JSON
+- Brand pages and navigation for NoDoubt Training Co.
+- PWA support (manifest + service worker)
+- Privacy-focused analytics pipeline
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+## Tech Stack
+- React 19 + TypeScript + Vite
+- React Router
+- IndexedDB via `idb`
+- Vitest + Testing Library
+- Vercel Serverless Functions (`api/*`)
+- Turso (`@libsql/client`) for analytics/job metadata
+- Vercel Blob for generated image storage
 
-## Expanding the ESLint configuration
+## App Routes
+- `/` timers list
+- `/timer/new` create default timer + redirect
+- `/timer/:id` timer detail/editor
+- `/timer/:id/run` running timer session
+- `/templates` templates list
+- `/template/:id` template detail/editor
+- `/history` run history
+- `/about` business/about page
+- `/settings` settings + timer import/export
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
-
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
-
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+## Project Structure
+```text
+src/
+  components/        layout and reusable UI
+  pages/             route screens
+  lib/               pure timer/rules/time logic
+  services/          storage, settings context, analytics, audio, transfer
+api/                 Vercel serverless functions
+public/              static assets + service worker + manifest
+docs/                product, business rules, analytics, deployment docs
+templates/           built-in timer template JSON files
+scripts/             maintenance scripts (analytics DB init)
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+## Getting Started
+### Prerequisites
+- Node.js 20+
+- npm 10+
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
-
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+### Install
+```bash
+npm install
 ```
+
+### Run frontend locally
+```bash
+npm run dev
+```
+Starts Vite dev server (client app only).
+
+### Run tests
+```bash
+npm test
+```
+
+### Lint
+```bash
+npm run lint
+```
+
+### Production build
+```bash
+npm run build
+npm run preview
+```
+
+## Local Development Modes
+### 1) Frontend-only mode (most timer work)
+Use `npm run dev`.
+- Timer CRUD/run/settings/templates/history (local data) work in browser.
+- API routes are not available in this mode.
+
+### 2) Full-stack mode (frontend + `/api/*`)
+Use Vercel dev runtime when testing serverless endpoints locally.
+- Required for analytics endpoints and content generation job flow.
+
+## Environment Variables
+Set these in `.env.local` for local full-stack/serverless work and in Vercel Project Settings for deployments.
+
+### Required for analytics APIs
+- `TURSO_DATABASE_URL`
+- `TURSO_AUTH_TOKEN`
+- `CRON_SECRET` (or legacy `ANALYTICS_CRON_SECRET`)
+
+### Required for content generation APIs
+- `OPENAI_API_KEY`
+- `BLOB_READ_WRITE_TOKEN`
+- `TURSO_DATABASE_URL`
+- `TURSO_AUTH_TOKEN`
+- `CRON_SECRET` (or legacy `ANALYTICS_CRON_SECRET`)
+
+## Analytics Setup
+Initialize analytics tables once:
+```bash
+npm run analytics:db:init
+```
+
+Vercel cron schedule is defined in `vercel.json` and calls:
+- `GET /api/analytics-rollup`
+
+See docs for details:
+- `docs/analytics.md`
+- `docs/DEPLOYMENT.md`
+
+## Deployment
+Primary target is Vercel.
+
+Build settings:
+- Build command: `npm run build`
+- Output directory: `dist`
+
+Serverless APIs under `api/` are deployed automatically with the project.
+
+## Data & Privacy Notes
+- Core timer data is local to the browser (IndexedDB).
+- No user authentication required for core app usage.
+- Analytics intentionally avoids direct personal identifiers.
+- Timer import/export covers timer definitions only (run history excluded).
+
+## Documentation
+- Product requirements: `docs/hiit-timer-prd.md`
+- Business rules: `docs/business-rules.md`
+- Analytics setup: `docs/analytics.md`
+- Deployment: `docs/DEPLOYMENT.md`
+- Brand reference: `docs/BRAND.md`
+
+## NPM Scripts
+- `npm run dev` - start Vite dev server
+- `npm run build` - type-check + production build
+- `npm run preview` - preview production build
+- `npm run lint` - run ESLint
+- `npm test` - run test suite once
+- `npm run test:watch` - run tests in watch mode
+- `npm run analytics:db:init` - initialize analytics DB tables
+
+## Troubleshooting
+- `Timer not updating as expected after schema/rules changes`:
+  - Clear site data for the app origin (IndexedDB + localStorage), then reload.
+  - The app uses IndexedDB database `nodoubt-hiit`; stale local records can mask code changes.
+- `Import/export appears broken`:
+  - Ensure the file is valid JSON and matches export format `nodoubt-timers-export` version `1`.
+  - Import replaces all existing timers in the current browser profile.
+- `API route returns 401 Unauthorized`:
+  - For cron-protected routes, send `Authorization: Bearer <CRON_SECRET>`.
+  - Confirm `CRON_SECRET` (or legacy `ANALYTICS_CRON_SECRET`) is set in env.
+- `Analytics endpoints fail locally`:
+  - Verify `TURSO_DATABASE_URL` and `TURSO_AUTH_TOKEN`.
+  - Run `npm run analytics:db:init` once before hitting rollup/summary endpoints.
+- `Content generation fails`:
+  - Verify `OPENAI_API_KEY`, `BLOB_READ_WRITE_TOKEN`, `TURSO_DATABASE_URL`, and `TURSO_AUTH_TOKEN`.
+  - Confirm required media/prompt files exist:
+    - `docs/nodoubt_hiit_prompt_production.md`
+    - `media/nodoubt-training-logo.png`
+    - `media/coach-gabe-and-kobe-poster.png`
+- `Service worker causes outdated UI`:
+  - In local dev, service workers are unregistered automatically.
+  - In production, hard refresh and clear site cache if an older bundle is still served.
