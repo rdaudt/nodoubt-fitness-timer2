@@ -104,6 +104,9 @@ Use `npm run dev`.
 ### 2) Full-stack mode (frontend + `/api/*`)
 Use Vercel dev runtime when testing serverless endpoints locally.
 - Required for analytics endpoints and content generation job flow.
+```bash
+npx vercel dev --listen 3000
+```
 
 ## Environment Variables
 Set these in `.env.local` for local full-stack/serverless work and in Vercel Project Settings for deployments.
