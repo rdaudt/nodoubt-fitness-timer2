@@ -2318,6 +2318,15 @@ select {
 }
 
 @media (min-width: 700px) {
+  body,
+  #root {
+    background: #ffffff;
+  }
+
+  .app-shell {
+    background: #0a0a0a;
+  }
+
   .screen {
     padding: 1.2rem 1.2rem 6.2rem;
   }
