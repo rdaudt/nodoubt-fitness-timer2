@@ -7,7 +7,7 @@ import { createTemplateFromTimer } from '../services/templateService';
 import { useSettings } from '../services/settingsContext';
 import { TimerRepository } from '../services/storage';
 import type { Timer } from '../types';
-import hiitWorkoutsRaw from '../../docs/hiit-workouts.txt?raw';
+import hiitWorkoutsRaw from '../data/hiit-workouts.txt?raw';
 
 const lockNumberInput = (e: WheelEvent<HTMLInputElement>) => {
   e.currentTarget.blur();
