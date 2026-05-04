@@ -93,3 +93,43 @@ export interface Template {
   source: TemplateSource;
   builtinTemplateId?: string;
 }
+
+export interface TenantPublicProfile {
+  id: string;
+  slug: string;
+  businessName: string;
+  coachName: string;
+  bio: string;
+  logoUrl: string;
+  coachPhotoUrl: string;
+  qrCodeUrl: string;
+  socialLinks: Array<{
+    label: string;
+    url: string;
+    sortOrder: number;
+  }>;
+}
+
+export interface PublicTemplate {
+  id: string;
+  name: string;
+  stationCount: number;
+  stationWorkoutTypes?: string[];
+  roundsPerStation: number;
+  workMinutes: number;
+  workSeconds: number;
+  restMinutes: number;
+  restSeconds: number;
+  stationTransitionMinutes: number;
+  stationTransitionSeconds: number;
+  startStationWorkManually: boolean;
+  warmupEnabled: boolean;
+  warmupMinutes: number;
+  warmupSeconds: number;
+  cooldownEnabled: boolean;
+  cooldownMinutes: number;
+  cooldownSeconds: number;
+  category: WorkoutCategory;
+  createdAt: string;
+  updatedAt: string;
+}

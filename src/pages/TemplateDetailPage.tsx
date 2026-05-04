@@ -4,6 +4,7 @@ import { estimateTimerDurationMs, formatClock } from '../lib/time';
 import { normalizeTimerFields, validateTimer } from '../lib/timerRules';
 import { trackAnalyticsEvent } from '../services/analytics';
 import { createTimerFromTemplate, deleteTemplate, getTemplateById, listTemplates, saveTemplate } from '../services/templateService';
+import { useTenant } from '../services/tenantContext';
 import { TimerRepository } from '../services/storage';
 import type { Template, Timer } from '../types';
 import hiitWorkoutsRaw from '../data/hiit-workouts.txt?raw';
@@ -155,6 +156,7 @@ const TimeMatrixBlock = ({
 export const TemplateDetailPage = () => {
   const { id = '' } = useParams();
   const navigate = useNavigate();
+  const { toTenantPath } = useTenant();
   const [template, setTemplate] = useState<Template | null>(null);
   const [allTemplates, setAllTemplates] = useState<Template[]>([]);
   const [error, setError] = useState('');
@@ -222,7 +224,7 @@ export const TemplateDetailPage = () => {
       return;
     }
     await deleteTemplate(template);
-    navigate('/templates');
+    navigate(toTenantPath('/templates'));
   };
 
   const onUseTemplate = async () => {
@@ -232,7 +234,7 @@ export const TemplateDetailPage = () => {
       category: timer.category,
     });
     window.dispatchEvent(new Event('timers:changed'));
-    navigate(`/timer/${timer.id}`);
+    navigate(toTenantPath(`/timer/${timer.id}`));
   };
 
   const stationWorkoutTypes = template.stationWorkoutTypes ?? [];

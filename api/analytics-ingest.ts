@@ -43,6 +43,7 @@ export default async function handler(request: NodeReq, response: NodeRes): Prom
         INSERT INTO analytics_events (
           event_id,
           event_name,
+          tenant_slug,
           occurred_at,
           received_at,
           browser_family,
@@ -50,11 +51,12 @@ export default async function handler(request: NodeReq, response: NodeRes): Prom
           os_version,
           device_type,
           payload_json
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
       `,
       args: [
         crypto.randomUUID(),
         parsed.eventName,
+        parsed.tenantSlug,
         parsed.occurredAt,
         new Date().toISOString(),
         parsed.browserFamily,

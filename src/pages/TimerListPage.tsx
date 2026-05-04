@@ -5,6 +5,7 @@ import { randomUniqueTimerName } from '../lib/timerFactory';
 import { trackAnalyticsEvent } from '../services/analytics';
 import { createTemplateFromTimer } from '../services/templateService';
 import { useSettings } from '../services/settingsContext';
+import { useTenant } from '../services/tenantContext';
 import { TimerRepository } from '../services/storage';
 import type { Timer } from '../types';
 
@@ -52,6 +53,7 @@ const assignCardImages = (cardCount: number, imagesInAllTimers: boolean): Array<
 
 export const TimerListPage = () => {
   const { settings, saveSettings } = useSettings();
+  const { toTenantPath } = useTenant();
   const [timers, setTimers] = useState<Timer[]>([]);
   const [cardImages, setCardImages] = useState<Array<string | undefined>>([]);
 
@@ -108,7 +110,7 @@ export const TimerListPage = () => {
     <section className="home-page">
       <div className="section-header">
         <h1 className="screen-title">Your HIIT Timers</h1>
-        <Link to="/timer/new" className="primary-btn">
+        <Link to={toTenantPath('/timer/new')} className="primary-btn">
           + New Timer
         </Link>
       </div>
