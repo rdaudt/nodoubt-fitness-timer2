@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { TimerCard } from '../components/TimerCard';
 import { WORKOUT_CATEGORY_FILTERS, type WorkoutCategoryFilter } from '../config';
-import { randomTimerName } from '../lib/timerFactory';
+import { randomUniqueTimerName } from '../lib/timerFactory';
 import { trackAnalyticsEvent } from '../services/analytics';
 import { createTemplateFromTimer } from '../services/templateService';
 import { useSettings } from '../services/settingsContext';
@@ -80,7 +80,7 @@ export const TimerListPage = () => {
     const clone: Timer = {
       ...timer,
       id: crypto.randomUUID(),
-      name: randomTimerName(),
+      name: randomUniqueTimerName(timers.map((item) => item.name)),
       createdAt: now,
       updatedAt: now,
     };
