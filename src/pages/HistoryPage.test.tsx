@@ -263,37 +263,8 @@ describe('HistoryPage', () => {
     expect(screen.queryByRole('button', { name: 'Create Content' })).toBeNull();
   });
 
-  it('blocks share for ineligible runs', async () => {
-    listAllRunsMock.mockResolvedValue([{
-      id: 'run-1',
-      timerId: 'timer-1',
-      timerNameAtRun: 'Demo Timer',
-      timerSnapshot: timer,
-      stationWorkoutTypes: [''],
-      totalPerStationMs: 30000,
-      totalWorkMs: 30000,
-      complete: false,
-      ranAt: '2026-02-01T10:00:00.000Z',
-      location: '',
-      createdAt: '2026-02-01T10:00:00.000Z',
-      updatedAt: '2026-02-01T10:00:00.000Z',
-    }]);
-    render(
-      <MemoryRouter initialEntries={['/history']}>
-        <Routes>
-          <Route path="/history" element={<HistoryPage />} />
-        </Routes>
-      </MemoryRouter>,
-    );
-
-    const button = await screen.findByRole('button', { name: 'Create Content' });
-    expect(button).toBeDisabled();
-    expect(screen.getByText('IG generation requires a complete run and workout type set for every station.')).toBeInTheDocument();
-  });
-
-  it('shows error when password is invalid', async () => {
+  it('hides create content button even when coach mode is on', async () => {
     listAllRunsMock.mockResolvedValue([completeRun]);
-    promptSpy.mockReturnValue('wrong-password');
     render(
       <MemoryRouter initialEntries={['/history']}>
         <Routes>
@@ -303,48 +274,6 @@ describe('HistoryPage', () => {
     );
 
     await screen.findByRole('link', { name: 'Demo Timer' });
-    fireEvent.click(screen.getByRole('button', { name: 'Create Content' }));
-
-    expect(await screen.findByRole('alert')).toHaveTextContent('IG generation error: Invalid password.');
-    expect(fetchSpy).not.toHaveBeenCalled();
-  });
-
-  it('creates async content job and shows queued state', async () => {
-    listAllRunsMock.mockResolvedValue([completeRun]);
-
-    render(
-      <MemoryRouter initialEntries={['/history']}>
-        <Routes>
-          <Route path="/history" element={<HistoryPage />} />
-        </Routes>
-      </MemoryRouter>,
-    );
-
-    await screen.findByRole('link', { name: 'Demo Timer' });
-    fireEvent.click(screen.getByRole('button', { name: 'Create Content' }));
-
-    await waitFor(() => expect(fetchSpy).toHaveBeenCalledTimes(1));
-    expect(fetchSpy.mock.calls[0][0]).toBe('/api/content-jobs-create');
-    expect(await screen.findByText('Content generation queued.')).toBeInTheDocument();
-  });
-
-  it('shows retryable inline error on API failure', async () => {
-    listAllRunsMock.mockResolvedValue([completeRun]);
-    fetchSpy.mockResolvedValue(new Response(JSON.stringify({ error: 'bad gateway' }), { status: 502 }));
-
-    render(
-      <MemoryRouter initialEntries={['/history']}>
-        <Routes>
-          <Route path="/history" element={<HistoryPage />} />
-        </Routes>
-      </MemoryRouter>,
-    );
-
-    await screen.findByRole('link', { name: 'Demo Timer' });
-    fireEvent.click(screen.getByRole('button', { name: 'Create Content' }));
-
-    expect(await screen.findByRole('alert')).toHaveTextContent('IG generation error: bad gateway');
-    fireEvent.click(screen.getByRole('button', { name: 'Create Content' }));
-    await waitFor(() => expect(fetchSpy).toHaveBeenCalledTimes(2));
+    expect(screen.queryByRole('button', { name: 'Create Content' })).toBeNull();
   });
 });

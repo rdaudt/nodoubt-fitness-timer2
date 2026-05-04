@@ -59,6 +59,7 @@ const HIIT_WORKOUT_TYPES = hiitWorkoutsRaw
   .split(/\r?\n/)
   .map((item) => item.trim())
   .filter((item) => item.length > 0);
+const SHOW_LOAD_RANDOM_WORKOUTS_BUTTON = false;
 
 const CountEditor = ({
   label,
@@ -425,9 +426,11 @@ export const TimerDetailPage = () => {
       {settings.coachMode && (
         <section className="stack">
           <h3>Workout Types (Optional)</h3>
-          <button type="button" onClick={onLoadRandomWorkouts}>
-            Load random workouts
-          </button>
+          {SHOW_LOAD_RANDOM_WORKOUTS_BUTTON && (
+            <button type="button" onClick={onLoadRandomWorkouts}>
+              Load random workouts
+            </button>
+          )}
           {Array.from({ length: timer.stationCount }, (_, index) => (
             <label className="field" key={`station-workout-${index + 1}`}>
               <span>Station {index + 1}</span>

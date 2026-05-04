@@ -47,6 +47,7 @@ type StoredJobInfo = {
 };
 
 const JOBS_STORAGE_KEY = 'nodoubt_content_jobs_v1';
+const SHOW_CREATE_CONTENT_BUTTON = false;
 
 const toRunExportPayload = (run: TimerRun): RunExportPayload => {
   const snapshot = normalizeTimerFields(run.timerSnapshot);
@@ -457,7 +458,7 @@ export const HistoryPage = () => {
                     <p className="history-run-location">Location: {run.location || 'Not set'}</p>
                     <div className="history-card-actions" aria-label="Run actions">
                       <button className="secondary-btn history-action-btn" onClick={() => downloadRunExport(run)}>Data Export</button>
-                      {settings.coachMode && (
+                      {settings.coachMode && SHOW_CREATE_CONTENT_BUTTON && (
                         <button
                           className="primary-btn history-action-btn"
                           onClick={() => void generateIgImage(run)}
@@ -470,9 +471,6 @@ export const HistoryPage = () => {
                       <button className="danger-btn history-action-icon" onClick={() => void deleteRun(run.id)} aria-label="Delete">🗑</button>
                     </div>
 
-                    {settings.coachMode && !canGenerate && (
-                      <p className="history-share-note">IG generation requires a complete run and workout type set for every station.</p>
-                    )}
                     {generation.status === 'queued' && <p>Content generation queued.</p>}
                     {generation.status === 'running' && <p>Content generation in progress.</p>}
                     {generation.error && <p role="alert">IG generation error: {generation.error}</p>}

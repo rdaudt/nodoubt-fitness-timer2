@@ -272,20 +272,7 @@ describe('TimerDetailPage', () => {
     expect(screen.queryByRole('button', { name: 'Load random workouts' })).toBeNull();
   });
 
-  it('loads random workouts without overwriting existing station workout types', async () => {
-    const randomSpy = vi.spyOn(Math, 'random').mockReturnValue(0);
-
-    getMock.mockResolvedValue({
-      ...timer,
-      stationCount: 3,
-      stationWorkoutTypes: ['Burpees', '', ''],
-    });
-    listMock.mockResolvedValue([{
-      ...timer,
-      stationCount: 3,
-      stationWorkoutTypes: ['Burpees', '', ''],
-    }]);
-
+  it('hides load random workouts in coach mode', async () => {
     render(
       <MemoryRouter initialEntries={['/timer/timer-1']}>
         <Routes>
@@ -295,13 +282,6 @@ describe('TimerDetailPage', () => {
     );
 
     await screen.findByLabelText('Station 1 workout type');
-    fireEvent.click(screen.getByRole('button', { name: 'Load random workouts' }));
-
-    await waitFor(() => expect(upsertMock).toHaveBeenCalledTimes(1));
-    expect(upsertMock.mock.calls[0][0].stationWorkoutTypes[0]).toBe('Burpees');
-    expect(upsertMock.mock.calls[0][0].stationWorkoutTypes[1]).toBeTruthy();
-    expect(upsertMock.mock.calls[0][0].stationWorkoutTypes[2]).toBeTruthy();
-
-    randomSpy.mockRestore();
+    expect(screen.queryByRole('button', { name: 'Load random workouts' })).toBeNull();
   });
 });
