@@ -55,6 +55,7 @@ const HIIT_WORKOUT_TYPES = hiitWorkoutsRaw
   .split(/\r?\n/)
   .map((item) => item.trim())
   .filter((item) => item.length > 0);
+const SHOW_LOAD_RANDOM_WORKOUTS_BUTTON = false;
 
 const CountEditor = ({
   label,
@@ -287,30 +288,32 @@ export const TemplateDetailPage = () => {
 
       <section className="stack">
         <h3>Workout Types (Optional)</h3>
-        <button
-          type="button"
-          onClick={() => {
-            const next = [...stationWorkoutTypes];
-            const available = [...HIIT_WORKOUT_TYPES];
-            for (let index = 0; index < template.stationCount; index += 1) {
-              if ((next[index] ?? '').trim().length > 0) {
-                continue;
+        {SHOW_LOAD_RANDOM_WORKOUTS_BUTTON && (
+          <button
+            type="button"
+            onClick={() => {
+              const next = [...stationWorkoutTypes];
+              const available = [...HIIT_WORKOUT_TYPES];
+              for (let index = 0; index < template.stationCount; index += 1) {
+                if ((next[index] ?? '').trim().length > 0) {
+                  continue;
+                }
+                if (available.length === 0) {
+                  break;
+                }
+                const pickIndex = Math.floor(Math.random() * available.length);
+                const [picked] = available.splice(pickIndex, 1);
+                if (picked) {
+                  next[index] = picked;
+                }
               }
-              if (available.length === 0) {
-                break;
-              }
-              const pickIndex = Math.floor(Math.random() * available.length);
-              const [picked] = available.splice(pickIndex, 1);
-              if (picked) {
-                next[index] = picked;
-              }
-            }
-            setTemplate((prev) => (prev ? { ...prev, stationWorkoutTypes: next } : prev));
-            void applyPatch({ stationWorkoutTypes: next });
-          }}
-        >
-          Load random workouts
-        </button>
+              setTemplate((prev) => (prev ? { ...prev, stationWorkoutTypes: next } : prev));
+              void applyPatch({ stationWorkoutTypes: next });
+            }}
+          >
+            Load random workouts
+          </button>
+        )}
         {Array.from({ length: template.stationCount }, (_, index) => (
           <label className="field" key={`template-station-workout-${index + 1}`}>
             <span>Station {index + 1}</span>
