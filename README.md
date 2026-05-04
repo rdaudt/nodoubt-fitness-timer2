@@ -21,8 +21,12 @@ Core timer usage is local-first and stored in IndexedDB. Optional backend APIs (
   - complete vs incomplete run tracking
   - editable run metadata
   - run JSON export
+  - content-generation UI action is currently hidden from end users
 - App settings:
   - coach mode, interval colors, audio toggles, card imagery toggles
+- Timer/template workout type editing:
+  - station workout type fields are editable
+  - "Load random workouts" UI action is currently hidden from end users
 - Timer transfer:
   - export/import timers as JSON
 - Brand pages and navigation for NoDoubt Training Co.
