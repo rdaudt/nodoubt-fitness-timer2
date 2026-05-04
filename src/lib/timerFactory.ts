@@ -107,11 +107,27 @@ export const randomTimerName = (random = Math.random): string => {
   return TIMER_NAME_IDEAS[Math.min(index, TIMER_NAME_IDEAS.length - 1)];
 };
 
-export const newTimer = (): Timer => {
+export const randomUniqueTimerName = (
+  existingNames: Iterable<string>,
+  random = Math.random,
+): string => {
+  const usedNames = new Set(existingNames);
+  if (usedNames.size >= TIMER_NAME_IDEAS.length) {
+    throw new Error('No unique timer names available.');
+  }
+
+  let candidate = randomTimerName(random);
+  while (usedNames.has(candidate)) {
+    candidate = randomTimerName(random);
+  }
+  return candidate;
+};
+
+export const newTimer = (existingNames: Iterable<string> = []): Timer => {
   const now = new Date().toISOString();
   return {
     id: crypto.randomUUID(),
-    name: randomTimerName(),
+    name: randomUniqueTimerName(existingNames),
     stationCount: 10,
     stationWorkoutTypes: [],
     roundsPerStation: 3,

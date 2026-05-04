@@ -28,7 +28,8 @@ const withTimeout = async <T,>(promise: Promise<T>, timeoutMs: number): Promise<
 const createTimerOnce = async (): Promise<Timer> => {
   if (!pendingTimerCreation) {
     pendingTimerCreation = (async () => {
-      const timer = newTimer();
+      const existingTimers = await TimerRepository.list();
+      const timer = newTimer(existingTimers.map((item) => item.name));
       await TimerRepository.upsert(timer);
       trackAnalyticsEvent('timer_created', {
         category: timer.category,

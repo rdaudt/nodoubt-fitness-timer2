@@ -4,9 +4,10 @@ import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { NewTimerPage } from './NewTimerPage';
 
-const { newTimerMock, upsertMock } = vi.hoisted(() => ({
+const { newTimerMock, upsertMock, listMock } = vi.hoisted(() => ({
   newTimerMock: vi.fn(),
   upsertMock: vi.fn(),
+  listMock: vi.fn(),
 }));
 
 vi.mock('../lib/timerFactory', () => ({
@@ -15,6 +16,7 @@ vi.mock('../lib/timerFactory', () => ({
 
 vi.mock('../services/storage', () => ({
   TimerRepository: {
+    list: listMock,
     upsert: upsertMock,
   },
 }));
@@ -43,6 +45,7 @@ describe('NewTimerPage', () => {
       createdAt: '2026-01-01T00:00:00.000Z',
       updatedAt: '2026-01-01T00:00:00.000Z',
     });
+    listMock.mockResolvedValue([]);
     upsertMock.mockResolvedValue(undefined);
   });
 
@@ -60,6 +63,7 @@ describe('NewTimerPage', () => {
 
     expect(await screen.findByText('Timer detail')).toBeInTheDocument();
     await waitFor(() => expect(newTimerMock).toHaveBeenCalledTimes(1));
+    expect(listMock).toHaveBeenCalledTimes(1);
     expect(upsertMock).toHaveBeenCalledTimes(1);
   });
 });
