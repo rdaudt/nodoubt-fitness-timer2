@@ -1,6 +1,5 @@
 import { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { WORKOUT_CATEGORY_FILTERS, type WorkoutCategoryFilter } from '../config';
 import { formatTimerTotal, getTimerSummaryItems } from '../lib/time';
 import { trackAnalyticsEvent } from '../services/analytics';
 import { createTimerFromTemplate, deleteTemplate, listTemplates } from '../services/templateService';
@@ -12,7 +11,6 @@ export const TemplatesPage = () => {
   const navigate = useNavigate();
   const { settings } = useSettings();
   const [templates, setTemplates] = useState<Template[]>([]);
-  const [categoryFilter, setCategoryFilter] = useState<WorkoutCategoryFilter>('ALL');
 
   useEffect(() => {
     const load = () => {
@@ -41,9 +39,7 @@ export const TemplatesPage = () => {
     await deleteTemplate(template);
   };
 
-  const visibleTemplates = categoryFilter === 'ALL'
-    ? templates
-    : templates.filter((template) => template.category === categoryFilter);
+  const visibleTemplates = templates;
 
   return (
     <section className="home-page">
@@ -51,25 +47,11 @@ export const TemplatesPage = () => {
         <h1 className="screen-title">Templates</h1>
       </div>
 
-      <label className="field home-category-filter-row">
-        <span>Workout Category</span>
-        <select
-          value={categoryFilter}
-          onChange={(e) => setCategoryFilter(e.target.value as WorkoutCategoryFilter)}
-          aria-label="Template category filter"
-        >
-          {WORKOUT_CATEGORY_FILTERS.map((option) => (
-            <option key={option} value={option}>{option}</option>
-          ))}
-        </select>
-      </label>
-
       <div className="stack">
         {visibleTemplates.length === 0
           ? <p className="empty">No templates found.</p>
           : visibleTemplates.map((template) => (
             <article key={template.id} className="timer-card template-card">
-              <span className="timer-card-category-badge">{template.category}</span>
               <div className="timer-card-copy template-card-copy">
                 <div className="timer-card-head">
                   <h3>{template.name}</h3>

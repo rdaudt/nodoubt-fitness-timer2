@@ -185,7 +185,7 @@ export const RunningTimerPage = () => {
       stationWorkoutTypes: timer.stationWorkoutTypes ?? [],
       totalPerStationMs,
       totalWorkMs,
-      category: timer.category,
+      category: 'GENERAL',
       complete,
       ranAt: nowIso,
       location: '',
@@ -203,7 +203,7 @@ export const RunningTimerPage = () => {
       warmupSec: timer.warmupMinutes * 60 + timer.warmupSeconds,
       cooldownEnabled: timer.cooldownEnabled,
       cooldownSec: timer.cooldownMinutes * 60 + timer.cooldownSeconds,
-      category: timer.category,
+      category: 'GENERAL',
       coachModeAtRun: settings.coachMode,
     } as const;
     trackAnalyticsEvent(complete ? 'timer_run_completed' : 'timer_run_incomplete', runPayload);
@@ -389,7 +389,6 @@ export const RunningTimerPage = () => {
         <div className="run-main-column" ref={mainColumnRef}>
           <header className="run-header">
             <p className="run-name">{timer.name}</p>
-            <p className="run-remaining">Category: {timer.category}</p>
             <p className="run-remaining">Total remaining: {formatClock(runner.state.totalRemainingMs / 1000)}</p>
             {isStationStartPause && <p className="run-paused-flag run-set-start-flag pulse">Prepare to start</p>}
           </header>

@@ -57,7 +57,6 @@ describe('TimerCard', () => {
     renderCard();
 
     expect(screen.getByText('Demo HIIT')).toBeInTheDocument();
-    expect(screen.getByText('GENERAL')).toBeInTheDocument();
     expect(screen.getByText('Stations 2')).toBeInTheDocument();
     expect(screen.getByText('Rounds 3')).toBeInTheDocument();
     expect(screen.getByText('Work 30s')).toBeInTheDocument();

@@ -99,9 +99,7 @@ export const normalizeTimerRun = (run: TimerRun): TimerRun | null => {
       : snapshot.stationWorkoutTypes ?? [],
     totalPerStationMs,
     totalWorkMs,
-    category: ['GENERAL', 'FAT-LOSS', 'PERFORMANCE'].includes(run.category)
-      ? run.category
-      : snapshot.category,
+    category: 'GENERAL',
     complete: run.complete ?? true,
     location: run.location ?? '',
   };

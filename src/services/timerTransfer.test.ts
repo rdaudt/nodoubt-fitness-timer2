@@ -150,4 +150,17 @@ describe('timerTransfer', () => {
     expect(timerRunsListMock).not.toHaveBeenCalled();
     expect(settingsGetMock).not.toHaveBeenCalled();
   });
+
+  it('forces imported timer categories to GENERAL before replaceAll', async () => {
+    normalizeTimerMock.mockImplementation((next) => ({ ...next, category: 'GENERAL' }));
+    const file = new File([JSON.stringify({
+      format: TIMER_EXPORT_FORMAT,
+      version: TIMER_EXPORT_VERSION,
+      exportedAt: '2026-04-28T00:00:00.000Z',
+      timers: [{ ...timer, category: 'FAT-LOSS' }],
+    })], 'timers.json', { type: 'application/json' });
+
+    await importTimersFromFile(file);
+    expect(replaceAllMock).toHaveBeenCalledWith([expect.objectContaining({ category: 'GENERAL' })]);
+  });
 });

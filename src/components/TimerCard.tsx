@@ -111,7 +111,6 @@ export const TimerCard = ({
         }}
       >
         <div className={featureImage ? 'timer-card timer-card-featured' : 'timer-card'}>
-          <span className="timer-card-category-badge">{timer.category}</span>
           {featureImage && (
             <div
               className="timer-card-feature-image"
