@@ -1,6 +1,7 @@
 const ANALYTICS_INGEST_PATH = '/api/analytics-ingest';
 const SESSION_TIMEOUT_MS = 30 * 60 * 1000;
 const LAST_ACTIVE_KEY = 'nodoubt_analytics_last_active_at_ms';
+const ACTIVE_TENANT_KEY = 'active_tenant_slug';
 
 export type AnalyticsEventName =
   | 'app_opened'
@@ -201,6 +202,7 @@ export const trackAnalyticsEvent = <TEvent extends AnalyticsEventName>(
   const uaDataMobile = (navigator as Navigator & UaNavigatorData).userAgentData?.mobile;
   const requestBody = JSON.stringify({
     eventName,
+    tenantSlug: window.localStorage.getItem(ACTIVE_TENANT_KEY) || '',
     occurredAt: new Date().toISOString(),
     browserFamily: detectBrowserFamily(navigator.userAgent),
     osFamily,

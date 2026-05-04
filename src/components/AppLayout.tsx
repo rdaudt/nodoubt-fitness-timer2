@@ -1,5 +1,6 @@
 import { NavLink, Outlet, useLocation } from 'react-router-dom';
 import { APP_NAME, BRAND } from '../config';
+import { useTenant } from '../services/tenantContext';
 import coachGabeHeader from '../../media/coach-gabe-header.jpeg';
 
 const TimersIcon = () => (
@@ -45,7 +46,7 @@ const SettingsIcon = () => (
 );
 
 const navItems = [
-  { to: '/', label: 'Timers', icon: TimersIcon },
+  { to: '', label: 'Timers', icon: TimersIcon },
   { to: '/templates', label: 'Templates', icon: TemplatesIcon },
   { to: '/history', label: 'History', icon: HistoryIcon },
   { to: '/about', label: 'About', icon: AboutIcon },
@@ -54,25 +55,31 @@ const navItems = [
 
 export const AppLayout = () => {
   const location = useLocation();
+  const { profile, toTenantPath } = useTenant();
   const isRunningView = /\/timer\/[^/]+\/run$/.test(location.pathname);
-  const isAboutPage = /^\/about\/?$/.test(location.pathname);
-  const brandUrl = 'https://www.instagram.com/nodoubt.fitness/';
+  const isAboutPage = /\/about\/?$/.test(location.pathname);
+  const primaryLink = profile?.socialLinks[0]?.url || BRAND.instagramUrl;
+  const logoUrl = profile?.logoUrl || '/assets/nodoubt-training-logo.png';
+  const coachPhoto = profile?.coachPhotoUrl || coachGabeHeader;
+  const coachName = profile?.coachName || 'Coach Gabe';
+  const businessName = profile?.businessName || BRAND.businessName;
+  const tagline = BRAND.tagline;
 
   return (
     <div className="app-shell">
       <header className={isRunningView ? 'topbar topbar-compact' : 'topbar'}>
         <div className="topbar-inner">
-          <a href={brandUrl} target="_blank" rel="noreferrer" className="brand-logo-link" aria-label={APP_NAME}>
-            <img src="/assets/nodoubt-training-logo.png" alt="NoDoubt Training Co. logo" className="brand-logo" />
+          <a href={primaryLink} target="_blank" rel="noreferrer" className="brand-logo-link" aria-label={APP_NAME}>
+            <img src={logoUrl} alt={`${businessName} logo`} className="brand-logo" />
           </a>
-          <a href={brandUrl} target="_blank" rel="noreferrer" className="brand-text-wrap" aria-label={APP_NAME}>
-            <p className="brand-name">{BRAND.businessName}</p>
-            <p className="brand-tagline">{BRAND.tagline}</p>
+          <a href={primaryLink} target="_blank" rel="noreferrer" className="brand-text-wrap" aria-label={APP_NAME}>
+            <p className="brand-name">{businessName}</p>
+            <p className="brand-tagline">{tagline}</p>
           </a>
           {!isAboutPage && (
-            <a href={brandUrl} target="_blank" rel="noreferrer" className="coach-wrap" aria-label="Coach Gabe">
-              <img src={coachGabeHeader} alt="Coach Gabe" className="coach-photo" />
-              <p className="coach-name">Coach Gabe</p>
+            <a href={primaryLink} target="_blank" rel="noreferrer" className="coach-wrap" aria-label={coachName}>
+              <img src={coachPhoto} alt={coachName} className="coach-photo" />
+              <p className="coach-name">{coachName}</p>
             </a>
           )}
         </div>
@@ -85,7 +92,7 @@ export const AppLayout = () => {
       {!isRunningView && (
         <nav className="bottom-nav" aria-label="Primary Navigation">
           {navItems.map((item) => (
-            <NavLink key={item.to} to={item.to} className={({ isActive }) => (isActive ? 'nav-item active' : 'nav-item')} end={item.to === '/'}>
+            <NavLink key={item.to} to={toTenantPath(item.to)} className={({ isActive }) => (isActive ? 'nav-item active' : 'nav-item')} end={item.to === ''}>
               <span className="nav-icon" aria-hidden="true">
                 <item.icon />
               </span>

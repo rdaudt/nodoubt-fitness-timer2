@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { newTimer } from '../lib/timerFactory';
 import { trackAnalyticsEvent } from '../services/analytics';
 import { TimerRepository } from '../services/storage';
+import { useTenant } from '../services/tenantContext';
 import type { Timer } from '../types';
 
 let pendingTimerCreation: Promise<Timer> | null = null;
@@ -55,6 +56,7 @@ const createTimerOnce = async (): Promise<Timer> => {
 
 export const NewTimerPage = () => {
   const navigate = useNavigate();
+  const { toTenantPath } = useTenant();
   const [error, setError] = useState('');
 
   useEffect(() => {
@@ -64,7 +66,7 @@ export const NewTimerPage = () => {
       try {
         const timer = await createTimerOnce();
         if (active) {
-          navigate(`/timer/${timer.id}`, { replace: true });
+          navigate(toTenantPath(`/timer/${timer.id}`), { replace: true });
         }
       } catch {
         if (active) {
@@ -78,7 +80,7 @@ export const NewTimerPage = () => {
     return () => {
       active = false;
     };
-  }, [navigate]);
+  }, [navigate, toTenantPath]);
 
   if (error) {
     return (

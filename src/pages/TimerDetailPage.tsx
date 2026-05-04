@@ -4,6 +4,7 @@ import { estimateTimerDurationMs, formatClock } from '../lib/time';
 import { normalizeTimerFields, validateTimer } from '../lib/timerRules';
 import { createTemplateFromTimer } from '../services/templateService';
 import { useSettings } from '../services/settingsContext';
+import { useTenant } from '../services/tenantContext';
 import { TimerRepository } from '../services/storage';
 import type { Timer } from '../types';
 import hiitWorkoutsRaw from '../data/hiit-workouts.txt?raw';
@@ -181,6 +182,7 @@ const TimeMatrixBlock = ({
 export const TimerDetailPage = () => {
   const { id = '' } = useParams();
   const navigate = useNavigate();
+  const { toTenantPath } = useTenant();
   const { settings } = useSettings();
 
   const [timer, setTimer] = useState<Timer | null>(null);
@@ -264,7 +266,7 @@ export const TimerDetailPage = () => {
       return;
     }
     await TimerRepository.remove(timer.id);
-    navigate('/');
+    navigate(toTenantPath(''));
   };
 
   const onCreateTemplate = async () => {
@@ -324,7 +326,7 @@ export const TimerDetailPage = () => {
         <div className="detail-toolbar-actions">
           <button className="danger-btn detail-top-icon-btn" aria-label="Delete timer" onClick={onDeleteTimer}>Delete</button>
           <button className="timer-clone-btn" type="button" onClick={onCreateTemplate}>Create Template</button>
-          <Link to={`/timer/${timer.id}/run`} className="primary-btn detail-top-btn selected">
+          <Link to={toTenantPath(`/timer/${timer.id}/run`)} className="primary-btn detail-top-btn selected">
             <span className="detail-run-icon" aria-hidden="true">▶</span>
             <span>RUN</span>
           </Link>
