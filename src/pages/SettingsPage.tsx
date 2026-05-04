@@ -4,6 +4,7 @@ import { intervalColorsAreUnique } from '../lib/settingsRules';
 import { trackAnalyticsEvent } from '../services/analytics';
 import { exportTimersToDevice, importTimersFromFile } from '../services/timerTransfer';
 import { useSettings } from '../services/settingsContext';
+import { useTenant } from '../services/tenantContext';
 import type { AppSettings, IntervalType } from '../types';
 import kobeSmiling from '../../media/kobe-smiling.png';
 import kobeAngry from '../../media/kobe-angry.png';
@@ -13,6 +14,7 @@ const types: IntervalType[] = ['warmup', 'work', 'rest', 'cooldown'];
 
 export const SettingsPage = () => {
   const { settings, saveSettings } = useSettings();
+  const { profile } = useTenant();
   const [draft, setDraft] = useState<AppSettings>(settings);
   const [transferMessage, setTransferMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
   const importFileRef = useRef<HTMLInputElement | null>(null);
@@ -191,6 +193,13 @@ export const SettingsPage = () => {
       {draft.kobeEverywhere && (
         <div className="settings-float-cat-wrap" aria-hidden="true">
           <img className="settings-float-cat" src={victorianGym3} alt="" />
+        </div>
+      )}
+
+      {profile?.qrCodeUrl && (
+        <div className="stack settings-stack settings-transfer-section">
+          <h2 className="settings-subtitle">Coach QR Code</h2>
+          <img src={profile.qrCodeUrl} alt={`${profile.businessName} QR code`} className="owner-photo about-coach-photo" />
         </div>
       )}
     </section>

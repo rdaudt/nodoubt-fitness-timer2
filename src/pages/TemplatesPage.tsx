@@ -5,21 +5,29 @@ import { trackAnalyticsEvent } from '../services/analytics';
 import { createTimerFromTemplate, deleteTemplate, listTemplates } from '../services/templateService';
 import { TimerRepository } from '../services/storage';
 import { useSettings } from '../services/settingsContext';
+import { useTenant } from '../services/tenantContext';
 import type { Template } from '../types';
 
 export const TemplatesPage = () => {
   const navigate = useNavigate();
   const { settings } = useSettings();
+  const { templates: publicTemplates, toTenantPath } = useTenant();
   const [templates, setTemplates] = useState<Template[]>([]);
 
   useEffect(() => {
     const load = () => {
-      listTemplates().then(setTemplates);
+      listTemplates().then((localTemplates) => {
+        if (publicTemplates.length > 0) {
+          setTemplates(publicTemplates.map((item) => ({ ...item, source: 'builtin' as const })));
+          return;
+        }
+        setTemplates(localTemplates);
+      });
     };
     load();
     window.addEventListener('templates:changed', load);
     return () => window.removeEventListener('templates:changed', load);
-  }, []);
+  }, [publicTemplates]);
 
   const onUseTemplate = async (template: Template) => {
     const timer = await createTimerFromTemplate(template);
@@ -28,7 +36,7 @@ export const TemplatesPage = () => {
       category: timer.category,
     });
     window.dispatchEvent(new Event('timers:changed'));
-    navigate(`/timer/${timer.id}`);
+    navigate(toTenantPath(`/timer/${timer.id}`));
   };
 
   const onDeleteTemplate = async (template: Template) => {
@@ -69,15 +77,19 @@ export const TemplatesPage = () => {
                   <strong>{formatTimerTotal(template)}</strong>
                   <span>Total Time</span>
                 </div>
-                <Link className="timer-clone-btn template-card-btn" to={`/template/${template.id}`}>
-                  View
-                </Link>
+                {publicTemplates.length === 0 && (
+                  <Link className="timer-clone-btn template-card-btn" to={toTenantPath(`/template/${template.id}`)}>
+                    View
+                  </Link>
+                )}
                 <button className="timer-clone-btn template-card-btn" type="button" onClick={() => void onUseTemplate(template)}>
                   Use
                 </button>
-                <button className="danger-btn template-card-delete-btn" type="button" onClick={() => void onDeleteTemplate(template)}>
-                  Delete
-                </button>
+                {publicTemplates.length === 0 && (
+                  <button className="danger-btn template-card-delete-btn" type="button" onClick={() => void onDeleteTemplate(template)}>
+                    Delete
+                  </button>
+                )}
               </div>
             </article>
           ))}

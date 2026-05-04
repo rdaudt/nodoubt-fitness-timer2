@@ -23,6 +23,7 @@ export type DeviceType = typeof DEVICE_TYPES[number];
 
 type ParsedIngestBody = {
   eventName: AnalyticsEventName;
+  tenantSlug: string;
   occurredAt: string;
   browserFamily: BrowserFamily;
   osFamily: OsFamily;
@@ -106,6 +107,10 @@ export const validateIngestBody = (value: unknown): ParsedIngestBody | null => {
   if (!EVENT_NAMES.includes(value.eventName as AnalyticsEventName)) {
     return null;
   }
+  const tenantSlug = typeof value.tenantSlug === 'string' ? value.tenantSlug.trim().toLowerCase() : '';
+  if (tenantSlug && !/^[a-z0-9-]{3,32}$/.test(tenantSlug)) {
+    return null;
+  }
   if (!BROWSER_FAMILIES.includes(value.browserFamily as BrowserFamily)) {
     return null;
   }
@@ -130,6 +135,7 @@ export const validateIngestBody = (value: unknown): ParsedIngestBody | null => {
   }
   return {
     eventName,
+    tenantSlug,
     occurredAt: value.occurredAt,
     browserFamily: value.browserFamily as BrowserFamily,
     osFamily: value.osFamily as OsFamily,

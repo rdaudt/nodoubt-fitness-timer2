@@ -32,7 +32,7 @@ interface AppSettingsRow {
   value: AppSettings;
 }
 
-const DB_NAME = 'nodoubt-hiit';
+const DB_NAME_PREFIX = 'nodoubt-hiit';
 const DB_VERSION = 3;
 const BUILTIN_DELETE_MARKER_PREFIX = '__deleted_builtin_template__:';
 
@@ -44,7 +44,12 @@ interface DeletedBuiltinTemplateMarker {
 
 type TemplateStoreRow = Template | DeletedBuiltinTemplateMarker;
 
-const dbPromise = openDB<AppDb>(DB_NAME, DB_VERSION, {
+let currentTenantSlug = 'gabe';
+const dbPromises = new Map<string, ReturnType<typeof openDB<AppDb>>>();
+
+const getDbName = (tenantSlug: string): string => `${DB_NAME_PREFIX}:${tenantSlug}`;
+
+const createDbPromise = (tenantSlug: string) => openDB<AppDb>(getDbName(tenantSlug), DB_VERSION, {
   upgrade(db) {
     if (!db.objectStoreNames.contains('timers')) {
       db.createObjectStore('timers', { keyPath: 'id' });
@@ -65,6 +70,20 @@ const dbPromise = openDB<AppDb>(DB_NAME, DB_VERSION, {
     }
   },
 });
+
+const getDbPromise = () => {
+  const existing = dbPromises.get(currentTenantSlug);
+  if (existing) {
+    return existing;
+  }
+  const promise = createDbPromise(currentTenantSlug);
+  dbPromises.set(currentTenantSlug, promise);
+  return promise;
+};
+
+export const setStorageTenant = (tenantSlug: string) => {
+  currentTenantSlug = tenantSlug.trim().toLowerCase() || 'gabe';
+};
 
 const isCurrentTimer = (timer: unknown): timer is Timer => (
   Boolean(timer)
@@ -143,7 +162,7 @@ const isDeletedBuiltinMarker = (row: TemplateStoreRow): row is DeletedBuiltinTem
 
 export const TimerRepository = {
   async list(): Promise<Timer[]> {
-    const db = await dbPromise;
+    const db = await getDbPromise();
     const timers = await db.getAll('timers');
     const valid: Timer[] = [];
 
@@ -159,7 +178,7 @@ export const TimerRepository = {
     return valid.sort((a, b) => +new Date(b.updatedAt) - +new Date(a.updatedAt));
   },
   async get(id: string): Promise<Timer | undefined> {
-    const db = await dbPromise;
+    const db = await getDbPromise();
     const timer = await db.get('timers', id);
     if (!timer) {
       return undefined;
@@ -172,11 +191,11 @@ export const TimerRepository = {
     return normalized;
   },
   async upsert(timer: Timer): Promise<void> {
-    const db = await dbPromise;
+    const db = await getDbPromise();
     await db.put('timers', normalizeTimerFields(timer));
   },
   async upsertMany(timers: Timer[]): Promise<void> {
-    const db = await dbPromise;
+    const db = await getDbPromise();
     const tx = db.transaction('timers', 'readwrite');
     for (const timer of timers) {
       await tx.store.put(normalizeTimerFields(timer));
@@ -184,15 +203,15 @@ export const TimerRepository = {
     await tx.done;
   },
   async remove(id: string): Promise<void> {
-    const db = await dbPromise;
+    const db = await getDbPromise();
     await db.delete('timers', id);
   },
   async clearAll(): Promise<void> {
-    const db = await dbPromise;
+    const db = await getDbPromise();
     await db.clear('timers');
   },
   async replaceAll(timers: Timer[]): Promise<void> {
-    const db = await dbPromise;
+    const db = await getDbPromise();
     const tx = db.transaction('timers', 'readwrite');
     await tx.store.clear();
     for (const timer of timers) {
@@ -204,7 +223,7 @@ export const TimerRepository = {
 
 export const TemplateRepository = {
   async list(): Promise<Template[]> {
-    const db = await dbPromise;
+    const db = await getDbPromise();
     const rows = await db.getAll('templates');
     const valid: Template[] = [];
 
@@ -223,7 +242,7 @@ export const TemplateRepository = {
     return valid.sort((a, b) => +new Date(b.updatedAt) - +new Date(a.updatedAt));
   },
   async get(id: string): Promise<Template | undefined> {
-    const db = await dbPromise;
+    const db = await getDbPromise();
     const row = await db.get('templates', id);
     if (!row || isDeletedBuiltinMarker(row)) {
       return undefined;
@@ -236,7 +255,7 @@ export const TemplateRepository = {
     return normalized;
   },
   async upsert(template: Template): Promise<void> {
-    const db = await dbPromise;
+    const db = await getDbPromise();
     const normalized = normalizeTemplate(template);
     if (!normalized) {
       return;
@@ -244,11 +263,11 @@ export const TemplateRepository = {
     await db.put('templates', normalized);
   },
   async remove(id: string): Promise<void> {
-    const db = await dbPromise;
+    const db = await getDbPromise();
     await db.delete('templates', id);
   },
   async replaceAll(templates: Template[]): Promise<void> {
-    const db = await dbPromise;
+    const db = await getDbPromise();
     const tx = db.transaction('templates', 'readwrite');
     await tx.store.clear();
     for (const template of templates) {
@@ -260,14 +279,14 @@ export const TemplateRepository = {
     await tx.done;
   },
   async listDeletedBuiltinIds(): Promise<string[]> {
-    const db = await dbPromise;
+    const db = await getDbPromise();
     const rows = await db.getAll('templates');
     return rows
       .filter((row): row is DeletedBuiltinTemplateMarker => isDeletedBuiltinMarker(row))
       .map((row) => row.deletedBuiltinId);
   },
   async markBuiltinDeleted(builtinTemplateId: string): Promise<void> {
-    const db = await dbPromise;
+    const db = await getDbPromise();
     const now = new Date().toISOString();
     await db.put('templates', {
       id: `${BUILTIN_DELETE_MARKER_PREFIX}${builtinTemplateId}`,
@@ -276,14 +295,14 @@ export const TemplateRepository = {
     });
   },
   async clearBuiltinDeletedMark(builtinTemplateId: string): Promise<void> {
-    const db = await dbPromise;
+    const db = await getDbPromise();
     await db.delete('templates', `${BUILTIN_DELETE_MARKER_PREFIX}${builtinTemplateId}`);
   },
 };
 
 export const SettingsRepository = {
   async get(): Promise<AppSettings> {
-    const db = await dbPromise;
+    const db = await getDbPromise();
     const row = await db.get('settings', 'app');
     if (!row?.value) {
       return DEFAULT_SETTINGS;
@@ -304,14 +323,14 @@ export const SettingsRepository = {
     };
   },
   async save(settings: AppSettings): Promise<void> {
-    const db = await dbPromise;
+    const db = await getDbPromise();
     await db.put('settings', { key: 'app', value: settings });
   },
 };
 
 export const TimerRunRepository = {
   async listAll(): Promise<TimerRun[]> {
-    const db = await dbPromise;
+    const db = await getDbPromise();
     const runs = await db.getAll('timerRuns');
     const valid: TimerRun[] = [];
     await Promise.all(runs.map(async (run) => {
@@ -325,7 +344,7 @@ export const TimerRunRepository = {
     return valid.sort((a, b) => +new Date(b.ranAt) - +new Date(a.ranAt));
   },
   async listByTimer(timerId: string): Promise<TimerRun[]> {
-    const db = await dbPromise;
+    const db = await getDbPromise();
     const runs = await db.getAllFromIndex('timerRuns', 'by-timer-id', timerId);
     const valid: TimerRun[] = [];
     await Promise.all(runs.map(async (run) => {
@@ -339,7 +358,7 @@ export const TimerRunRepository = {
     return valid.sort((a, b) => +new Date(b.ranAt) - +new Date(a.ranAt));
   },
   async create(run: TimerRun): Promise<void> {
-    const db = await dbPromise;
+    const db = await getDbPromise();
     const normalized = normalizeTimerRun(run);
     if (!normalized) {
       return;
@@ -347,7 +366,7 @@ export const TimerRunRepository = {
     await db.put('timerRuns', normalized);
   },
   async update(run: TimerRun): Promise<void> {
-    const db = await dbPromise;
+    const db = await getDbPromise();
     const normalized = normalizeTimerRun(run);
     if (!normalized) {
       return;
@@ -355,7 +374,7 @@ export const TimerRunRepository = {
     await db.put('timerRuns', normalized);
   },
   async remove(id: string): Promise<void> {
-    const db = await dbPromise;
+    const db = await getDbPromise();
     await db.delete('timerRuns', id);
   },
 };

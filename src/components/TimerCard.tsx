@@ -2,6 +2,7 @@ import { useRef, useState, type MouseEventHandler, type PointerEventHandler } fr
 import { Link } from 'react-router-dom';
 import type { AppSettings, Timer } from '../types';
 import { formatTimerTotal, getTimerSummaryItems } from '../lib/time';
+import { useTenant } from '../services/tenantContext';
 
 const ACTION_WIDTH = 96;
 const OPEN_THRESHOLD = 44;
@@ -28,6 +29,7 @@ export const TimerCard = ({
   onClone: (timer: Timer) => void;
   onCreateTemplate: (timer: Timer) => void;
 }) => {
+  const { toTenantPath } = useTenant();
   const summaryItems = getTimerSummaryItems(timer, coachMode);
   const [translateX, setTranslateX] = useState(0);
   const [open, setOpen] = useState(false);
@@ -118,7 +120,7 @@ export const TimerCard = ({
               aria-hidden="true"
             />
           )}
-          <Link className="timer-card-main" to={`/timer/${timer.id}`} onClick={onCardLinkClick}>
+          <Link className="timer-card-main" to={toTenantPath(`/timer/${timer.id}`)} onClick={onCardLinkClick}>
             <div className="timer-card-copy">
               <div className="timer-card-head">
                 <h3>{timer.name}</h3>
@@ -163,7 +165,7 @@ export const TimerCard = ({
             >
               Template
             </button>
-            <Link className="timer-run-btn" to={`/timer/${timer.id}/run?from=home`} aria-label={`Run ${timer.name}`} onClick={onCardLinkClick}>
+            <Link className="timer-run-btn" to={toTenantPath(`/timer/${timer.id}/run?from=home`)} aria-label={`Run ${timer.name}`} onClick={onCardLinkClick}>
               <span aria-hidden="true">{'>'}</span>
             </Link>
           </div>
