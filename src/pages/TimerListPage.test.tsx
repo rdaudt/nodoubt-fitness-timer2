@@ -1,4 +1,4 @@
-import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { cleanup, render, screen, waitFor } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { TimerListPage } from './TimerListPage';
@@ -139,71 +139,4 @@ describe('TimerListPage', () => {
     expect(new Set(imageUrls).size).toBe(4);
   });
 
-  it('reassigns images when workout category filter changes', async () => {
-    listMock.mockResolvedValue([
-      buildTimer('timer-1', 'General Timer A', 'GENERAL'),
-      buildTimer('timer-2', 'General Timer B', 'GENERAL'),
-      buildTimer('timer-3', 'Fat Loss Timer', 'FAT-LOSS'),
-    ]);
-
-    const randomValues = [
-      0, 0, 0, 0, 0, 0, 0,
-      0.999, 0.999, 0.999, 0.999, 0.999, 0.999, 0.999,
-    ];
-    const randomSpy = vi.spyOn(Math, 'random').mockImplementation(() => randomValues.shift() ?? 0.5);
-
-    const { container } = render(
-      <MemoryRouter>
-        <TimerListPage />
-      </MemoryRouter>,
-    );
-
-    await screen.findByText('General Timer A');
-    const initialGeneralImage = getImageUrls(container)[0];
-
-    fireEvent.change(screen.getByLabelText('Workout category filter'), {
-      target: { value: 'GENERAL' },
-    });
-
-    await waitFor(() => {
-      const filteredImage = getImageUrls(container)[0];
-      expect(filteredImage).toBeTruthy();
-      expect(filteredImage).not.toBe(initialGeneralImage);
-    });
-
-    randomSpy.mockRestore();
-  });
-
-  it('reassigns the first-card image when filter changes and images in all timers is off', async () => {
-    settingsMock.imagesInAllTimers = false;
-    listMock.mockResolvedValue([
-      buildTimer('timer-1', 'General Timer A', 'GENERAL'),
-      buildTimer('timer-2', 'General Timer B', 'GENERAL'),
-      buildTimer('timer-3', 'Fat Loss Timer', 'FAT-LOSS'),
-    ]);
-
-    const randomValues = [0, 0, 0.999, 0.999];
-    const randomSpy = vi.spyOn(Math, 'random').mockImplementation(() => randomValues.shift() ?? 0.5);
-
-    const { container } = render(
-      <MemoryRouter>
-        <TimerListPage />
-      </MemoryRouter>,
-    );
-
-    await screen.findByText('General Timer A');
-    const initialGeneralImage = getImageUrls(container)[0];
-
-    fireEvent.change(screen.getByLabelText('Workout category filter'), {
-      target: { value: 'GENERAL' },
-    });
-
-    await waitFor(() => {
-      const filteredImage = getImageUrls(container)[0];
-      expect(filteredImage).toBeTruthy();
-      expect(filteredImage).not.toBe(initialGeneralImage);
-    });
-
-    randomSpy.mockRestore();
-  });
 });

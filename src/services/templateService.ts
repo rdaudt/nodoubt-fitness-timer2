@@ -44,7 +44,7 @@ const parseBuiltinTemplate = (value: unknown, filePath: string): Template | null
   const candidate = normalizeTimerFields({
     id: toBuiltinTemplateId(filePath),
     name: file.name,
-    category: file.category,
+    category: 'GENERAL',
     stationCount: file.stationCount,
     stationWorkoutTypes: file.stationWorkoutTypes ?? [],
     roundsPerStation: file.roundsPerStation,
@@ -83,6 +83,7 @@ export const createTemplateFromTimer = async (timer: Timer, name: string): Promi
       ...timer,
       id: crypto.randomUUID(),
       name,
+      category: 'GENERAL',
       createdAt: now,
       updatedAt: now,
     }),
@@ -90,7 +91,7 @@ export const createTemplateFromTimer = async (timer: Timer, name: string): Promi
   };
   await TemplateRepository.upsert(template);
   trackAnalyticsEvent('template_created_from_timer', {
-    category: template.category,
+    category: 'GENERAL',
   });
   window.dispatchEvent(new Event('templates:changed'));
   return template;
@@ -171,6 +172,7 @@ export const saveTemplate = async (template: Template): Promise<Template> => {
       id: crypto.randomUUID(),
       source: 'user',
       builtinTemplateId: template.id,
+      category: 'GENERAL',
       updatedAt: now,
       createdAt: now,
     };
@@ -182,6 +184,7 @@ export const saveTemplate = async (template: Template): Promise<Template> => {
   const updated: Template = {
     ...template,
     source: 'user',
+    category: 'GENERAL',
     updatedAt: now,
   };
   await TemplateRepository.upsert(updated);

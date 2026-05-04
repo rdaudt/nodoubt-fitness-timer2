@@ -1,6 +1,5 @@
 import { useEffect, useMemo, useState, type WheelEvent } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
-import { WORKOUT_CATEGORIES } from '../config';
 import { estimateTimerDurationMs, formatClock } from '../lib/time';
 import { normalizeTimerFields, validateTimer } from '../lib/timerRules';
 import { createTemplateFromTimer } from '../services/templateService';
@@ -317,19 +316,6 @@ export const TimerDetailPage = () => {
         aria-label="Timer name"
         placeholder="Timer name"
       />
-
-      <label className="field home-category-filter-row">
-        <span>Workout Category</span>
-        <select
-          value={timer.category}
-          onChange={(e) => void applyPatch({ category: e.target.value as Timer['category'] })}
-          aria-label="Workout category"
-        >
-          {WORKOUT_CATEGORIES.map((option) => (
-            <option key={option} value={option}>{option}</option>
-          ))}
-        </select>
-      </label>
 
       <div className="detail-toolbar">
         <p className="detail-total-label">TOTAL: {formatClock(totalSeconds)}</p>

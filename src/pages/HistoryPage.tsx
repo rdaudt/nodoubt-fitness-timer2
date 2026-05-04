@@ -1,6 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { WORKOUT_CATEGORIES } from '../config';
 import {
   estimateTimerDurationMs,
   formatClock,
@@ -131,7 +130,6 @@ export const HistoryPage = () => {
   const [draftTimerName, setDraftTimerName] = useState('');
   const [draftDateTime, setDraftDateTime] = useState('');
   const [draftLocation, setDraftLocation] = useState('');
-  const [draftCategory, setDraftCategory] = useState<TimerRun['category']>('GENERAL');
   const [draftStationWorkoutTypes, setDraftStationWorkoutTypes] = useState<string[]>([]);
   const [generationByRunId, setGenerationByRunId] = useState<Record<string, GenerationState>>({});
 
@@ -260,7 +258,6 @@ export const HistoryPage = () => {
     setDraftTimerName(run.timerNameAtRun);
     setDraftDateTime(toDateTimeLocal(run.ranAt));
     setDraftLocation(run.location ?? '');
-    setDraftCategory(run.category);
     setDraftStationWorkoutTypes((run.stationWorkoutTypes ?? run.timerSnapshot.stationWorkoutTypes ?? []).slice(0, run.timerSnapshot.stationCount));
   };
 
@@ -274,7 +271,7 @@ export const HistoryPage = () => {
       timerNameAtRun: draftTimerName.trim() || run.timerNameAtRun,
       ranAt: parsed.toISOString(),
       location: draftLocation.trim(),
-      category: draftCategory,
+      category: 'GENERAL',
       stationWorkoutTypes: draftStationWorkoutTypes
         .slice(0, run.timerSnapshot.stationCount)
         .map((item) => item.trim()),
@@ -443,7 +440,6 @@ export const HistoryPage = () => {
                       <p className="history-run-title-link">{run.timerNameAtRun} (Deleted timer)</p>
                     )}
                     <p className="history-run-datetime">{new Date(run.ranAt).toLocaleString()}</p>
-                    <p className="history-run-datetime">Category: {run.category}</p>
                   </div>
                   <span className={`history-run-complete ${run.complete ? 'is-on' : 'is-off'}`}>
                     {run.complete ? 'Complete' : 'Incomplete'}
@@ -537,18 +533,6 @@ export const HistoryPage = () => {
                           aria-label="Run location"
                           placeholder="Location"
                         />
-                      </label>
-                      <label className="field">
-                        <span>Workout Category</span>
-                        <select
-                          value={draftCategory}
-                          onChange={(e) => setDraftCategory(e.target.value as TimerRun['category'])}
-                          aria-label="Run workout category"
-                        >
-                          {WORKOUT_CATEGORIES.map((option) => (
-                            <option key={option} value={option}>{option}</option>
-                          ))}
-                        </select>
                       </label>
                     </section>
 

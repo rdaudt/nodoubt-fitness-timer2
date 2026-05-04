@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { Timer } from '../types';
-import { validateTimer } from './timerRules';
+import { normalizeTimerFields, validateTimer } from './timerRules';
 
 const makeTimer = (overrides: Partial<Timer> = {}): Timer => ({
   id: 'timer-1',
@@ -48,5 +48,10 @@ describe('timerRules', () => {
     expect(validateTimer(makeTimer({ roundsPerStation: 2, restSeconds: 0 })).errors).toContain(
       'Rest time must be at least 1 second when rounds are greater than 1.',
     );
+  });
+
+  it('normalizes any category value to GENERAL', () => {
+    expect(normalizeTimerFields(makeTimer({ category: 'FAT-LOSS' })).category).toBe('GENERAL');
+    expect(normalizeTimerFields(makeTimer({ category: 'PERFORMANCE' })).category).toBe('GENERAL');
   });
 });

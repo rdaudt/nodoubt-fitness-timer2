@@ -45,7 +45,7 @@ describe('templateService', () => {
   });
 
   it('creates a new timer from template with a new id and preserved workout shape', async () => {
-    const timer = await createTimerFromTemplate(template);
+    const timer = await createTimerFromTemplate({ ...template, category: 'FAT-LOSS' });
     expect(timer.id).not.toBe(template.id);
     expect(timer.name).toBe(template.name);
     expect(timer.stationCount).toBe(2);
@@ -53,9 +53,10 @@ describe('templateService', () => {
   });
 
   it('saving a builtin template creates a user-owned override', async () => {
-    const saved = await saveTemplate(template);
+    const saved = await saveTemplate({ ...template, category: 'PERFORMANCE' });
     expect(saved.source).toBe('user');
     expect(saved.builtinTemplateId).toBe('builtin:general-001');
+    expect(saved.category).toBe('GENERAL');
     expect(upsertMock).toHaveBeenCalledTimes(1);
     expect(clearBuiltinDeletedMarkMock).toHaveBeenCalledWith('builtin:general-001');
   });

@@ -93,4 +93,14 @@ describe('normalizeTimerRun', () => {
       totalWorkMs: 67890,
     });
   });
+
+  it('forces run category to GENERAL', () => {
+    const normalized = normalizeTimerRun({
+      ...runBase,
+      category: 'FAT-LOSS',
+      totalPerStationMs: 12345,
+      totalWorkMs: 67890,
+    });
+    expect(normalized?.category).toBe('GENERAL');
+  });
 });

@@ -1,7 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { TimerCard } from '../components/TimerCard';
-import { WORKOUT_CATEGORY_FILTERS, type WorkoutCategoryFilter } from '../config';
 import { randomUniqueTimerName } from '../lib/timerFactory';
 import { trackAnalyticsEvent } from '../services/analytics';
 import { createTemplateFromTimer } from '../services/templateService';
@@ -54,7 +53,6 @@ const assignCardImages = (cardCount: number, imagesInAllTimers: boolean): Array<
 export const TimerListPage = () => {
   const { settings, saveSettings } = useSettings();
   const [timers, setTimers] = useState<Timer[]>([]);
-  const [categoryFilter, setCategoryFilter] = useState<WorkoutCategoryFilter>('ALL');
   const [cardImages, setCardImages] = useState<Array<string | undefined>>([]);
 
   useEffect(() => {
@@ -81,6 +79,7 @@ export const TimerListPage = () => {
       ...timer,
       id: crypto.randomUUID(),
       name: randomUniqueTimerName(timers.map((item) => item.name)),
+      category: 'GENERAL',
       createdAt: now,
       updatedAt: now,
     };
@@ -99,12 +98,7 @@ export const TimerListPage = () => {
     await createTemplateFromTimer(timer, nextName);
   };
 
-  const visibleTimers = useMemo(
-    () => (categoryFilter === 'ALL'
-      ? timers
-      : timers.filter((timer) => timer.category === categoryFilter)),
-    [categoryFilter, timers],
-  );
+  const visibleTimers = useMemo(() => timers, [timers]);
 
   useEffect(() => {
     setCardImages(assignCardImages(visibleTimers.length, settings.imagesInAllTimers));
@@ -128,19 +122,6 @@ export const TimerListPage = () => {
           onChange={(e) => saveSettings({ ...settings, coachMode: e.target.checked })}
           aria-label="Coach Mode"
         />
-      </label>
-
-      <label className="field home-category-filter-row">
-        <span>Workout Category</span>
-        <select
-          value={categoryFilter}
-          onChange={(e) => setCategoryFilter(e.target.value as WorkoutCategoryFilter)}
-          aria-label="Workout category filter"
-        >
-          {WORKOUT_CATEGORY_FILTERS.map((option) => (
-            <option key={option} value={option}>{option}</option>
-          ))}
-        </select>
       </label>
 
       <div className="stack">
