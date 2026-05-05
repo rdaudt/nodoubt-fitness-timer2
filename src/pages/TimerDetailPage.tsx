@@ -2,7 +2,6 @@ import { useEffect, useMemo, useState, type WheelEvent } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { estimateTimerDurationMs, formatClock } from '../lib/time';
 import { normalizeTimerFields, validateTimer } from '../lib/timerRules';
-import { createTemplateFromTimer } from '../services/templateService';
 import { useSettings } from '../services/settingsContext';
 import { useTenant } from '../services/tenantContext';
 import { TimerRepository } from '../services/storage';
@@ -269,17 +268,6 @@ export const TimerDetailPage = () => {
     navigate(toTenantPath(''));
   };
 
-  const onCreateTemplate = async () => {
-    if (!timer) {
-      return;
-    }
-    const nextName = window.prompt('Template name', timer.name)?.trim();
-    if (!nextName) {
-      return;
-    }
-    await createTemplateFromTimer(timer, nextName);
-  };
-
   if (!timer) {
     return <p className="empty">Timer not found.</p>;
   }
@@ -322,12 +310,17 @@ export const TimerDetailPage = () => {
 
       <div className="detail-toolbar">
         <p className="detail-total-label">TOTAL: {formatClock(totalSeconds)}</p>
-        <div />
         <div className="detail-toolbar-actions">
-          <button className="danger-btn detail-top-icon-btn" aria-label="Delete timer" onClick={onDeleteTimer}>Delete</button>
-          <button className="timer-clone-btn" type="button" onClick={onCreateTemplate}>Create Template</button>
-          <Link to={toTenantPath(`/timer/${timer.id}/run`)} className="primary-btn detail-top-btn selected">
-            <span className="detail-run-icon" aria-hidden="true">▶</span>
+          <button className="danger-btn detail-top-icon-btn" aria-label="Delete timer" onClick={onDeleteTimer}>
+            <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+              <path
+                d="M9 3h6l1 2h4v2H4V5h4l1-2Zm-2 6h10l-1 11H8L7 9Zm3 2v7h2v-7h-2Zm4 0v7h2v-7h-2Z"
+                fill="currentColor"
+              />
+            </svg>
+          </button>
+          <Link to={toTenantPath(`/timer/${timer.id}/run`)} className="primary-btn detail-run-btn selected">
+            <span className="detail-run-icon" aria-hidden="true">{'\u25B6'}</span>
             <span>RUN</span>
           </Link>
         </div>

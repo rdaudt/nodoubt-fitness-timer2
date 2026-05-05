@@ -8,7 +8,6 @@ import { useTenant } from '../services/tenantContext';
 import type { AppSettings, IntervalType } from '../types';
 import kobeSmiling from '../../media/kobe-smiling.png';
 import kobeAngry from '../../media/kobe-angry.png';
-import victorianGym3 from '../../media/victorian-gym-3.png';
 
 const types: IntervalType[] = ['warmup', 'work', 'rest', 'cooldown'];
 
@@ -162,7 +161,7 @@ export const SettingsPage = () => {
       {!unique && <p className="error-inline">Each interval type must use a unique color.</p>}
 
       <div className="actions-row settings-actions-row">
-        <button className="secondary-btn" onClick={() => updateDraft(DEFAULT_SETTINGS)}>Reset Defaults</button>
+        <button className="primary-btn" onClick={() => updateDraft(DEFAULT_SETTINGS)}>Reset Defaults</button>
       </div>
 
       <div className="stack settings-stack settings-transfer-section">
@@ -172,8 +171,8 @@ export const SettingsPage = () => {
           Run history is not included.
         </p>
         <div className="actions-row settings-actions-row">
-          <button className="secondary-btn" onClick={() => void onExport()}>Export Timers</button>
-          <button className="secondary-btn" onClick={onImportClick}>Import Timers</button>
+          <button className="primary-btn" onClick={() => void onExport()}>Export Timers</button>
+          <button className="primary-btn" onClick={onImportClick}>Import Timers</button>
         </div>
         <input
           ref={importFileRef}
@@ -189,12 +188,6 @@ export const SettingsPage = () => {
           </p>
         )}
       </div>
-
-      {draft.kobeEverywhere && (
-        <div className="settings-float-cat-wrap" aria-hidden="true">
-          <img className="settings-float-cat" src={victorianGym3} alt="" />
-        </div>
-      )}
 
       {profile?.qrCodeUrl && (
         <div className="stack settings-stack settings-transfer-section">
