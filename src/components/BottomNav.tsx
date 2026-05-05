@@ -1,4 +1,4 @@
-import { NavLink } from 'react-router-dom';
+import { NavLink, useLocation } from 'react-router-dom';
 
 const TimersIcon = () => (
   <svg viewBox="0 0 24 24" aria-hidden="true">
@@ -56,6 +56,9 @@ interface BottomNavProps {
 }
 
 export const BottomNav = ({ clickable, toTenantPath }: BottomNavProps) => {
+  const location = useLocation();
+  const normalizePath = (value: string): string => value.replace(/\/+$/, '') || '/';
+
   if (!clickable) {
     return (
       <nav className="bottom-nav" aria-label="Primary Navigation">
@@ -77,7 +80,12 @@ export const BottomNav = ({ clickable, toTenantPath }: BottomNavProps) => {
         <NavLink
           key={item.to}
           to={toTenantPath ? toTenantPath(item.to) : item.to}
-          className={({ isActive }) => (isActive ? 'nav-item active' : 'nav-item')}
+          className={({ isActive }) => {
+            const targetPath = normalizePath(toTenantPath ? toTenantPath(item.to) : item.to);
+            const currentPath = normalizePath(location.pathname);
+            const isTimersLanding = item.to === '' && currentPath === targetPath;
+            return (isActive || isTimersLanding) ? 'nav-item active' : 'nav-item';
+          }}
           end={item.to === ''}
         >
           <span className="nav-icon" aria-hidden="true">
