@@ -11,6 +11,7 @@ import {
 } from '../lib/time';
 import { normalizeTimerFields } from '../lib/timerRules';
 import { useSettings } from '../services/settingsContext';
+import { useTenant } from '../services/tenantContext';
 import { TimerRepository, TimerRunRepository } from '../services/storage';
 import type { Timer, TimerRun } from '../types';
 
@@ -125,6 +126,7 @@ const saveStoredJobs = (jobs: Record<string, StoredJobInfo>) => {
 
 export const HistoryPage = () => {
   const { settings } = useSettings();
+  const { toTenantPath } = useTenant();
   const [runs, setRuns] = useState<TimerRun[]>([]);
   const [timers, setTimers] = useState<Timer[]>([]);
   const [editingRunId, setEditingRunId] = useState<string | null>(null);
@@ -434,7 +436,7 @@ export const HistoryPage = () => {
                 <div className="history-run-card-head">
                   <div className="history-run-title-wrap">
                     {activeTimer ? (
-                      <Link to={`/timer/${run.timerId}`} className="history-run-title-link">
+                      <Link to={toTenantPath(`/timer/${run.timerId}`)} className="history-run-title-link">
                         {run.timerNameAtRun}
                       </Link>
                     ) : (

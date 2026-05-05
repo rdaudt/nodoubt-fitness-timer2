@@ -40,6 +40,8 @@ export const TenantProvider = ({ children }: { children: React.ReactNode }) => {
       return;
     }
 
+    setStorageTenant(slug);
+    window.localStorage.setItem('active_tenant_slug', slug);
     setLoaded(false);
     setProfile(null);
     setTemplates([]);
@@ -53,8 +55,6 @@ export const TenantProvider = ({ children }: { children: React.ReactNode }) => {
       }
       setProfile(tenantProfile);
       setTemplates(tenantTemplates);
-      setStorageTenant(tenantProfile.slug);
-      window.localStorage.setItem('active_tenant_slug', tenantProfile.slug);
       setLoaded(true);
     }).catch(() => {
       navigate('/invalid-url', { replace: true });
