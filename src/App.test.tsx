@@ -1,6 +1,7 @@
 import { cleanup, render, screen, waitFor } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import App from './App';
+import { DEFAULT_SETTINGS } from './config';
 
 const {
   fetchTenantPublicProfileMock,
@@ -13,6 +14,26 @@ const {
 vi.mock('./services/tenantApi', () => ({
   fetchTenantPublicProfile: fetchTenantPublicProfileMock,
   fetchTenantPublicTemplates: fetchTenantPublicTemplatesMock,
+}));
+
+vi.mock('./services/authContext', () => ({
+  AuthProvider: ({ children }: { children: unknown }) => children,
+  useAuth: () => ({
+    loaded: true,
+    user: { sub: 'sub-1', email: 'user@example.com', name: 'User', picture: '', isCoach: false },
+    login: vi.fn(),
+    logoutUser: vi.fn(),
+    deleteCurrentAccount: vi.fn(),
+  }),
+}));
+
+vi.mock('./services/settingsContext', () => ({
+  SettingsProvider: ({ children }: { children: unknown }) => children,
+  useSettings: () => ({
+    loaded: true,
+    settings: DEFAULT_SETTINGS,
+    saveSettings: vi.fn(),
+  }),
 }));
 
 describe('App invalid URL behavior', () => {
@@ -39,7 +60,7 @@ describe('App invalid URL behavior', () => {
   });
 
   it('renders invalid URL page for unknown tenant slug', async () => {
-    window.history.replaceState({}, '', '/unknown-tenant');
+    window.history.replaceState({}, '', '/unknown-tenant/about');
     render(<App />);
 
     await waitFor(() => expect(screen.getByRole('heading', { name: 'Invalid Timer URL' })).toBeInTheDocument());

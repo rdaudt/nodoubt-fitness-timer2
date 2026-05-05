@@ -111,7 +111,20 @@ const statements = [
       published_at TEXT
     );
   `,
+  `
+    CREATE TABLE IF NOT EXISTS app_users (
+      google_sub TEXT PRIMARY KEY,
+      email TEXT NOT NULL,
+      name TEXT NOT NULL DEFAULT '',
+      picture_url TEXT NOT NULL DEFAULT '',
+      is_coach INTEGER NOT NULL DEFAULT 0,
+      created_at TEXT NOT NULL,
+      updated_at TEXT NOT NULL,
+      last_login_at TEXT NOT NULL
+    );
+  `,
   `CREATE INDEX IF NOT EXISTS idx_coach_tenants_slug_status ON coach_tenants (slug, status);`,
+  `CREATE INDEX IF NOT EXISTS idx_app_users_email ON app_users (email);`,
   `CREATE INDEX IF NOT EXISTS idx_coach_social_links_tenant_sort ON coach_social_links (tenant_id, sort_order);`,
   `CREATE INDEX IF NOT EXISTS idx_coach_templates_tenant_status_sort ON coach_templates (tenant_id, status, sort_order);`,
 ];
