@@ -1,7 +1,16 @@
 import { NavLink, Outlet, useLocation } from 'react-router-dom';
+import type { SyntheticEvent } from 'react';
 import { APP_NAME, BRAND } from '../config';
 import { useTenant } from '../services/tenantContext';
 import coachGabeHeader from '../../media/coach-gabe-header.jpeg';
+
+const withFallbackImage = (fallbackSrc: string) => (event: SyntheticEvent<HTMLImageElement>) => {
+  const image = event.currentTarget;
+  if (image.src.endsWith(fallbackSrc)) {
+    return;
+  }
+  image.src = fallbackSrc;
+};
 
 const TimersIcon = () => (
   <svg viewBox="0 0 24 24" aria-hidden="true">
@@ -70,7 +79,7 @@ export const AppLayout = () => {
       <header className={isRunningView ? 'topbar topbar-compact' : 'topbar'}>
         <div className="topbar-inner">
           <a href={primaryLink} target="_blank" rel="noreferrer" className="brand-logo-link" aria-label={APP_NAME}>
-            <img src={logoUrl} alt={`${businessName} logo`} className="brand-logo" />
+            <img src={logoUrl} alt={`${businessName} logo`} className="brand-logo" onError={withFallbackImage('/assets/nodoubt-training-logo.png')} />
           </a>
           <a href={primaryLink} target="_blank" rel="noreferrer" className="brand-text-wrap" aria-label={APP_NAME}>
             <p className="brand-name">{businessName}</p>
@@ -78,7 +87,7 @@ export const AppLayout = () => {
           </a>
           {!isAboutPage && (
             <a href={primaryLink} target="_blank" rel="noreferrer" className="coach-wrap" aria-label={coachName}>
-              <img src={coachPhoto} alt={coachName} className="coach-photo" />
+              <img src={coachPhoto} alt={coachName} className="coach-photo" onError={withFallbackImage(coachGabeHeader)} />
               <p className="coach-name">{coachName}</p>
             </a>
           )}

@@ -5,7 +5,7 @@ Mobile-first, offline-capable HIIT timer PWA with coach-focused workflows.
 ## Overview
 This app lets users create and run station-based HIIT workouts with warmup, work/rest rounds, station transitions, and cooldown. It also includes templates, run history, timer import/export, and optional coach content-generation workflows.
 
-Core timer usage is local-first and stored in IndexedDB. Optional backend APIs (Vercel serverless) support analytics and async image generation jobs.
+Core timer usage is local-first and stored in IndexedDB. Tenant profile and published templates are read from shared Turso data managed by `best-hiit-timer-portal`. Optional backend APIs (Vercel serverless) also support analytics and async image generation jobs.
 
 ## Key Features
 - Timer CRUD with station/round model
@@ -43,15 +43,15 @@ Core timer usage is local-first and stored in IndexedDB. Optional backend APIs (
 - Vercel Blob for generated image storage
 
 ## App Routes
-- `/` timers list
-- `/timer/new` create default timer + redirect
-- `/timer/:id` timer detail/editor
-- `/timer/:id/run` running timer session
-- `/templates` templates list
-- `/template/:id` template detail/editor
-- `/history` run history
-- `/about` business/about page
-- `/settings` settings + timer import/export
+- `/:tenantSlug` timers list
+- `/:tenantSlug/timer/new` create default timer + redirect
+- `/:tenantSlug/timer/:id` timer detail/editor
+- `/:tenantSlug/timer/:id/run` running timer session
+- `/:tenantSlug/templates` templates list
+- `/:tenantSlug/template/:id` template detail/editor
+- `/:tenantSlug/history` run history
+- `/:tenantSlug/about` business/about page
+- `/:tenantSlug/settings` settings + timer import/export
 
 ## Project Structure
 ```text
@@ -118,6 +118,7 @@ Set these in `.env.local` for local full-stack/serverless work and in Vercel Pro
 - `TURSO_DATABASE_URL`
 - `TURSO_AUTH_TOKEN`
 - `CRON_SECRET` (or legacy `ANALYTICS_CRON_SECRET`)
+- `VITE_DEFAULT_TENANT_SLUG` (recommended for slug fallback redirect)
 
 ### Required for content generation APIs
 - `OPENAI_API_KEY`
@@ -125,6 +126,11 @@ Set these in `.env.local` for local full-stack/serverless work and in Vercel Pro
 - `TURSO_DATABASE_URL`
 - `TURSO_AUTH_TOKEN`
 - `CRON_SECRET` (or legacy `ANALYTICS_CRON_SECRET`)
+
+### Shared portal data requirements
+- `TURSO_DATABASE_URL` and `TURSO_AUTH_TOKEN` must target the same Turso database used by `best-hiit-timer-portal`.
+- The HIIT app reads published tenant profile/templates only; it does not own tenant schema migrations.
+- Tenant brand images (`logo_url`, `coach_photo_url`) are consumed as provided; when absent or broken, the app falls back to bundled defaults.
 
 ## Analytics Setup
 Initialize analytics tables once:
