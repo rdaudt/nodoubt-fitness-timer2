@@ -3,8 +3,10 @@ import { DEFAULT_SETTINGS, TYPE_LABELS } from '../config';
 import { intervalColorsAreUnique } from '../lib/settingsRules';
 import { trackAnalyticsEvent } from '../services/analytics';
 import { exportTimersToDevice, importTimersFromFile } from '../services/timerTransfer';
+import { useAuth } from '../services/authContext';
 import { useSettings } from '../services/settingsContext';
 import { useTenant } from '../services/tenantContext';
+import { clearCurrentTenantLocalData } from '../services/storage';
 import type { AppSettings, IntervalType } from '../types';
 import kobeSmiling from '../../media/kobe-smiling.png';
 import kobeAngry from '../../media/kobe-angry.png';
@@ -13,6 +15,7 @@ const types: IntervalType[] = ['warmup', 'work', 'rest', 'cooldown'];
 
 export const SettingsPage = () => {
   const { settings, saveSettings } = useSettings();
+  const { logoutUser, deleteCurrentAccount } = useAuth();
   const { profile } = useTenant();
   const [draft, setDraft] = useState<AppSettings>(settings);
   const [transferMessage, setTransferMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
@@ -65,6 +68,28 @@ export const SettingsPage = () => {
         type: 'error',
         text: error instanceof Error ? error.message : 'Failed to import timers.',
       });
+    }
+  };
+
+  const onSignOut = async () => {
+    await logoutUser();
+    window.history.replaceState({}, '', '/login');
+  };
+
+  const onDeleteAccount = async () => {
+    const typed = window.prompt('Type DELETE to confirm account deletion.');
+    if (typed !== 'DELETE') {
+      return;
+    }
+    if (!window.confirm('This will permanently delete your account profile from Turso. Continue?')) {
+      return;
+    }
+    try {
+      await deleteCurrentAccount();
+      await clearCurrentTenantLocalData();
+      window.history.replaceState({}, '', '/login');
+    } catch {
+      setTransferMessage({ type: 'error', text: 'Failed to delete account. Please try again.' });
     }
   };
 
@@ -195,6 +220,18 @@ export const SettingsPage = () => {
           <img src={profile.qrCodeUrl} alt={`${profile.businessName} QR code`} className="owner-photo about-coach-photo" />
         </div>
       )}
+
+      <div className="stack settings-stack settings-transfer-section">
+        <h2 className="settings-subtitle">Account</h2>
+        <p className="timer-meta settings-section-note">
+          You can sign out or permanently delete your user account profile from Turso.
+          Coach data is not deleted.
+        </p>
+        <div className="actions-row settings-actions-row">
+          <button className="primary-btn" onClick={() => void onSignOut()}>Sign Out</button>
+          <button className="primary-btn danger-btn" onClick={() => void onDeleteAccount()}>Delete Account</button>
+        </div>
+      </div>
     </section>
   );
 };

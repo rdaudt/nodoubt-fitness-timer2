@@ -5,7 +5,7 @@ Mobile-first, offline-capable HIIT timer PWA with coach-focused workflows.
 ## Overview
 This app lets users create and run station-based HIIT workouts with warmup, work/rest rounds, station transitions, and cooldown. It also includes templates, run history, timer import/export, and optional coach content-generation workflows.
 
-Core timer usage is local-first and stored in IndexedDB. Tenant profile and published templates are read from shared Turso data managed by `best-hiit-timer-portal`. Optional backend APIs (Vercel serverless) also support analytics and async image generation jobs.
+Core timer usage is local-first and stored in IndexedDB. Google authentication is required for all users. Tenant profile and published templates are read from shared Turso data managed by `best-hiit-timer-portal`. Optional backend APIs (Vercel serverless) also support analytics and async image generation jobs.
 
 ## Key Features
 - Timer CRUD with station/round model
@@ -99,10 +99,11 @@ npm run preview
 ```
 
 ## Local Development Modes
-### 1) Frontend-only mode (most timer work)
+### 1) Frontend-only mode (limited without auth)
 Use `npm run dev`.
 - Timer CRUD/run/settings/templates/history (local data) work in browser.
 - API routes are not available in this mode.
+- Google sign-in flow is not available in this mode.
 
 ### 2) Full-stack mode (frontend + `/api/*`)
 Use Vercel dev runtime when testing serverless endpoints locally.
@@ -131,6 +132,12 @@ Set these in `.env.local` for local full-stack/serverless work and in Vercel Pro
 - `TURSO_DATABASE_URL` and `TURSO_AUTH_TOKEN` must target the same Turso database used by `best-hiit-timer-portal`.
 - The HIIT app reads published tenant profile/templates only; it does not own tenant schema migrations.
 - Tenant brand images (`logo_url`, `coach_photo_url`) are consumed as provided; when absent or broken, the app falls back to bundled defaults.
+
+### Required for Google authentication
+- `APP_BASE_URL` (example: `http://localhost:3000` for `vercel dev`)
+- `GOOGLE_CLIENT_ID`
+- `GOOGLE_CLIENT_SECRET`
+- `AUTH_SESSION_SECRET`
 
 ## Analytics Setup
 Initialize analytics tables once:
@@ -169,7 +176,7 @@ Serverless APIs under `api/` are deployed automatically with the project.
 
 ## Data & Privacy Notes
 - Core timer data is local to the browser (IndexedDB).
-- No user authentication required for core app usage.
+- Google authentication is required for app usage.
 - Analytics intentionally avoids direct personal identifiers.
 - Timer import/export covers timer definitions only (run history excluded).
 

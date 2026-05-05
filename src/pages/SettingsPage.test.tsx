@@ -3,10 +3,13 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { SettingsPage } from './SettingsPage';
 import { DEFAULT_SETTINGS } from '../config';
 
-const { saveSettingsMock, exportTimersMock, importTimersMock } = vi.hoisted(() => ({
+const { saveSettingsMock, exportTimersMock, importTimersMock, logoutUserMock, deleteCurrentAccountMock, clearLocalDataMock } = vi.hoisted(() => ({
   saveSettingsMock: vi.fn(),
   exportTimersMock: vi.fn(),
   importTimersMock: vi.fn(),
+  logoutUserMock: vi.fn(),
+  deleteCurrentAccountMock: vi.fn(),
+  clearLocalDataMock: vi.fn(),
 }));
 
 vi.mock('../services/settingsContext', () => ({
@@ -22,12 +25,30 @@ vi.mock('../services/timerTransfer', () => ({
   importTimersFromFile: importTimersMock,
 }));
 
+vi.mock('../services/authContext', () => ({
+  useAuth: () => ({
+    loaded: true,
+    user: { sub: 'sub-1', email: 'u@x.com', name: 'U', picture: '', isCoach: false },
+    login: vi.fn(),
+    logoutUser: logoutUserMock,
+    deleteCurrentAccount: deleteCurrentAccountMock,
+  }),
+}));
+
+vi.mock('../services/storage', () => ({
+  clearCurrentTenantLocalData: clearLocalDataMock,
+}));
+
 describe('SettingsPage import/export', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     exportTimersMock.mockResolvedValue(undefined);
     importTimersMock.mockResolvedValue(2);
+    logoutUserMock.mockResolvedValue(undefined);
+    deleteCurrentAccountMock.mockResolvedValue(undefined);
+    clearLocalDataMock.mockResolvedValue(undefined);
     vi.spyOn(window, 'confirm').mockReturnValue(true);
+    vi.spyOn(window, 'prompt').mockReturnValue('DELETE');
   });
 
   afterEach(() => {
@@ -97,5 +118,12 @@ describe('SettingsPage import/export', () => {
 
     await waitFor(() => expect(importTimersMock).toHaveBeenCalledWith(file));
     expect(await screen.findByText('Invalid export file format.')).toBeInTheDocument();
+  });
+
+  it('deletes account after typed confirmation', async () => {
+    render(<SettingsPage />);
+    fireEvent.click(screen.getByRole('button', { name: 'Delete Account' }));
+    await waitFor(() => expect(deleteCurrentAccountMock).toHaveBeenCalledTimes(1));
+    expect(clearLocalDataMock).toHaveBeenCalledTimes(1);
   });
 });

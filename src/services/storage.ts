@@ -1,4 +1,4 @@
-import { openDB } from 'idb';
+import { deleteDB, openDB } from 'idb';
 import { DEFAULT_SETTINGS } from '../config';
 import { getStationWorkoutDurationMs, getWorkDurationMs } from '../lib/time';
 import { normalizeTimerFields } from '../lib/timerRules';
@@ -83,6 +83,14 @@ const getDbPromise = () => {
 
 export const setStorageTenant = (tenantSlug: string) => {
   currentTenantSlug = tenantSlug.trim().toLowerCase() || 'gabe';
+};
+
+export const clearCurrentTenantLocalData = async (): Promise<void> => {
+  const targetSlug = currentTenantSlug;
+  const dbName = getDbName(targetSlug);
+  dbPromises.delete(targetSlug);
+  await deleteDB(dbName);
+  window.localStorage.removeItem('active_tenant_slug');
 };
 
 const isCurrentTimer = (timer: unknown): timer is Timer => (
