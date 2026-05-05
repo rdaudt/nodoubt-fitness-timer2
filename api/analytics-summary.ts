@@ -79,7 +79,7 @@ export default async function handler(request: NodeReq, response: NodeRes): Prom
       `),
     ]);
 
-    const row = totalsResult.rows[0] ?? {};
+    const row = (totalsResult.rows[0] ?? {}) as Record<string, unknown>;
     const completedRuns = asNumber(row.timer_run_completed_count);
 
     response.status(200).json({
