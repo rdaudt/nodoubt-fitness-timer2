@@ -4,7 +4,10 @@ import type { PublicTemplate, TenantPublicProfile } from '../types';
 import { fetchTenantPublicProfile, fetchTenantPublicTemplates } from './tenantApi';
 import { setStorageTenant } from './storage';
 
-const DEFAULT_TENANT_SLUG = 'gabe';
+const FALLBACK_DEFAULT_TENANT_SLUG = 'gabe';
+const envDefaultSlugRaw = typeof import.meta.env.VITE_DEFAULT_TENANT_SLUG === 'string'
+  ? import.meta.env.VITE_DEFAULT_TENANT_SLUG.trim().toLowerCase()
+  : '';
 const RESERVED_SLUGS = new Set(['api', 'timer', 'settings', 'templates', 'template', 'about', 'history']);
 const SLUG_RE = /^[a-z0-9-]{3,32}$/;
 
@@ -26,6 +29,7 @@ const fallbackTenantContext: TenantContextValue = {
 };
 
 const isValidSlug = (slug: string): boolean => SLUG_RE.test(slug) && !RESERVED_SLUGS.has(slug);
+const DEFAULT_TENANT_SLUG = isValidSlug(envDefaultSlugRaw) ? envDefaultSlugRaw : FALLBACK_DEFAULT_TENANT_SLUG;
 
 export const TenantProvider = ({ children }: { children: React.ReactNode }) => {
   const { tenantSlug = '' } = useParams();
