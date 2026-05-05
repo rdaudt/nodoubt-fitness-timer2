@@ -86,6 +86,18 @@ const getSessionSecret = (): Uint8Array => new TextEncoder().encode(requireEnv('
 
 const asArray = (value: string | string[] | undefined): string[] => (Array.isArray(value) ? value : value ? [value] : []);
 
+const normalizeNextPath = (value: string): string => {
+  const trimmed = value.trim();
+  if (!trimmed.startsWith('/')) {
+    return '/';
+  }
+  // Reject protocol-relative and backslash-prefixed paths.
+  if (trimmed.startsWith('//') || trimmed.startsWith('/\\')) {
+    return '/';
+  }
+  return trimmed;
+};
+
 export const setCookies = (response: NodeRes, cookies: string[]) => {
   response.setHeader?.('Set-Cookie', cookies);
 };
@@ -104,7 +116,7 @@ export const buildLoginRedirect = (request: NodeReq): { state: string; nextPath:
   const clientId = requireEnv('GOOGLE_CLIENT_ID');
   const callbackUrl = `${baseUrl.replace(/\/$/, '')}/api/auth/callback`;
   const requestedNext = asArray(request.query?.next)[0] ?? '';
-  const nextPath = requestedNext.startsWith('/') ? requestedNext : '/';
+  const nextPath = normalizeNextPath(requestedNext);
   const state = crypto.randomUUID();
 
   const params = new URLSearchParams({
@@ -279,7 +291,7 @@ export const getCallbackCode = (request: NodeReq): string => asArray(request.que
 export const getStoredOauthState = (request: NodeReq): string => readCookie(request, OAUTH_STATE_COOKIE);
 export const getStoredNextPath = (request: NodeReq): string => {
   const value = readCookie(request, OAUTH_NEXT_COOKIE);
-  return value.startsWith('/') ? value : '/';
+  return normalizeNextPath(value);
 };
 
 export const deleteCurrentUser = async (userSub: string): Promise<void> => {
