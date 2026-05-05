@@ -4,6 +4,7 @@ import { formatClock, getStationWorkoutDurationMs, getWorkDurationMs } from '../
 import { useTimerRunner } from '../lib/useTimerRunner';
 import { trackAnalyticsEvent } from '../services/analytics';
 import { useSettings } from '../services/settingsContext';
+import { useTenant } from '../services/tenantContext';
 import { TimerRepository, TimerRunRepository } from '../services/storage';
 import type { AppSettings, CountdownType, Timer, TimerRun, TimelineEntry } from '../types';
 
@@ -142,6 +143,7 @@ export const RunningTimerPage = () => {
   const { id = '' } = useParams();
   const [searchParams] = useSearchParams();
   const { settings, saveSettings } = useSettings();
+  const { toTenantPath } = useTenant();
   const [timer, setTimer] = useState<Timer | null>(null);
   const [showSessionMap, setShowSessionMap] = useState(true);
   const [showOptions, setShowOptions] = useState(true);
@@ -252,7 +254,9 @@ export const RunningTimerPage = () => {
     };
   }, [settings.coachMode, timer?.startStationWorkManually, runner.state.status, confirmAction]);
 
-  const donePath = searchParams.get('from') === 'home' ? '/' : `/timer/${timer?.id ?? id}`;
+  const donePath = searchParams.get('from') === 'home'
+    ? toTenantPath('')
+    : toTenantPath(`/timer/${timer?.id ?? id}`);
   const activeEntry = runner.timeline[runner.state.currentIndex];
   const nextEntry = runner.timeline[runner.state.currentIndex + 1];
   const isStationStartPause = runner.state.status === 'paused' && runner.state.pauseReason === 'stationStart';
