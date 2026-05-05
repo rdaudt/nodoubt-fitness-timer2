@@ -69,10 +69,6 @@ export const TenantProvider = ({ children }: { children: React.ReactNode }) => {
     toTenantPath: (path: string) => `/${slug}${path.startsWith('/') ? path : `/${path}`}`,
   }), [loaded, profile, slug, templates]);
 
-  if (!loaded) {
-    return null;
-  }
-
   return <TenantContext.Provider value={value}>{children}</TenantContext.Provider>;
 };
 
