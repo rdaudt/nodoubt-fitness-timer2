@@ -17,11 +17,8 @@ export const TemplatesPage = () => {
   useEffect(() => {
     const load = () => {
       listTemplates().then((localTemplates) => {
-        if (publicTemplates.length > 0) {
-          setTemplates(publicTemplates.map((item) => ({ ...item, source: 'builtin' as const })));
-          return;
-        }
-        setTemplates(localTemplates);
+        const portalMapped: Template[] = publicTemplates.map((item) => ({ ...item, source: 'portal' }));
+        setTemplates([...portalMapped, ...localTemplates]);
       });
     };
     load();
@@ -77,7 +74,7 @@ export const TemplatesPage = () => {
                   <strong>{formatTimerTotal(template)}</strong>
                   <span>Total Time</span>
                 </div>
-                {publicTemplates.length === 0 && (
+                {template.source !== 'portal' && (
                   <Link className="timer-clone-btn template-card-btn" to={toTenantPath(`/template/${template.id}`)}>
                     View
                   </Link>
@@ -85,7 +82,7 @@ export const TemplatesPage = () => {
                 <button className="timer-clone-btn template-card-btn" type="button" onClick={() => void onUseTemplate(template)}>
                   Use
                 </button>
-                {publicTemplates.length === 0 && (
+                {template.source !== 'portal' && (
                   <button className="danger-btn template-card-delete-btn" type="button" onClick={() => void onDeleteTemplate(template)}>
                     Delete
                   </button>

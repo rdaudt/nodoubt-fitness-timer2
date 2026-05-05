@@ -1,4 +1,4 @@
-import { createTenantTablesIfNeeded, getTenantsDb } from './_tenantsDb.js';
+import { getTenantsDb } from './_tenantsDb.js';
 
 type NodeReq = { query?: Record<string, string | string[]>; method?: string };
 type NodeRes = { status: (code: number) => { json: (body: unknown) => void } };
@@ -16,7 +16,6 @@ export default async function handler(request: NodeReq, response: NodeRes): Prom
     return;
   }
   try {
-    await createTenantTablesIfNeeded();
     const db = getTenantsDb();
     const tenantResult = await db.execute({
       sql: `

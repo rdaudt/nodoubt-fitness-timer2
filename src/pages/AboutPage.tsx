@@ -3,6 +3,15 @@ import { useSettings } from '../services/settingsContext';
 import { useTenant } from '../services/tenantContext';
 import kobeAiSolutions from '../../media/kobe-ai-solutions.png';
 import coachGabeAndKobe from '../../media/coach-gabe-and-kobe.png';
+import type { SyntheticEvent } from 'react';
+
+const withFallbackImage = (fallbackSrc: string) => (event: SyntheticEvent<HTMLImageElement>) => {
+  const image = event.currentTarget;
+  if (image.src.endsWith(fallbackSrc)) {
+    return;
+  }
+  image.src = fallbackSrc;
+};
 
 export const AboutPage = () => {
   const { settings } = useSettings();
@@ -16,7 +25,7 @@ export const AboutPage = () => {
   return (
     <section className="about-page">
       <h1 className="screen-title">About {businessName}</h1>
-      <img src={coachPhoto} alt={coachName} className="owner-photo about-coach-photo" />
+      <img src={coachPhoto} alt={coachName} className="owner-photo about-coach-photo" onError={withFallbackImage(coachGabeAndKobe)} />
       <p className="about-coach-name">{coachName}</p>
       <p className="about-copy">{bio}</p>
       <a className="primary-btn full pulse" href={cta.url} target="_blank" rel="noreferrer">

@@ -1,7 +1,7 @@
 export type IntervalType = 'warmup' | 'work' | 'rest' | 'cooldown';
 export type CountdownType = IntervalType | 'stationTransition';
 export type WorkoutCategory = 'GENERAL' | 'FAT-LOSS' | 'PERFORMANCE';
-export type TemplateSource = 'builtin' | 'user';
+export type TemplateSource = 'builtin' | 'user' | 'portal';
 
 export interface Timer {
   id: string;
