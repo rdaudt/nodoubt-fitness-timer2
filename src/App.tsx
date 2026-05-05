@@ -7,18 +7,19 @@ import { RunningTimerPage } from './pages/RunningTimerPage';
 import { SettingsPage } from './pages/SettingsPage';
 import { TemplateDetailPage } from './pages/TemplateDetailPage';
 import { TemplatesPage } from './pages/TemplatesPage';
+import { InvalidUrlPage } from './pages/InvalidUrlPage';
 import { TimerDetailPage } from './pages/TimerDetailPage';
 import { TimerListPage } from './pages/TimerListPage';
 import { SettingsProvider } from './services/settingsContext';
-import { TenantProvider, tenantDefaults } from './services/tenantContext';
+import { TenantProvider } from './services/tenantContext';
 
 const TimerEditRedirect = () => {
-  const { tenantSlug = tenantDefaults.defaultSlug, id = '' } = useParams();
+  const { tenantSlug = '', id = '' } = useParams();
   return <Navigate to={`/${tenantSlug}/timer/${id}`} replace />;
 };
 
 const TenantShell = () => {
-  const { tenantSlug = tenantDefaults.defaultSlug } = useParams();
+  const { tenantSlug = '' } = useParams();
   return (
     <TenantProvider>
       <SettingsProvider key={tenantSlug}>
@@ -28,24 +29,21 @@ const TenantShell = () => {
   );
 };
 
-const LegacyRedirect = ({ path = '' }: { path?: string }) => (
-  <Navigate to={`/${tenantDefaults.defaultSlug}${path}`} replace />
-);
-
 function App() {
   return (
     <BrowserRouter>
       <Routes>
-        <Route path="/" element={<LegacyRedirect />} />
-        <Route path="/history" element={<LegacyRedirect path="/history" />} />
-        <Route path="/about" element={<LegacyRedirect path="/about" />} />
-        <Route path="/templates" element={<LegacyRedirect path="/templates" />} />
-        <Route path="/template/:id" element={<LegacyRedirect path="/templates" />} />
-        <Route path="/settings" element={<LegacyRedirect path="/settings" />} />
-        <Route path="/timer/new" element={<LegacyRedirect path="/timer/new" />} />
-        <Route path="/timer/:id" element={<LegacyRedirect />} />
-        <Route path="/timer/:id/edit" element={<LegacyRedirect />} />
-        <Route path="/timer/:id/run" element={<LegacyRedirect />} />
+        <Route path="/invalid-url" element={<InvalidUrlPage />} />
+        <Route path="/" element={<InvalidUrlPage />} />
+        <Route path="/history" element={<InvalidUrlPage />} />
+        <Route path="/about" element={<InvalidUrlPage />} />
+        <Route path="/templates" element={<InvalidUrlPage />} />
+        <Route path="/template/:id" element={<InvalidUrlPage />} />
+        <Route path="/settings" element={<InvalidUrlPage />} />
+        <Route path="/timer/new" element={<InvalidUrlPage />} />
+        <Route path="/timer/:id" element={<InvalidUrlPage />} />
+        <Route path="/timer/:id/edit" element={<InvalidUrlPage />} />
+        <Route path="/timer/:id/run" element={<InvalidUrlPage />} />
 
         <Route path="/:tenantSlug" element={<TenantShell />}>
           <Route index element={<TimerListPage />} />
@@ -58,10 +56,10 @@ function App() {
           <Route path="timer/:id" element={<TimerDetailPage />} />
           <Route path="timer/:id/edit" element={<TimerEditRedirect />} />
           <Route path="timer/:id/run" element={<RunningTimerPage />} />
-          <Route path="*" element={<LegacyRedirect />} />
+          <Route path="*" element={<Navigate to="/invalid-url" replace />} />
         </Route>
 
-        <Route path="*" element={<LegacyRedirect />} />
+        <Route path="*" element={<InvalidUrlPage />} />
       </Routes>
     </BrowserRouter>
   );

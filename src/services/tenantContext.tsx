@@ -4,10 +4,6 @@ import type { PublicTemplate, TenantPublicProfile } from '../types';
 import { fetchTenantPublicProfile, fetchTenantPublicTemplates } from './tenantApi';
 import { setStorageTenant } from './storage';
 
-const FALLBACK_DEFAULT_TENANT_SLUG = 'gabe';
-const envDefaultSlugRaw = typeof import.meta.env.VITE_DEFAULT_TENANT_SLUG === 'string'
-  ? import.meta.env.VITE_DEFAULT_TENANT_SLUG.trim().toLowerCase()
-  : '';
 const RESERVED_SLUGS = new Set(['api', 'timer', 'settings', 'templates', 'template', 'about', 'history']);
 const SLUG_RE = /^[a-z0-9-]{3,32}$/;
 
@@ -29,7 +25,6 @@ const fallbackTenantContext: TenantContextValue = {
 };
 
 const isValidSlug = (slug: string): boolean => SLUG_RE.test(slug) && !RESERVED_SLUGS.has(slug);
-const DEFAULT_TENANT_SLUG = isValidSlug(envDefaultSlugRaw) ? envDefaultSlugRaw : FALLBACK_DEFAULT_TENANT_SLUG;
 
 export const TenantProvider = ({ children }: { children: React.ReactNode }) => {
   const { tenantSlug = '' } = useParams();
@@ -41,17 +36,19 @@ export const TenantProvider = ({ children }: { children: React.ReactNode }) => {
 
   useEffect(() => {
     if (!isValidSlug(slug)) {
-      navigate(`/${DEFAULT_TENANT_SLUG}`, { replace: true });
+      navigate('/invalid-url', { replace: true });
       return;
     }
 
     setLoaded(false);
+    setProfile(null);
+    setTemplates([]);
     void Promise.all([
       fetchTenantPublicProfile(slug),
       fetchTenantPublicTemplates(slug),
     ]).then(([tenantProfile, tenantTemplates]) => {
       if (!tenantProfile) {
-        navigate(`/${DEFAULT_TENANT_SLUG}`, { replace: true });
+        navigate('/invalid-url', { replace: true });
         return;
       }
       setProfile(tenantProfile);
@@ -59,16 +56,22 @@ export const TenantProvider = ({ children }: { children: React.ReactNode }) => {
       setStorageTenant(tenantProfile.slug);
       window.localStorage.setItem('active_tenant_slug', tenantProfile.slug);
       setLoaded(true);
+    }).catch(() => {
+      navigate('/invalid-url', { replace: true });
     });
   }, [navigate, slug]);
 
   const value = useMemo<TenantContextValue>(() => ({
-    slug: slug || DEFAULT_TENANT_SLUG,
+    slug,
     profile,
     templates,
     loaded,
-    toTenantPath: (path: string) => `/${slug || DEFAULT_TENANT_SLUG}${path.startsWith('/') ? path : `/${path}`}`,
+    toTenantPath: (path: string) => `/${slug}${path.startsWith('/') ? path : `/${path}`}`,
   }), [loaded, profile, slug, templates]);
+
+  if (!loaded) {
+    return null;
+  }
 
   return <TenantContext.Provider value={value}>{children}</TenantContext.Provider>;
 };
@@ -76,8 +79,4 @@ export const TenantProvider = ({ children }: { children: React.ReactNode }) => {
 export const useTenant = (): TenantContextValue => {
   const context = useContext(TenantContext);
   return context ?? fallbackTenantContext;
-};
-
-export const tenantDefaults = {
-  defaultSlug: DEFAULT_TENANT_SLUG,
 };
