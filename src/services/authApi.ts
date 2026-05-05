@@ -37,7 +37,7 @@ export const logout = async (): Promise<void> => {
 };
 
 export const deleteAccount = async (): Promise<void> => {
-  const response = await fetch('/api/account', { method: 'DELETE', credentials: 'include' });
+  const response = await fetch('/api/auth/account', { method: 'DELETE', credentials: 'include' });
   if (!response.ok) {
     throw new Error('Failed to delete account.');
   }
