@@ -19,7 +19,7 @@ const workImages = [
   '/assets/jab-throwing-cat.png',
   '/assets/vintage-apparel-pushup.png',
   '/assets/vintage-apparel-crunches.png',
-  '/assets/pullup-cat.png',
+  '/assets/warmup-cat.png',
 ];
 
 type SessionCircleType = 'warmup' | 'work' | 'rest' | 'cooldown';

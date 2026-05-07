@@ -2,30 +2,20 @@ import { BRAND } from '../config';
 import { useSettings } from '../services/settingsContext';
 import { useTenant } from '../services/tenantContext';
 import kobeAiSolutions from '../../media/kobe-ai-solutions.png';
-import coachGabeAndKobe from '../../media/coach-gabe-and-kobe.png';
-import type { SyntheticEvent } from 'react';
-
-const withFallbackImage = (fallbackSrc: string) => (event: SyntheticEvent<HTMLImageElement>) => {
-  const image = event.currentTarget;
-  if (image.src.endsWith(fallbackSrc)) {
-    return;
-  }
-  image.src = fallbackSrc;
-};
 
 export const AboutPage = () => {
   const { settings } = useSettings();
   const { profile } = useTenant();
-  const businessName = profile?.businessName || BRAND.businessName;
-  const coachName = profile?.coachName || 'Coach Gabe';
+  const businessName = profile?.businessName ?? '';
+  const coachName = profile?.coachName ?? '';
   const bio = profile?.bio || BRAND.aboutBio;
   const cta = profile?.socialLinks[0] ?? { label: BRAND.ctaLabel, url: BRAND.instagramUrl };
-  const coachPhoto = profile?.coachPhotoUrl || coachGabeAndKobe;
+  const coachPhoto = profile?.coachPhotoUrl ?? '';
 
   return (
     <section className="about-page">
       <h1 className="screen-title">About {businessName}</h1>
-      <img src={coachPhoto} alt={coachName} className="owner-photo about-coach-photo" onError={withFallbackImage(coachGabeAndKobe)} />
+      {coachPhoto && <img src={coachPhoto} alt={coachName} className="owner-photo about-coach-photo" />}
       <p className="about-coach-name">{coachName}</p>
       <p className="about-copy">{bio}</p>
       <a className="primary-btn full pulse" href={cta.url} target="_blank" rel="noreferrer">

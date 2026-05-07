@@ -35,6 +35,8 @@ export const TenantProvider = ({ children }: { children: React.ReactNode }) => {
   const [loaded, setLoaded] = useState(false);
 
   useEffect(() => {
+    let active = true;
+
     if (!isValidSlug(slug)) {
       navigate('/invalid-url', { replace: true });
       return;
@@ -49,6 +51,9 @@ export const TenantProvider = ({ children }: { children: React.ReactNode }) => {
       fetchTenantPublicProfile(slug),
       fetchTenantPublicTemplates(slug),
     ]).then(([tenantProfile, tenantTemplates]) => {
+      if (!active) {
+        return;
+      }
       if (!tenantProfile) {
         navigate('/invalid-url', { replace: true });
         return;
@@ -57,8 +62,14 @@ export const TenantProvider = ({ children }: { children: React.ReactNode }) => {
       setTemplates(tenantTemplates);
       setLoaded(true);
     }).catch(() => {
-      navigate('/invalid-url', { replace: true });
+      if (active) {
+        navigate('/invalid-url', { replace: true });
+      }
     });
+
+    return () => {
+      active = false;
+    };
   }, [navigate, slug]);
 
   const value = useMemo<TenantContextValue>(() => ({

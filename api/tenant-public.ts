@@ -4,6 +4,24 @@ type NodeReq = { query?: Record<string, string | string[]>; method?: string };
 type NodeRes = { status: (code: number) => { json: (body: unknown) => void } };
 
 const normalizeSlug = (value: unknown): string => (typeof value === 'string' ? value.trim().toLowerCase() : '');
+const normalizeAssetUrl = (value: unknown): string => {
+  const raw = typeof value === 'string' ? value.trim() : '';
+  if (!raw) {
+    return '';
+  }
+  try {
+    const parsed = new URL(raw);
+    if (parsed.protocol !== 'https:') {
+      return '';
+    }
+    if (parsed.hostname.endsWith('.blob.vercel-storage.com')) {
+      return `/api/tenant-asset?url=${encodeURIComponent(parsed.toString())}`;
+    }
+    return parsed.toString();
+  } catch {
+    return '';
+  }
+};
 
 export default async function handler(request: NodeReq, response: NodeRes): Promise<void> {
   if (request.method !== 'GET') {
@@ -46,9 +64,9 @@ export default async function handler(request: NodeReq, response: NodeRes): Prom
       businessName: String(row.business_name ?? ''),
       coachName: String(row.coach_name ?? ''),
       bio: String(row.bio ?? ''),
-      logoUrl: String(row.logo_url ?? ''),
-      coachPhotoUrl: String(row.coach_photo_url ?? ''),
-      qrCodeUrl: String(row.qr_code_url ?? ''),
+      logoUrl: normalizeAssetUrl(row.logo_url),
+      coachPhotoUrl: normalizeAssetUrl(row.coach_photo_url),
+      qrCodeUrl: normalizeAssetUrl(row.qr_code_url),
       socialLinks: socialResult.rows.map((item) => ({
         label: String((item as Record<string, unknown>).label ?? ''),
         url: String((item as Record<string, unknown>).url ?? ''),
