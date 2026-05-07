@@ -9,7 +9,10 @@ export const AboutPage = () => {
   const businessName = profile?.businessName ?? '';
   const coachName = profile?.coachName ?? '';
   const bio = profile?.bio || BRAND.aboutBio;
-  const cta = profile?.socialLinks[0] ?? { label: BRAND.ctaLabel, url: BRAND.instagramUrl };
+  const normalizedIgUsername = (profile?.igUsername ?? '').trim().replace(/^@+/, '');
+  const dmUrl = normalizedIgUsername ? `https://ig.me/m/${encodeURIComponent(normalizedIgUsername)}` : '';
+  const ctaUrl = dmUrl || profile?.socialLinks[0]?.url || BRAND.instagramUrl;
+  const ctaLabel = BRAND.ctaLabel;
   const coachPhoto = profile?.coachPhotoUrl ?? '';
 
   return (
@@ -18,8 +21,8 @@ export const AboutPage = () => {
       {coachPhoto && <img src={coachPhoto} alt={coachName} className="owner-photo about-coach-photo" />}
       <p className="about-coach-name">{coachName}</p>
       <p className="about-copy">{bio}</p>
-      <a className="primary-btn full pulse" href={cta.url} target="_blank" rel="noreferrer">
-        {cta.label}
+      <a className="primary-btn full pulse" href={ctaUrl} target="_blank" rel="noreferrer">
+        {ctaLabel}
       </a>
       {settings.kobeEverywhere && <img src={kobeAiSolutions} alt="Kobe AI Solutions" className="about-kobe-ai-image" />}
     </section>

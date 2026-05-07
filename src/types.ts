@@ -99,6 +99,8 @@ export interface TenantPublicProfile {
   slug: string;
   businessName: string;
   coachName: string;
+  headerTagline: string;
+  igUsername: string;
   bio: string;
   logoUrl: string;
   coachPhotoUrl: string;

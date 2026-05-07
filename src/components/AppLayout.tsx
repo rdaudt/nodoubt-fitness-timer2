@@ -13,6 +13,7 @@ export const AppLayout = () => {
   const coachPhoto = profile?.coachPhotoUrl ?? '';
   const coachName = profile?.coachName ?? '';
   const businessName = profile?.businessName ?? '';
+  const headerTagline = profile?.headerTagline ?? '';
 
   return (
     <div className="app-shell">
@@ -23,6 +24,7 @@ export const AppLayout = () => {
           </a>
           <a href={primaryLink} target="_blank" rel="noreferrer" className="brand-text-wrap" aria-label={APP_NAME}>
             <p className="brand-name">{businessName}</p>
+            {headerTagline && <p className="brand-tagline">{headerTagline}</p>}
           </a>
           {!isAboutPage && (
             <a href={primaryLink} target="_blank" rel="noreferrer" className="coach-wrap" aria-label={coachName}>

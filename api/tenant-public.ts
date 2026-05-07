@@ -37,7 +37,7 @@ export default async function handler(request: NodeReq, response: NodeRes): Prom
     const db = getTenantsDb();
     const tenantResult = await db.execute({
       sql: `
-        SELECT id, slug, business_name, coach_name, bio, logo_url, coach_photo_url, qr_code_url
+        SELECT id, slug, business_name, coach_name, header_tagline, ig_username, bio, logo_url, coach_photo_url, qr_code_url
         FROM coach_tenants
         WHERE slug = ? AND status = 'published'
         LIMIT 1
@@ -63,6 +63,8 @@ export default async function handler(request: NodeReq, response: NodeRes): Prom
       slug: String(row.slug),
       businessName: String(row.business_name ?? ''),
       coachName: String(row.coach_name ?? ''),
+      headerTagline: String(row.header_tagline ?? ''),
+      igUsername: String(row.ig_username ?? ''),
       bio: String(row.bio ?? ''),
       logoUrl: normalizeAssetUrl(row.logo_url),
       coachPhotoUrl: normalizeAssetUrl(row.coach_photo_url),

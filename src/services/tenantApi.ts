@@ -31,6 +31,8 @@ const normalizeProfile = (value: unknown): TenantPublicProfile | null => {
     slug,
     businessName: asString(typed.businessName),
     coachName: asString(typed.coachName),
+    headerTagline: asString(typed.headerTagline),
+    igUsername: asString(typed.igUsername),
     bio: asString(typed.bio),
     logoUrl: asString(typed.logoUrl),
     coachPhotoUrl: asString(typed.coachPhotoUrl),
