@@ -1,5 +1,7 @@
+import { useEffect } from 'react';
 import { Outlet, useLocation } from 'react-router-dom';
 import { APP_NAME, BRAND } from '../config';
+import { getPerfTraceId, isPerfTriageEnabled, registerExpectedImage, settleImage } from '../services/perfTriage';
 import { useTenant } from '../services/tenantContext';
 import { BottomNav } from './BottomNav';
 
@@ -14,13 +16,45 @@ export const AppLayout = () => {
   const coachName = profile?.coachName ?? '';
   const businessName = profile?.businessName ?? '';
   const headerTagline = profile?.headerTagline ?? '';
+  const perfEnabled = isPerfTriageEnabled();
+  const tracedImageUrl = (url: string): string => {
+    if (!perfEnabled || !url.startsWith('/api/tenant-asset?')) {
+      return url;
+    }
+    const traceId = getPerfTraceId();
+    if (!traceId) {
+      return url;
+    }
+    const separator = url.includes('?') ? '&' : '?';
+    return `${url}${separator}traceId=${encodeURIComponent(traceId)}&route=${encodeURIComponent(location.pathname)}`;
+  };
+
+  useEffect(() => {
+    if (!perfEnabled) {
+      return;
+    }
+    if (logoUrl) {
+      registerExpectedImage('header-logo');
+    }
+    if (coachPhoto && !isAboutPage) {
+      registerExpectedImage('header-coach-photo');
+    }
+  }, [coachPhoto, isAboutPage, logoUrl, perfEnabled]);
 
   return (
     <div className="app-shell">
       <header className={isRunningView ? 'topbar topbar-compact' : 'topbar'}>
         <div className="topbar-inner">
           <a href={primaryLink} target="_blank" rel="noreferrer" className="brand-logo-link" aria-label={APP_NAME}>
-            {logoUrl && <img src={logoUrl} alt={`${businessName} logo`} className="brand-logo" />}
+            {logoUrl && (
+              <img
+                src={tracedImageUrl(logoUrl)}
+                alt={`${businessName} logo`}
+                className="brand-logo"
+                onLoad={() => settleImage('header-logo')}
+                onError={() => settleImage('header-logo', true)}
+              />
+            )}
           </a>
           <a href={primaryLink} target="_blank" rel="noreferrer" className="brand-text-wrap" aria-label={APP_NAME}>
             <p className="brand-name">{businessName}</p>
@@ -28,7 +62,15 @@ export const AppLayout = () => {
           </a>
           {!isAboutPage && (
             <a href={primaryLink} target="_blank" rel="noreferrer" className="coach-wrap" aria-label={coachName}>
-              {coachPhoto && <img src={coachPhoto} alt={coachName} className="coach-photo" />}
+              {coachPhoto && (
+                <img
+                  src={tracedImageUrl(coachPhoto)}
+                  alt={coachName}
+                  className="coach-photo"
+                  onLoad={() => settleImage('header-coach-photo')}
+                  onError={() => settleImage('header-coach-photo', true)}
+                />
+              )}
               <p className="coach-name">{coachName}</p>
             </a>
           )}

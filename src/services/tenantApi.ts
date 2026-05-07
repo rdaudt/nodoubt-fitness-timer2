@@ -1,4 +1,20 @@
 import type { PublicTemplate, TenantPublicProfile } from '../types';
+import { isPerfTriageEnabled, recordFetchMetric } from './perfTriage';
+
+interface PerfFetchOptions {
+  traceId?: string;
+  route?: string;
+}
+
+const buildPerfHeaders = (options?: PerfFetchOptions): HeadersInit | undefined => {
+  if (!options?.traceId) {
+    return undefined;
+  }
+  return {
+    'x-perf-trace-id': options.traceId,
+    'x-perf-route': options.route ?? '',
+  };
+};
 
 const asString = (value: unknown): string => (typeof value === 'string' ? value : '');
 
@@ -76,21 +92,49 @@ const normalizeTemplate = (value: unknown): PublicTemplate | null => {
   };
 };
 
-export const fetchTenantPublicProfile = async (slug: string): Promise<TenantPublicProfile | null> => {
-  const response = await fetch(`/api/tenant-public?slug=${encodeURIComponent(slug)}`);
+export const fetchTenantPublicProfile = async (slug: string, options?: PerfFetchOptions): Promise<TenantPublicProfile | null> => {
+  const startedAt = performance.now();
+  const perfEnabled = isPerfTriageEnabled();
+  let headersAt = startedAt;
+  const response = await fetch(`/api/tenant-public?slug=${encodeURIComponent(slug)}`, {
+    headers: buildPerfHeaders(options),
+  });
+  headersAt = performance.now();
+  if (perfEnabled) {
+    recordFetchMetric('tenant_public_fetch_ms', headersAt - startedAt);
+    recordFetchMetric('tenant_public_headers_ms', headersAt - startedAt);
+  }
   if (!response.ok) {
     return null;
   }
+  const parseStart = performance.now();
   const payload = await response.json();
+  if (perfEnabled) {
+    recordFetchMetric('tenant_public_json_parse_ms', performance.now() - parseStart);
+  }
   return normalizeProfile(payload);
 };
 
-export const fetchTenantPublicTemplates = async (slug: string): Promise<PublicTemplate[]> => {
-  const response = await fetch(`/api/tenant-templates?slug=${encodeURIComponent(slug)}`);
+export const fetchTenantPublicTemplates = async (slug: string, options?: PerfFetchOptions): Promise<PublicTemplate[]> => {
+  const startedAt = performance.now();
+  const perfEnabled = isPerfTriageEnabled();
+  let headersAt = startedAt;
+  const response = await fetch(`/api/tenant-templates?slug=${encodeURIComponent(slug)}`, {
+    headers: buildPerfHeaders(options),
+  });
+  headersAt = performance.now();
+  if (perfEnabled) {
+    recordFetchMetric('tenant_templates_fetch_ms', headersAt - startedAt);
+    recordFetchMetric('tenant_templates_headers_ms', headersAt - startedAt);
+  }
   if (!response.ok) {
     return [];
   }
+  const parseStart = performance.now();
   const payload = await response.json();
+  if (perfEnabled) {
+    recordFetchMetric('tenant_templates_json_parse_ms', performance.now() - parseStart);
+  }
   if (!Array.isArray(payload)) {
     return [];
   }
