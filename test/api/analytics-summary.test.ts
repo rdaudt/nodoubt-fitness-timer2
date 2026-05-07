@@ -2,7 +2,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const executeMock = vi.fn();
 
-vi.mock('./_analyticsDb', () => ({
+vi.mock('../../api/_analyticsDb', () => ({
   createTablesIfNeeded: vi.fn(async () => {}),
   getAnalyticsDb: vi.fn(() => ({
     execute: executeMock,
@@ -45,7 +45,7 @@ describe('analytics-summary API', () => {
       .mockResolvedValueOnce({ rows: [{ device_type: 'mobile', count: 2 }] })
       .mockResolvedValueOnce({ rows: [{ category: 'GENERAL', count: 1 }] });
 
-    const { default: handler } = await import('./analytics-summary');
+    const { default: handler } = await import('../../api/analytics-summary');
     const { res, store } = createMockRes();
     await handler({ method: 'GET' }, res);
 

@@ -3,7 +3,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 const executeMock = vi.fn();
 const batchMock = vi.fn();
 
-vi.mock('./_analyticsDb', () => ({
+vi.mock('../../api/_analyticsDb', () => ({
   createTablesIfNeeded: vi.fn(async () => {}),
   getAnalyticsDb: vi.fn(() => ({
     execute: executeMock,
@@ -39,7 +39,7 @@ describe('analytics-ingest API', () => {
   });
 
   it('rejects invalid payload', async () => {
-    const { default: handler } = await import('./analytics-ingest');
+    const { default: handler } = await import('../../api/analytics-ingest');
     const { res, store } = createMockRes();
 
     await handler({ method: 'POST', body: { foo: 'bar' } }, res);
@@ -50,7 +50,7 @@ describe('analytics-ingest API', () => {
 
   it('accepts valid event payload and stores it', async () => {
     executeMock.mockResolvedValue({ rowsAffected: 1 });
-    const { default: handler } = await import('./analytics-ingest');
+    const { default: handler } = await import('../../api/analytics-ingest');
     const { res, store } = createMockRes();
 
     await handler({
@@ -73,7 +73,7 @@ describe('analytics-ingest API', () => {
   });
 
   it('rejects payload with invalid device metadata', async () => {
-    const { default: handler } = await import('./analytics-ingest');
+    const { default: handler } = await import('../../api/analytics-ingest');
     const { res, store } = createMockRes();
 
     await handler({

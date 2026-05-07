@@ -1,5 +1,5 @@
 import { createTablesIfNeeded, getContentJobById, verifyJobAccess } from './_contentJobsDb.js';
-import { processPendingJobs } from './content-jobs-process.js';
+import { processPendingJobs } from './_contentJobsProcess.js';
 
 type NodeReq = {
   method?: string;
