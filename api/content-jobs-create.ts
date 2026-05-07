@@ -1,5 +1,5 @@
 import { createContentJob, createTablesIfNeeded } from './_contentJobsDb.js';
-import { processPendingJobs } from './content-jobs-process.js';
+import { processPendingJobs } from './_contentJobsProcess.js';
 import { validatePayload } from './_igGeneration.js';
 
 type NodeReq = {

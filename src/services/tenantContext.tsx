@@ -1,7 +1,8 @@
 import { createContext, useContext, useEffect, useMemo, useState } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
+import { useLocation, useNavigate, useParams } from 'react-router-dom';
 import type { PublicTemplate, TenantPublicProfile } from '../types';
 import { fetchTenantPublicProfile, fetchTenantPublicTemplates } from './tenantApi';
+import { flushPerfObservation, isPerfTriageEnabled, markPerf, startPerfRun } from './perfTriage';
 import { setStorageTenant } from './storage';
 
 const RESERVED_SLUGS = new Set(['api', 'timer', 'settings', 'templates', 'template', 'about', 'history']);
@@ -28,6 +29,7 @@ const isValidSlug = (slug: string): boolean => SLUG_RE.test(slug) && !RESERVED_S
 
 export const TenantProvider = ({ children }: { children: React.ReactNode }) => {
   const { tenantSlug = '' } = useParams();
+  const location = useLocation();
   const navigate = useNavigate();
   const slug = tenantSlug.trim().toLowerCase();
   const [profile, setProfile] = useState<TenantPublicProfile | null>(null);
@@ -36,6 +38,12 @@ export const TenantProvider = ({ children }: { children: React.ReactNode }) => {
 
   useEffect(() => {
     let active = true;
+    const perfEnabled = isPerfTriageEnabled();
+    const perfRoute = `${location.pathname}${location.search}`;
+    const traceId = perfEnabled ? startPerfRun(slug, perfRoute) : '';
+    if (perfEnabled) {
+      markPerf('tenant_provider_start');
+    }
 
     if (!isValidSlug(slug)) {
       navigate('/invalid-url', { replace: true });
@@ -48,8 +56,8 @@ export const TenantProvider = ({ children }: { children: React.ReactNode }) => {
     setProfile(null);
     setTemplates([]);
     void Promise.all([
-      fetchTenantPublicProfile(slug),
-      fetchTenantPublicTemplates(slug),
+      fetchTenantPublicProfile(slug, perfEnabled ? { traceId, route: perfRoute } : undefined),
+      fetchTenantPublicTemplates(slug, perfEnabled ? { traceId, route: perfRoute } : undefined),
     ]).then(([tenantProfile, tenantTemplates]) => {
       if (!active) {
         return;
@@ -61,8 +69,15 @@ export const TenantProvider = ({ children }: { children: React.ReactNode }) => {
       setProfile(tenantProfile);
       setTemplates(tenantTemplates);
       setLoaded(true);
+      if (perfEnabled) {
+        markPerf('tenant_data_committed');
+        flushPerfObservation('data-ready');
+      }
     }).catch(() => {
       if (active) {
+        if (perfEnabled) {
+          flushPerfObservation('error');
+        }
         navigate('/invalid-url', { replace: true });
       }
     });
@@ -70,7 +85,7 @@ export const TenantProvider = ({ children }: { children: React.ReactNode }) => {
     return () => {
       active = false;
     };
-  }, [navigate, slug]);
+  }, [location.pathname, location.search, navigate, slug]);
 
   const value = useMemo<TenantContextValue>(() => ({
     slug,

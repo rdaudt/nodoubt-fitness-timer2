@@ -32,7 +32,7 @@ describe('generate-ig-image API', () => {
   });
 
   it('rejects invalid payload with 400', async () => {
-    const { default: handler } = await import('./generate-ig-image');
+    const { default: handler } = await import('../../api/generate-ig-image');
     const { res, store } = createMockRes();
 
     await handler({ method: 'POST', body: { bad: true } }, res);
@@ -46,7 +46,7 @@ describe('generate-ig-image API', () => {
       data: [{ b64_json: 'Zm9v' }],
     }), { status: 200 }));
 
-    const { default: handler } = await import('./generate-ig-image');
+    const { default: handler } = await import('../../api/generate-ig-image');
     const { res, store } = createMockRes();
 
     await handler({

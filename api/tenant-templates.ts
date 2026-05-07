@@ -1,9 +1,34 @@
 import { getTenantsDb } from './_tenantsDb.js';
 
-type NodeReq = { query?: Record<string, string | string[]>; method?: string };
+type NodeReq = {
+  query?: Record<string, string | string[]>;
+  method?: string;
+  headers?: Record<string, string | string[] | undefined>;
+};
 type NodeRes = { status: (code: number) => { json: (body: unknown) => void } };
 
 const normalizeSlug = (value: unknown): string => (typeof value === 'string' ? value.trim().toLowerCase() : '');
+const getHeader = (headers: NodeReq['headers'], name: string): string => {
+  if (!headers) {
+    return '';
+  }
+  const raw = headers[name.toLowerCase()] ?? headers[name];
+  return Array.isArray(raw) ? String(raw[0] ?? '') : String(raw ?? '');
+};
+const perfEnabled = process.env.PERF_TRIAGE_ENABLED === '1';
+const perfLog = (traceId: string, route: string, stage: string, valueMs: number, extra?: Record<string, unknown>) => {
+  if (!perfEnabled) {
+    return;
+  }
+  console.log('[perf-triage-api]', {
+    endpoint: 'tenant-templates',
+    traceId,
+    route,
+    stage,
+    ms: Math.round(valueMs),
+    ...extra,
+  });
+};
 
 const parseWorkoutTypes = (value: unknown): string[] => {
   if (typeof value !== 'string') {
@@ -23,12 +48,16 @@ export default async function handler(request: NodeReq, response: NodeRes): Prom
     return;
   }
   const slug = normalizeSlug(request.query?.slug);
+  const traceId = getHeader(request.headers, 'x-perf-trace-id');
+  const route = getHeader(request.headers, 'x-perf-route');
+  const startedAt = Date.now();
   if (!slug) {
     response.status(400).json({ error: 'Missing slug.' });
     return;
   }
   try {
     const db = getTenantsDb();
+    const tenantStart = Date.now();
     const tenantResult = await db.execute({
       sql: `
         SELECT id
@@ -38,11 +67,13 @@ export default async function handler(request: NodeReq, response: NodeRes): Prom
       `,
       args: [slug],
     });
+    perfLog(traceId, route, 'tenant-query', Date.now() - tenantStart, { found: tenantResult.rows.length > 0 });
     const tenantRow = tenantResult.rows[0] as Record<string, unknown> | undefined;
     if (!tenantRow) {
       response.status(404).json([]);
       return;
     }
+    const templatesStart = Date.now();
     const result = await db.execute({
       sql: `
         SELECT *
@@ -52,6 +83,7 @@ export default async function handler(request: NodeReq, response: NodeRes): Prom
       `,
       args: [String(tenantRow.id)],
     });
+    perfLog(traceId, route, 'templates-query', Date.now() - templatesStart, { templateCount: result.rows.length });
     response.status(200).json(result.rows.map((item) => {
       const row = item as Record<string, unknown>;
       return {
@@ -77,6 +109,7 @@ export default async function handler(request: NodeReq, response: NodeRes): Prom
         updatedAt: String(row.updated_at ?? ''),
       };
     }));
+    perfLog(traceId, route, 'total', Date.now() - startedAt);
   } catch (error) {
     console.error('tenant-templates failed', error);
     response.status(500).json({ error: 'Failed to load tenant templates.' });
