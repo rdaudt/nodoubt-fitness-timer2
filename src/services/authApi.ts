@@ -24,7 +24,7 @@ const parseUser = (value: unknown): AuthUser | null => {
 };
 
 export const fetchMe = async (): Promise<AuthUser | null> => {
-  const response = await fetch('/api/auth?action=me', { credentials: 'include' });
+  const response = await fetch('/api/auth?action=me', { credentials: 'include', cache: 'no-store' });
   if (!response.ok) {
     return null;
   }

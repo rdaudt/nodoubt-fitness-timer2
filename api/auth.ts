@@ -23,6 +23,12 @@ type NodeRes = {
   redirect?: (status: number, url: string) => void;
 };
 
+const setNoStore = (response: NodeRes): void => {
+  response.setHeader?.('Cache-Control', 'no-store, no-cache, must-revalidate, private');
+  response.setHeader?.('Pragma', 'no-cache');
+  response.setHeader?.('Expires', '0');
+};
+
 const getAction = (request: NodeReq): string => {
   const raw = request.query?.action;
   const action = Array.isArray(raw) ? raw[0] : raw;
@@ -30,6 +36,7 @@ const getAction = (request: NodeReq): string => {
 };
 
 const handleLogin = async (request: NodeReq, response: NodeRes): Promise<void> => {
+  setNoStore(response);
   if (request.method !== 'GET') {
     response.status(405).json({ error: 'Method not allowed' });
     return;
@@ -40,6 +47,7 @@ const handleLogin = async (request: NodeReq, response: NodeRes): Promise<void> =
 };
 
 const handleCallback = async (request: NodeReq, response: NodeRes): Promise<void> => {
+  setNoStore(response);
   if (request.method !== 'GET') {
     response.status(405).json({ error: 'Method not allowed' });
     return;
@@ -53,11 +61,16 @@ const handleCallback = async (request: NodeReq, response: NodeRes): Promise<void
   }
   await createTenantTablesIfNeeded();
   const { cookie } = await createAuthenticatedSession(code);
-  setCookies(response, [cookie]);
+  setCookies(response, [
+    cookie,
+    'nd_timer_oauth_state=; Path=/; HttpOnly; SameSite=Lax; Max-Age=0',
+    'nd_timer_oauth_next=; Path=/; HttpOnly; SameSite=Lax; Max-Age=0',
+  ]);
   redirect(response, nextPath);
 };
 
 const handleMe = async (request: NodeReq, response: NodeRes): Promise<void> => {
+  setNoStore(response);
   if (request.method !== 'GET') {
     response.status(405).json({ error: 'Method not allowed' });
     return;
@@ -72,6 +85,7 @@ const handleMe = async (request: NodeReq, response: NodeRes): Promise<void> => {
 };
 
 const handleLogout = async (request: NodeReq, response: NodeRes): Promise<void> => {
+  setNoStore(response);
   if (request.method !== 'POST') {
     response.status(405).json({ error: 'Method not allowed' });
     return;
@@ -81,6 +95,7 @@ const handleLogout = async (request: NodeReq, response: NodeRes): Promise<void> 
 };
 
 const handleAccountDelete = async (request: NodeReq, response: NodeRes): Promise<void> => {
+  setNoStore(response);
   if (request.method !== 'DELETE') {
     response.status(405).json({ error: 'Method not allowed' });
     return;
