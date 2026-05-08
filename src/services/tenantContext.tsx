@@ -73,14 +73,9 @@ export const TenantProvider = ({ children }: { children: React.ReactNode }) => {
       setTemplates([]);
     }
 
-    if (cached && !stale) {
-      if (perfEnabled) {
-        markPerf('tenant_data_committed');
-        flushPerfObservation('data-ready');
-      }
-      return () => {
-        active = false;
-      };
+    if (cached && !stale && perfEnabled) {
+      markPerf('tenant_data_committed');
+      flushPerfObservation('data-ready');
     }
 
     void Promise.all([

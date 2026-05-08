@@ -223,10 +223,6 @@ export const SettingsPage = () => {
 
       <div className="stack settings-stack settings-transfer-section">
         <h2 className="settings-subtitle">Account</h2>
-        <p className="timer-meta settings-section-note">
-          You can sign out or permanently delete your user account profile from Turso.
-          Coach data is not deleted.
-        </p>
         <div className="actions-row settings-actions-row">
           <button className="primary-btn" onClick={() => void onSignOut()}>Sign Out</button>
           <button className="primary-btn danger-btn" onClick={() => void onDeleteAccount()}>Delete Account</button>

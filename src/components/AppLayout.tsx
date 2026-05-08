@@ -10,7 +10,9 @@ export const AppLayout = () => {
   const { profile, toTenantPath } = useTenant();
   const isRunningView = /\/timer\/[^/]+\/run$/.test(location.pathname);
   const isAboutPage = /\/about\/?$/.test(location.pathname);
-  const primaryLink = profile?.socialLinks[0]?.url || BRAND.instagramUrl;
+  const igUsername = (profile?.igUsername ?? '').trim().replace(/^@+/, '');
+  const instagramUrl = igUsername ? `https://www.instagram.com/${encodeURIComponent(igUsername)}/` : '';
+  const primaryLink = instagramUrl || profile?.socialLinks[0]?.url || BRAND.instagramUrl;
   const logoUrl = profile?.logoUrl ?? '';
   const coachPhoto = profile?.coachPhotoUrl ?? '';
   const coachName = profile?.coachName ?? '';
