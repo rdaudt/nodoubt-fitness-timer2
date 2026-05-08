@@ -42,7 +42,7 @@ const handleLogin = async (request: NodeReq, response: NodeRes): Promise<void> =
     return;
   }
   const { state, nextPath, url } = await buildLoginRedirect(request);
-  applyLoginCookies(response, state, nextPath);
+  applyLoginCookies(response, request, state, nextPath);
   redirect(response, url);
 };
 
@@ -55,17 +55,13 @@ const handleCallback = async (request: NodeReq, response: NodeRes): Promise<void
   const code = getCallbackCode(request);
   const { isValid, nextPath } = await getValidatedOauthState(request);
   if (!code || !isValid) {
-    clearAuthCookies(response);
+    clearAuthCookies(response, request);
     redirect(response, '/login?error=invalid_oauth_state');
     return;
   }
   await createTenantTablesIfNeeded();
-  const { cookie } = await createAuthenticatedSession(code);
-  setCookies(response, [
-    cookie,
-    'nd_timer_oauth_state=; Path=/; HttpOnly; SameSite=Lax; Max-Age=0',
-    'nd_timer_oauth_next=; Path=/; HttpOnly; SameSite=Lax; Max-Age=0',
-  ]);
+  const { cookie } = await createAuthenticatedSession(code, request);
+  setCookies(response, [cookie]);
   redirect(response, nextPath);
 };
 
@@ -77,7 +73,7 @@ const handleMe = async (request: NodeReq, response: NodeRes): Promise<void> => {
   }
   const user = await getSessionUser(request);
   if (!user) {
-    clearAuthCookies(response);
+    clearAuthCookies(response, request);
     response.status(200).json({ user: null });
     return;
   }
@@ -90,7 +86,7 @@ const handleLogout = async (request: NodeReq, response: NodeRes): Promise<void> 
     response.status(405).json({ error: 'Method not allowed' });
     return;
   }
-  clearAuthCookies(response);
+  clearAuthCookies(response, request);
   response.status(200).json({ ok: true });
 };
 
@@ -102,12 +98,12 @@ const handleAccountDelete = async (request: NodeReq, response: NodeRes): Promise
   }
   const user = await getSessionUser(request);
   if (!user?.sub) {
-    clearAuthCookies(response);
+    clearAuthCookies(response, request);
     response.status(401).json({ error: 'Unauthorized' });
     return;
   }
   await deleteCurrentUser(user.sub);
-  clearAuthCookies(response);
+  clearAuthCookies(response, request);
   response.status(200).json({ ok: true });
 };
 
@@ -138,7 +134,7 @@ export default async function handler(request: NodeReq, response: NodeRes): Prom
   } catch (error) {
     console.error(`auth/${action || 'unknown'} failed`, error);
     if (action === 'callback') {
-      clearAuthCookies(response);
+      clearAuthCookies(response, request);
       redirect(response, '/login?error=oauth_callback_failed');
       return;
     }

@@ -46,6 +46,26 @@ const requireEnv = (name: string): string => {
   return value;
 };
 
+const firstHeaderValue = (value: HeadersValue): string => {
+  if (Array.isArray(value)) {
+    return String(value[0] ?? '').trim();
+  }
+  return String(value ?? '').trim();
+};
+
+const getRequestBaseUrl = (request: NodeReq): string => {
+  const headers = request.headers ?? {};
+  const forwardedProto = firstHeaderValue(headers['x-forwarded-proto'] ?? headers['X-Forwarded-Proto']);
+  const forwardedHost = firstHeaderValue(headers['x-forwarded-host'] ?? headers['X-Forwarded-Host']);
+  const host = firstHeaderValue(headers.host ?? headers.Host);
+  const proto = forwardedProto || (host.includes('localhost') || host.includes('127.0.0.1') ? 'http' : 'https');
+  const effectiveHost = forwardedHost || host;
+  if (effectiveHost) {
+    return `${proto}://${effectiveHost}`;
+  }
+  return requireEnv('APP_BASE_URL');
+};
+
 const getCookieHeader = (headers: Record<string, HeadersValue> | undefined): string => {
   if (!headers) {
     return '';
@@ -72,19 +92,23 @@ const parseCookies = (cookieHeader: string): Record<string, string> => {
   return map;
 };
 
-const isSecureCookie = (): boolean => requireEnv('APP_BASE_URL').startsWith('https://');
+const isSecureCookie = (request?: NodeReq): boolean => {
+  const baseUrl = request ? getRequestBaseUrl(request) : requireEnv('APP_BASE_URL');
+  return baseUrl.startsWith('https://');
+};
 
 const serializeCookie = (
   name: string,
   value: string,
   maxAgeSec: number,
+  request?: NodeReq,
 ): string => {
-  const secure = isSecureCookie() ? '; Secure' : '';
+  const secure = isSecureCookie(request) ? '; Secure' : '';
   return `${name}=${encodeURIComponent(value)}; Path=/; HttpOnly; SameSite=Lax; Max-Age=${maxAgeSec}${secure}`;
 };
 
-const clearCookie = (name: string): string => {
-  const secure = isSecureCookie() ? '; Secure' : '';
+const clearCookie = (name: string, request?: NodeReq): string => {
+  const secure = isSecureCookie(request) ? '; Secure' : '';
   return `${name}=; Path=/; HttpOnly; SameSite=Lax; Max-Age=0${secure}`;
 };
 
@@ -145,12 +169,16 @@ export const readCookie = (request: NodeReq, key: string): string => {
   return cookies[key] ?? '';
 };
 
-export const clearAuthCookies = (response: NodeRes) => {
-  setCookies(response, [clearCookie(SESSION_COOKIE), clearCookie(OAUTH_STATE_COOKIE), clearCookie(OAUTH_NEXT_COOKIE)]);
+export const clearAuthCookies = (response: NodeRes, request?: NodeReq) => {
+  setCookies(response, [
+    clearCookie(SESSION_COOKIE, request),
+    clearCookie(OAUTH_STATE_COOKIE, request),
+    clearCookie(OAUTH_NEXT_COOKIE, request),
+  ]);
 };
 
 export const buildLoginRedirect = async (request: NodeReq): Promise<{ state: string; nextPath: string; url: string }> => {
-  const baseUrl = requireEnv('APP_BASE_URL');
+  const baseUrl = getRequestBaseUrl(request);
   const clientId = requireEnv('GOOGLE_CLIENT_ID');
   const callbackUrl = `${baseUrl.replace(/\/$/, '')}/api/auth?action=callback`;
   const requestedNext = asArray(request.query?.next)[0] ?? '';
@@ -168,8 +196,8 @@ export const buildLoginRedirect = async (request: NodeReq): Promise<{ state: str
   return { state, nextPath, url: `https://accounts.google.com/o/oauth2/v2/auth?${params.toString()}` };
 };
 
-const exchangeCodeForTokens = async (code: string): Promise<{ id_token: string }> => {
-  const baseUrl = requireEnv('APP_BASE_URL');
+const exchangeCodeForTokens = async (code: string, request: NodeReq): Promise<{ id_token: string }> => {
+  const baseUrl = getRequestBaseUrl(request);
   const clientId = requireEnv('GOOGLE_CLIENT_ID');
   const clientSecret = requireEnv('GOOGLE_CLIENT_SECRET');
   const callbackUrl = `${baseUrl.replace(/\/$/, '')}/api/auth?action=callback`;
@@ -296,15 +324,15 @@ const verifySessionToken = async (token: string): Promise<SessionUser | null> =>
   }
 };
 
-export const applyLoginCookies = (response: NodeRes, state: string, nextPath: string) => {
+export const applyLoginCookies = (response: NodeRes, request: NodeReq, state: string, nextPath: string) => {
   setCookies(response, [
-    serializeCookie(OAUTH_STATE_COOKIE, state, OAUTH_STATE_MAX_AGE_SEC),
-    serializeCookie(OAUTH_NEXT_COOKIE, nextPath, OAUTH_STATE_MAX_AGE_SEC),
+    serializeCookie(OAUTH_STATE_COOKIE, state, OAUTH_STATE_MAX_AGE_SEC, request),
+    serializeCookie(OAUTH_NEXT_COOKIE, nextPath, OAUTH_STATE_MAX_AGE_SEC, request),
   ]);
 };
 
-export const createAuthenticatedSession = async (identityCode: string): Promise<{ user: SessionUser; cookie: string }> => {
-  const { id_token: idToken } = await exchangeCodeForTokens(identityCode);
+export const createAuthenticatedSession = async (identityCode: string, request: NodeReq): Promise<{ user: SessionUser; cookie: string }> => {
+  const { id_token: idToken } = await exchangeCodeForTokens(identityCode, request);
   const identity = await verifyGoogleIdentity(idToken);
   const isCoach = await resolveCoachStatusByEmail(identity.email);
   const user: SessionUser = {
@@ -316,7 +344,7 @@ export const createAuthenticatedSession = async (identityCode: string): Promise<
   };
   await upsertAppUser(user);
   const token = await createSessionToken(user);
-  return { user, cookie: serializeCookie(SESSION_COOKIE, token, SESSION_MAX_AGE_SEC) };
+  return { user, cookie: serializeCookie(SESSION_COOKIE, token, SESSION_MAX_AGE_SEC, request) };
 };
 
 export const getSessionUser = async (request: NodeReq): Promise<SessionUser | null> => {
