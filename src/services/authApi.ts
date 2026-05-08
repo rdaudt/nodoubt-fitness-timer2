@@ -24,7 +24,7 @@ const parseUser = (value: unknown): AuthUser | null => {
 };
 
 export const fetchMe = async (): Promise<AuthUser | null> => {
-  const response = await fetch('/api/auth/me', { credentials: 'include' });
+  const response = await fetch('/api/auth?action=me', { credentials: 'include' });
   if (!response.ok) {
     return null;
   }
@@ -33,14 +33,14 @@ export const fetchMe = async (): Promise<AuthUser | null> => {
 };
 
 export const logout = async (): Promise<void> => {
-  await fetch('/api/auth/logout', { method: 'POST', credentials: 'include' });
+  await fetch('/api/auth?action=logout', { method: 'POST', credentials: 'include' });
 };
 
 export const deleteAccount = async (): Promise<void> => {
-  const response = await fetch('/api/auth/account', { method: 'DELETE', credentials: 'include' });
+  const response = await fetch('/api/auth?action=account', { method: 'DELETE', credentials: 'include' });
   if (!response.ok) {
     throw new Error('Failed to delete account.');
   }
 };
 
-export const getGoogleLoginUrl = (nextPath: string): string => `/api/auth/login?next=${encodeURIComponent(nextPath)}`;
+export const getGoogleLoginUrl = (nextPath: string): string => `/api/auth?action=login&next=${encodeURIComponent(nextPath)}`;

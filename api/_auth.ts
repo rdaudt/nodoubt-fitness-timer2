@@ -114,7 +114,7 @@ export const clearAuthCookies = (response: NodeRes) => {
 export const buildLoginRedirect = (request: NodeReq): { state: string; nextPath: string; url: string } => {
   const baseUrl = requireEnv('APP_BASE_URL');
   const clientId = requireEnv('GOOGLE_CLIENT_ID');
-  const callbackUrl = `${baseUrl.replace(/\/$/, '')}/api/auth/callback`;
+  const callbackUrl = `${baseUrl.replace(/\/$/, '')}/api/auth?action=callback`;
   const requestedNext = asArray(request.query?.next)[0] ?? '';
   const nextPath = normalizeNextPath(requestedNext);
   const state = crypto.randomUUID();
@@ -134,7 +134,7 @@ const exchangeCodeForTokens = async (code: string): Promise<{ id_token: string }
   const baseUrl = requireEnv('APP_BASE_URL');
   const clientId = requireEnv('GOOGLE_CLIENT_ID');
   const clientSecret = requireEnv('GOOGLE_CLIENT_SECRET');
-  const callbackUrl = `${baseUrl.replace(/\/$/, '')}/api/auth/callback`;
+  const callbackUrl = `${baseUrl.replace(/\/$/, '')}/api/auth?action=callback`;
 
   const body = new URLSearchParams({
     code,

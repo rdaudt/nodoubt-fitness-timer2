@@ -11,8 +11,8 @@ import {
   getStoredOauthState,
   redirect,
   setCookies,
-} from '../_auth.js';
-import { createTenantTablesIfNeeded } from '../_tenantsDb.js';
+} from './_auth.js';
+import { createTenantTablesIfNeeded } from './_tenantsDb.js';
 
 type NodeReq = {
   method?: string;
