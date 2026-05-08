@@ -827,6 +827,11 @@ select {
   border: none;
 }
 
+.settings-qr-code {
+  width: min(180px, 48%);
+  image-rendering: auto;
+}
+
 .about-coach-name {
   text-align: center;
   margin: 0;

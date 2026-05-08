@@ -217,7 +217,7 @@ export const SettingsPage = () => {
       {profile?.qrCodeUrl && (
         <div className="stack settings-stack settings-transfer-section">
           <h2 className="settings-subtitle">Coach QR Code</h2>
-          <img src={profile.qrCodeUrl} alt={`${profile.businessName} QR code`} className="owner-photo about-coach-photo" />
+          <img src={profile.qrCodeUrl} alt={`${profile.businessName} QR code`} className="owner-photo about-coach-photo settings-qr-code" />
         </div>
       )}
 
