@@ -70,7 +70,7 @@ export default async function handler(request: NodeReq, response: NodeRes): Prom
       return;
     }
     const contentType = upstream.headers.get('content-type') || 'application/octet-stream';
-    const cacheControl = upstream.headers.get('cache-control') || 'public, max-age=300';
+    const cacheControl = upstream.headers.get('cache-control') || 'public, max-age=300, stale-while-revalidate=600';
     const body = Buffer.from(await upstream.arrayBuffer());
     response.setHeader('Content-Type', contentType);
     response.setHeader('Cache-Control', cacheControl);

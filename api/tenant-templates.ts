@@ -5,7 +5,10 @@ type NodeReq = {
   method?: string;
   headers?: Record<string, string | string[] | undefined>;
 };
-type NodeRes = { status: (code: number) => { json: (body: unknown) => void } };
+type NodeRes = {
+  status: (code: number) => { json: (body: unknown) => void };
+  setHeader: (name: string, value: string) => void;
+};
 
 const normalizeSlug = (value: unknown): string => (typeof value === 'string' ? value.trim().toLowerCase() : '');
 const getHeader = (headers: NodeReq['headers'], name: string): string => {
@@ -84,6 +87,7 @@ export default async function handler(request: NodeReq, response: NodeRes): Prom
       args: [String(tenantRow.id)],
     });
     perfLog(traceId, route, 'templates-query', Date.now() - templatesStart, { templateCount: result.rows.length });
+    response.setHeader('Cache-Control', 'public, max-age=60, stale-while-revalidate=600');
     response.status(200).json(result.rows.map((item) => {
       const row = item as Record<string, unknown>;
       return {

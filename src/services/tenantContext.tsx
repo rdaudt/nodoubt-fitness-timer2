@@ -1,9 +1,10 @@
-import { createContext, useContext, useEffect, useMemo, useState } from 'react';
+import { createContext, useContext, useEffect, useMemo, useRef, useState } from 'react';
 import { useLocation, useNavigate, useParams } from 'react-router-dom';
 import type { PublicTemplate, TenantPublicProfile } from '../types';
 import { fetchTenantPublicProfile, fetchTenantPublicTemplates } from './tenantApi';
-import { flushPerfObservation, isPerfTriageEnabled, markPerf, startPerfRun } from './perfTriage';
+import { flushPerfObservation, isPerfTriageEnabled, markPerf, recordCacheSource, startPerfRun } from './perfTriage';
 import { setStorageTenant } from './storage';
+import { clearTenantSessionCache, getTenantSessionCache, isTenantCacheStale, setTenantSessionCache } from './tenantSessionCache';
 
 const RESERVED_SLUGS = new Set(['api', 'timer', 'settings', 'templates', 'template', 'about', 'history']);
 const SLUG_RE = /^[a-z0-9-]{3,32}$/;
@@ -35,6 +36,7 @@ export const TenantProvider = ({ children }: { children: React.ReactNode }) => {
   const [profile, setProfile] = useState<TenantPublicProfile | null>(null);
   const [templates, setTemplates] = useState<PublicTemplate[]>([]);
   const [loaded, setLoaded] = useState(false);
+  const previousSlugRef = useRef('');
 
   useEffect(() => {
     let active = true;
@@ -49,32 +51,81 @@ export const TenantProvider = ({ children }: { children: React.ReactNode }) => {
       navigate('/invalid-url', { replace: true });
       return;
     }
+    if (previousSlugRef.current && previousSlugRef.current !== slug) {
+      clearTenantSessionCache();
+    }
+    previousSlugRef.current = slug;
 
     setStorageTenant(slug);
     window.localStorage.setItem('active_tenant_slug', slug);
-    setLoaded(false);
-    setProfile(null);
-    setTemplates([]);
+    const cached = getTenantSessionCache(slug);
+    const stale = cached ? isTenantCacheStale(cached.entry) : true;
+
+    if (cached) {
+      setProfile(cached.entry.profile);
+      setTemplates(cached.entry.templates);
+      setLoaded(Boolean(cached.entry.profile));
+      recordCacheSource('tenant_public', cached.source);
+      recordCacheSource('tenant_templates', cached.source);
+    } else {
+      setLoaded(false);
+      setProfile(null);
+      setTemplates([]);
+    }
+
+    if (cached && !stale) {
+      if (perfEnabled) {
+        markPerf('tenant_data_committed');
+        flushPerfObservation('data-ready');
+      }
+      return () => {
+        active = false;
+      };
+    }
+
     void Promise.all([
-      fetchTenantPublicProfile(slug, perfEnabled ? { traceId, route: perfRoute } : undefined),
-      fetchTenantPublicTemplates(slug, perfEnabled ? { traceId, route: perfRoute } : undefined),
+      fetchTenantPublicProfile(slug, perfEnabled ? {
+        traceId,
+        route: perfRoute,
+        onCacheSource: (source) => recordCacheSource('tenant_public', source),
+      } : undefined),
+      fetchTenantPublicTemplates(slug, perfEnabled ? {
+        traceId,
+        route: perfRoute,
+        onCacheSource: (source) => recordCacheSource('tenant_templates', source),
+      } : undefined),
     ]).then(([tenantProfile, tenantTemplates]) => {
       if (!active) {
         return;
       }
       if (!tenantProfile) {
+        if (cached?.entry.profile) {
+          setLoaded(true);
+          if (perfEnabled) {
+            flushPerfObservation('error');
+          }
+          return;
+        }
         navigate('/invalid-url', { replace: true });
         return;
       }
       setProfile(tenantProfile);
       setTemplates(tenantTemplates);
       setLoaded(true);
+      setTenantSessionCache(slug, tenantProfile, tenantTemplates);
       if (perfEnabled) {
         markPerf('tenant_data_committed');
         flushPerfObservation('data-ready');
       }
     }).catch(() => {
       if (active) {
+        if (cached?.entry.profile) {
+          setLoaded(true);
+          if (perfEnabled) {
+            flushPerfObservation('error');
+          }
+          return;
+        }
         if (perfEnabled) {
           flushPerfObservation('error');
         }

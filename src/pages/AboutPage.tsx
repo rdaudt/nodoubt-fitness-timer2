@@ -43,7 +43,7 @@ export const AboutPage = () => {
           src={tracedImageUrl(coachPhoto)}
           alt={coachName}
           className="owner-photo about-coach-photo"
-          onLoad={() => settleImage('about-coach-photo')}
+          onLoad={(event) => settleImage('about-coach-photo', false, event.currentTarget.currentSrc)}
           onError={() => settleImage('about-coach-photo', true)}
         />
       )}
