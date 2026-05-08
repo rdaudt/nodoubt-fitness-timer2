@@ -5,10 +5,8 @@ import {
   createAuthenticatedSession,
   deleteCurrentUser,
   getCallbackCode,
-  getCallbackState,
   getSessionUser,
-  getStoredNextPath,
-  getStoredOauthState,
+  getValidatedOauthState,
   redirect,
   setCookies,
 } from './_auth.js';
@@ -36,7 +34,7 @@ const handleLogin = async (request: NodeReq, response: NodeRes): Promise<void> =
     response.status(405).json({ error: 'Method not allowed' });
     return;
   }
-  const { state, nextPath, url } = buildLoginRedirect(request);
+  const { state, nextPath, url } = await buildLoginRedirect(request);
   applyLoginCookies(response, state, nextPath);
   redirect(response, url);
 };
@@ -46,11 +44,9 @@ const handleCallback = async (request: NodeReq, response: NodeRes): Promise<void
     response.status(405).json({ error: 'Method not allowed' });
     return;
   }
-  const state = getCallbackState(request);
   const code = getCallbackCode(request);
-  const expectedState = getStoredOauthState(request);
-  const nextPath = getStoredNextPath(request);
-  if (!state || !code || !expectedState || state !== expectedState) {
+  const { isValid, nextPath } = await getValidatedOauthState(request);
+  if (!code || !isValid) {
     clearAuthCookies(response);
     redirect(response, '/login?error=invalid_oauth_state');
     return;

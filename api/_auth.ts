@@ -8,6 +8,7 @@ const OAUTH_STATE_COOKIE = 'nd_timer_oauth_state';
 const OAUTH_NEXT_COOKIE = 'nd_timer_oauth_next';
 const SESSION_MAX_AGE_SEC = 8 * 60 * 60;
 const OAUTH_STATE_MAX_AGE_SEC = 10 * 60;
+const OAUTH_STATE_AUD = 'nd_timer_oauth_state';
 
 type HeadersValue = string | string[] | undefined;
 type NodeReq = { headers?: Record<string, HeadersValue>; query?: Record<string, string | string[]> };
@@ -23,6 +24,11 @@ export interface SessionUser {
   name: string;
   picture: string;
   isCoach: boolean;
+}
+
+interface OAuthStatePayload {
+  nonce: string;
+  nextPath: string;
 }
 
 interface GoogleIdentity {
@@ -98,6 +104,38 @@ const normalizeNextPath = (value: string): string => {
   return trimmed;
 };
 
+const createOauthStateToken = async (nextPath: string): Promise<string> => {
+  const now = Math.floor(Date.now() / 1000);
+  return new SignJWT({
+    nonce: crypto.randomUUID(),
+    nextPath,
+  })
+    .setProtectedHeader({ alg: 'HS256' })
+    .setAudience(OAUTH_STATE_AUD)
+    .setIssuedAt(now)
+    .setExpirationTime(now + OAUTH_STATE_MAX_AGE_SEC)
+    .sign(getSessionSecret());
+};
+
+const verifyOauthStateToken = async (token: string): Promise<OAuthStatePayload | null> => {
+  if (!token) {
+    return null;
+  }
+  try {
+    const { payload } = await jwtVerify(token, getSessionSecret(), { audience: OAUTH_STATE_AUD });
+    const nonce = String(payload.nonce ?? '');
+    if (!nonce) {
+      return null;
+    }
+    return {
+      nonce,
+      nextPath: normalizeNextPath(String(payload.nextPath ?? '/')),
+    };
+  } catch {
+    return null;
+  }
+};
+
 export const setCookies = (response: NodeRes, cookies: string[]) => {
   response.setHeader?.('Set-Cookie', cookies);
 };
@@ -111,13 +149,13 @@ export const clearAuthCookies = (response: NodeRes) => {
   setCookies(response, [clearCookie(SESSION_COOKIE), clearCookie(OAUTH_STATE_COOKIE), clearCookie(OAUTH_NEXT_COOKIE)]);
 };
 
-export const buildLoginRedirect = (request: NodeReq): { state: string; nextPath: string; url: string } => {
+export const buildLoginRedirect = async (request: NodeReq): Promise<{ state: string; nextPath: string; url: string }> => {
   const baseUrl = requireEnv('APP_BASE_URL');
   const clientId = requireEnv('GOOGLE_CLIENT_ID');
   const callbackUrl = `${baseUrl.replace(/\/$/, '')}/api/auth?action=callback`;
   const requestedNext = asArray(request.query?.next)[0] ?? '';
   const nextPath = normalizeNextPath(requestedNext);
-  const state = crypto.randomUUID();
+  const state = await createOauthStateToken(nextPath);
 
   const params = new URLSearchParams({
     client_id: clientId,
@@ -292,6 +330,20 @@ export const getStoredOauthState = (request: NodeReq): string => readCookie(requ
 export const getStoredNextPath = (request: NodeReq): string => {
   const value = readCookie(request, OAUTH_NEXT_COOKIE);
   return normalizeNextPath(value);
+};
+export const getValidatedOauthState = async (
+  request: NodeReq,
+): Promise<{ isValid: boolean; nextPath: string }> => {
+  const callbackState = getCallbackState(request);
+  const callbackPayload = await verifyOauthStateToken(callbackState);
+  if (callbackPayload) {
+    return { isValid: true, nextPath: callbackPayload.nextPath };
+  }
+  const expectedState = getStoredOauthState(request);
+  if (callbackState && expectedState && callbackState === expectedState) {
+    return { isValid: true, nextPath: getStoredNextPath(request) };
+  }
+  return { isValid: false, nextPath: '/' };
 };
 
 export const deleteCurrentUser = async (userSub: string): Promise<void> => {
