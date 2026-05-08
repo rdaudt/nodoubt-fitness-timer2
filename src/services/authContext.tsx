@@ -1,5 +1,6 @@
 import { createContext, useContext, useEffect, useMemo, useState } from 'react';
 import { deleteAccount, fetchMe, getGoogleLoginUrl, logout, type AuthUser } from './authApi';
+import { clearTenantSessionCache } from './tenantSessionCache';
 
 interface AuthContextValue {
   loaded: boolean;
@@ -29,10 +30,12 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     },
     logoutUser: async () => {
       await logout();
+      clearTenantSessionCache();
       setUser(null);
     },
     deleteCurrentAccount: async () => {
       await deleteAccount();
+      clearTenantSessionCache();
       setUser(null);
     },
   }), [loaded, user]);

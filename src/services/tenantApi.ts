@@ -4,6 +4,7 @@ import { isPerfTriageEnabled, recordFetchMetric } from './perfTriage';
 interface PerfFetchOptions {
   traceId?: string;
   route?: string;
+  onCacheSource?: (source: 'network' | 'sw-cache') => void;
 }
 
 const buildPerfHeaders = (options?: PerfFetchOptions): HeadersInit | undefined => {
@@ -99,6 +100,7 @@ export const fetchTenantPublicProfile = async (slug: string, options?: PerfFetch
   const response = await fetch(`/api/tenant-public?slug=${encodeURIComponent(slug)}`, {
     headers: buildPerfHeaders(options),
   });
+  options?.onCacheSource?.(response.headers.get('x-sw-cache') ? 'sw-cache' : 'network');
   headersAt = performance.now();
   if (perfEnabled) {
     recordFetchMetric('tenant_public_fetch_ms', headersAt - startedAt);
@@ -122,6 +124,7 @@ export const fetchTenantPublicTemplates = async (slug: string, options?: PerfFet
   const response = await fetch(`/api/tenant-templates?slug=${encodeURIComponent(slug)}`, {
     headers: buildPerfHeaders(options),
   });
+  options?.onCacheSource?.(response.headers.get('x-sw-cache') ? 'sw-cache' : 'network');
   headersAt = performance.now();
   if (perfEnabled) {
     recordFetchMetric('tenant_templates_fetch_ms', headersAt - startedAt);

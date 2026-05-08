@@ -9,6 +9,7 @@ type PerfMetricName =
   | 'tenant_data_committed'
   | 'tenant_data_ready_ms'
   | 'tenant_image_settled_ms';
+type CacheSourceName = 'memory' | 'sessionStorage' | 'network' | 'sw-cache';
 
 interface PerfRun {
   id: string;
@@ -19,6 +20,7 @@ interface PerfRun {
   metrics: Partial<Record<PerfMetricName, number>>;
   imagePending: Set<string>;
   imageErrors: number;
+  cacheSources: Record<string, number>;
   flushed: boolean;
 }
 
@@ -61,6 +63,7 @@ export const startPerfRun = (tenant: string, route: string): string => {
       metrics: {},
       imagePending: new Set(),
       imageErrors: 0,
+      cacheSources: {},
       flushed: false,
     };
   }
@@ -105,7 +108,22 @@ export const registerExpectedImage = (key: string): void => {
   run.imagePending.add(key);
 };
 
-export const settleImage = (key: string, errored = false): void => {
+const detectImageSource = (resourceUrl: string): 'network' | 'sw-cache' | null => {
+  if (typeof performance === 'undefined' || typeof performance.getEntriesByName !== 'function') {
+    return null;
+  }
+  const entries = performance.getEntriesByName(resourceUrl, 'resource');
+  if (!entries.length) {
+    return null;
+  }
+  const last = entries[entries.length - 1] as PerformanceResourceTiming;
+  if (typeof last.transferSize === 'number' && last.transferSize === 0) {
+    return 'sw-cache';
+  }
+  return 'network';
+};
+
+export const settleImage = (key: string, errored = false, resourceUrl?: string): void => {
   const run = getRun();
   if (!run) {
     return;
@@ -116,11 +134,25 @@ export const settleImage = (key: string, errored = false): void => {
   run.imagePending.delete(key);
   if (errored) {
     run.imageErrors += 1;
+  } else if (resourceUrl) {
+    const source = detectImageSource(resourceUrl);
+    if (source) {
+      recordCacheSource('tenant_asset', source);
+    }
   }
   if (run.imagePending.size === 0 && run.metrics.tenant_image_settled_ms === undefined) {
     run.metrics.tenant_image_settled_ms = Math.round(now() - run.startedAtMs);
     flushPerfObservation('images-settled');
   }
+};
+
+export const recordCacheSource = (key: string, source: CacheSourceName): void => {
+  const run = getRun();
+  if (!run) {
+    return;
+  }
+  const metricKey = `${key}:${source}`;
+  run.cacheSources[metricKey] = (run.cacheSources[metricKey] ?? 0) + 1;
 };
 
 export const flushPerfObservation = (reason: 'data-ready' | 'images-settled' | 'error'): void => {
@@ -137,6 +169,7 @@ export const flushPerfObservation = (reason: 'data-ready' | 'images-settled' | '
     metrics: run.metrics,
     imagePending: run.imagePending.size,
     imageErrors: run.imageErrors,
+    cacheSources: run.cacheSources,
     suspectedBottleneck: deriveBottleneck(run),
   };
   if (reason === 'images-settled' || reason === 'error') {

@@ -51,7 +51,7 @@ export const AppLayout = () => {
                 src={tracedImageUrl(logoUrl)}
                 alt={`${businessName} logo`}
                 className="brand-logo"
-                onLoad={() => settleImage('header-logo')}
+                onLoad={(event) => settleImage('header-logo', false, event.currentTarget.currentSrc)}
                 onError={() => settleImage('header-logo', true)}
               />
             )}
@@ -67,7 +67,7 @@ export const AppLayout = () => {
                   src={tracedImageUrl(coachPhoto)}
                   alt={coachName}
                   className="coach-photo"
-                  onLoad={() => settleImage('header-coach-photo')}
+                  onLoad={(event) => settleImage('header-coach-photo', false, event.currentTarget.currentSrc)}
                   onError={() => settleImage('header-coach-photo', true)}
                 />
               )}
