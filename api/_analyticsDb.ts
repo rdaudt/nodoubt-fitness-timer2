@@ -90,10 +90,16 @@ export const createTablesIfNeeded = async () => {
   ];
 
   const requiredEventColumns = [
+    `event_id TEXT`,
+    `event_name TEXT NOT NULL DEFAULT ''`,
     `tenant_slug TEXT NOT NULL DEFAULT ''`,
+    `occurred_at TEXT NOT NULL DEFAULT ''`,
+    `received_at TEXT NOT NULL DEFAULT ''`,
+    `browser_family TEXT NOT NULL DEFAULT 'other'`,
     `os_family TEXT NOT NULL DEFAULT 'other'`,
     `os_version TEXT NOT NULL DEFAULT 'unknown'`,
     `device_type TEXT NOT NULL DEFAULT 'desktop'`,
+    `payload_json TEXT NOT NULL DEFAULT '{}'`,
   ];
 
   for (const columnDef of requiredRollupColumns) {
