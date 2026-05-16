@@ -1,4 +1,4 @@
-const APP_SHELL_CACHE = 'nodoubt-shell-v3';
+const APP_SHELL_CACHE = 'nodoubt-shell-v4';
 const API_CACHE = 'nodoubt-api-runtime-v1';
 const ASSET_CACHE = 'nodoubt-asset-runtime-v1';
 const APP_SHELL = ['/', '/index.html', '/manifest.webmanifest'];
@@ -75,6 +75,10 @@ self.addEventListener('fetch', (event) => {
     return;
   }
   const url = new URL(event.request.url);
+
+  if (url.pathname.startsWith('/api/') && !isApiRuntimeRequest(url) && !isAssetRuntimeRequest(url)) {
+    return;
+  }
 
   if (event.request.mode === 'navigate') {
     event.respondWith(
