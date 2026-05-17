@@ -19,6 +19,7 @@ const statements = [
       event_id TEXT PRIMARY KEY,
       event_name TEXT NOT NULL,
       tenant_slug TEXT NOT NULL DEFAULT '',
+      tenant_id TEXT NOT NULL DEFAULT '',
       occurred_at TEXT NOT NULL,
       received_at TEXT NOT NULL,
       browser_family TEXT NOT NULL,
