@@ -24,6 +24,8 @@ export interface SessionUser {
   name: string;
   picture: string;
   isCoach: boolean;
+  coachSlug: string | null;
+  coachOwnershipValid: boolean;
 }
 
 interface OAuthStatePayload {
@@ -240,18 +242,31 @@ const verifyGoogleIdentity = async (idToken: string): Promise<GoogleIdentity> =>
   };
 };
 
-const resolveCoachStatusByEmail = async (email: string): Promise<boolean> => {
+interface CoachOwnership {
+  isCoach: boolean;
+  coachSlug: string | null;
+  coachOwnershipValid: boolean;
+}
+
+export const resolveCoachOwnershipByEmail = async (email: string): Promise<CoachOwnership> => {
   const db = getTenantsDb();
   const result = await db.execute({
     sql: `
-      SELECT id
+      SELECT slug
       FROM coach_tenants
       WHERE lower(owner_email) = lower(?)
-      LIMIT 1
+      LIMIT 2
     `,
     args: [email],
   });
-  return result.rows.length > 0;
+  if (result.rows.length !== 1) {
+    return { isCoach: false, coachSlug: null, coachOwnershipValid: false };
+  }
+  const slug = String((result.rows[0] as Record<string, unknown>).slug ?? '').trim().toLowerCase();
+  if (!slug) {
+    return { isCoach: false, coachSlug: null, coachOwnershipValid: false };
+  }
+  return { isCoach: true, coachSlug: slug, coachOwnershipValid: true };
 };
 
 const upsertAppUser = async (user: SessionUser): Promise<void> => {
@@ -299,6 +314,8 @@ const createSessionToken = async (user: SessionUser): Promise<string> => {
     name: user.name,
     picture: user.picture,
     isCoach: user.isCoach,
+    coachSlug: user.coachSlug,
+    coachOwnershipValid: user.coachOwnershipValid,
   })
     .setProtectedHeader({ alg: 'HS256' })
     .setIssuedAt(now)
@@ -318,6 +335,8 @@ const verifySessionToken = async (token: string): Promise<SessionUser | null> =>
       name: String(payload.name ?? ''),
       picture: String(payload.picture ?? ''),
       isCoach: Boolean(payload.isCoach),
+      coachSlug: typeof payload.coachSlug === 'string' ? payload.coachSlug : null,
+      coachOwnershipValid: Boolean(payload.coachOwnershipValid),
     };
   } catch {
     return null;
@@ -334,13 +353,15 @@ export const applyLoginCookies = (response: NodeRes, request: NodeReq, state: st
 export const createAuthenticatedSession = async (identityCode: string, request: NodeReq): Promise<{ user: SessionUser; cookie: string }> => {
   const { id_token: idToken } = await exchangeCodeForTokens(identityCode, request);
   const identity = await verifyGoogleIdentity(idToken);
-  const isCoach = await resolveCoachStatusByEmail(identity.email);
+  const ownership = await resolveCoachOwnershipByEmail(identity.email);
   const user: SessionUser = {
     sub: identity.sub,
     email: identity.email,
     name: identity.name,
     picture: identity.picture,
-    isCoach,
+    isCoach: ownership.isCoach,
+    coachSlug: ownership.coachSlug,
+    coachOwnershipValid: ownership.coachOwnershipValid,
   };
   await upsertAppUser(user);
   const token = await createSessionToken(user);

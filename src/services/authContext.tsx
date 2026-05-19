@@ -1,5 +1,7 @@
 import { createContext, useContext, useEffect, useMemo, useState } from 'react';
+import { useParams } from 'react-router-dom';
 import { deleteAccount, fetchMe, getGoogleLoginUrl, logout, type AuthUser } from './authApi';
+import { setAnalyticsCoachModeProvider } from './analytics';
 import { clearTenantSessionCache } from './tenantSessionCache';
 
 interface AuthContextValue {
@@ -21,6 +23,10 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       .then((me) => setUser(me))
       .finally(() => setLoaded(true));
   }, []);
+
+  useEffect(() => {
+    setAnalyticsCoachModeProvider(() => Boolean(user?.isCoach));
+  }, [user]);
 
   const value = useMemo<AuthContextValue>(() => ({
     loaded,
@@ -49,4 +55,19 @@ export const useAuth = (): AuthContextValue => {
     throw new Error('useAuth must be used within AuthProvider');
   }
   return ctx;
+};
+
+export const useCoachMode = (): boolean => {
+  const { user } = useAuth();
+  const { tenantSlug = '' } = useParams();
+  return isCoachModeEnabled(user, tenantSlug);
+};
+
+export const isCoachModeEnabled = (user: AuthUser | null, tenantSlug: string): boolean => {
+  if (!user || !user.coachOwnershipValid) {
+    return false;
+  }
+  const coachSlug = (user.coachSlug ?? '').trim().toLowerCase();
+  const routeSlug = tenantSlug.trim().toLowerCase();
+  return Boolean(coachSlug) && Boolean(routeSlug) && coachSlug === routeSlug;
 };

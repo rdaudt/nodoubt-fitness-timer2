@@ -4,6 +4,8 @@ export interface AuthUser {
   name: string;
   picture: string;
   isCoach: boolean;
+  coachSlug: string | null;
+  coachOwnershipValid: boolean;
 }
 
 const parseUser = (value: unknown): AuthUser | null => {
@@ -20,6 +22,8 @@ const parseUser = (value: unknown): AuthUser | null => {
     name: typeof user.name === 'string' ? user.name : '',
     picture: typeof user.picture === 'string' ? user.picture : '',
     isCoach: Boolean(user.isCoach),
+    coachSlug: typeof user.coachSlug === 'string' ? user.coachSlug : null,
+    coachOwnershipValid: Boolean(user.coachOwnershipValid),
   };
 };
 
