@@ -16,6 +16,7 @@ export type AnalyticsEventName =
   | 'timers_imported';
 
 export interface RunAnalyticsPayload {
+  coachMode: boolean;
   stationCount: number;
   roundsPerStation: number;
   workSec: number;
@@ -30,26 +31,34 @@ export interface RunAnalyticsPayload {
 }
 
 export interface AnalyticsPayloadByEvent {
-  app_opened: Record<string, never>;
+  app_opened: {
+    coachMode: boolean;
+  };
   timer_created: {
+    coachMode: boolean;
     category: 'GENERAL' | 'FAT-LOSS' | 'PERFORMANCE';
   };
   timer_cloned: {
+    coachMode: boolean;
     category: 'GENERAL' | 'FAT-LOSS' | 'PERFORMANCE';
   };
   timer_created_from_template: {
+    coachMode: boolean;
     category: 'GENERAL' | 'FAT-LOSS' | 'PERFORMANCE';
   };
   template_created_from_timer: {
+    coachMode: boolean;
     category: 'GENERAL' | 'FAT-LOSS' | 'PERFORMANCE';
   };
   timer_run_completed: RunAnalyticsPayload;
   timer_run_incomplete: RunAnalyticsPayload;
   timer_run_coach_mode: RunAnalyticsPayload;
   timers_exported: {
+    coachMode: boolean;
     timerCount: number;
   };
   timers_imported: {
+    coachMode: boolean;
     timerCount: number;
   };
 }
@@ -194,12 +203,19 @@ const sendBeaconPayload = (body: string): boolean => {
   }
 };
 
+let analyticsCoachModeProvider: (() => boolean) | null = null;
+
+export const setAnalyticsCoachModeProvider = (provider: (() => boolean) | null) => {
+  analyticsCoachModeProvider = provider;
+};
+
 export const trackAnalyticsEvent = <TEvent extends AnalyticsEventName>(
   eventName: TEvent,
-  payload: AnalyticsPayloadByEvent[TEvent],
+  payload: Omit<AnalyticsPayloadByEvent[TEvent], 'coachMode'>,
 ) => {
   const osFamily = detectOsFamily(navigator.userAgent, getUaPlatform(navigator));
   const uaDataMobile = (navigator as Navigator & UaNavigatorData).userAgentData?.mobile;
+  const coachMode = analyticsCoachModeProvider ? analyticsCoachModeProvider() : false;
   const requestBody = JSON.stringify({
     eventName,
     tenantSlug: window.localStorage.getItem(ACTIVE_TENANT_KEY) || '',
@@ -208,7 +224,10 @@ export const trackAnalyticsEvent = <TEvent extends AnalyticsEventName>(
     osFamily,
     osVersion: detectOsVersionMajor(navigator.userAgent, osFamily, getUaPlatformVersion(navigator)),
     deviceType: detectDeviceType(navigator.userAgent, osFamily, uaDataMobile),
-    payload,
+    payload: {
+      ...payload,
+      coachMode,
+    },
   });
 
   if (sendBeaconPayload(requestBody)) {
