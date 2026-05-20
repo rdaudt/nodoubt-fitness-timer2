@@ -18,6 +18,7 @@ vi.mock('./services/tenantApi', () => ({
 
 vi.mock('./services/authContext', () => ({
   AuthProvider: ({ children }: { children: unknown }) => children,
+  useCoachMode: () => false,
   useAuth: () => ({
     loaded: true,
     user: { sub: 'sub-1', email: 'user@example.com', name: 'User', picture: '', isCoach: false },

@@ -10,12 +10,14 @@ import {
   redirect,
   setCookies,
 } from './_auth.js';
+import { handleClassLocations, handleHiitClasses } from './_hiitClasses.js';
 import { createTenantTablesIfNeeded } from './_tenantsDb.js';
 
 type NodeReq = {
   method?: string;
   query?: Record<string, string | string[]>;
   headers?: Record<string, string | string[]>;
+  body?: unknown;
 };
 type NodeRes = {
   status: (code: number) => { json: (body: unknown) => void };
@@ -107,6 +109,17 @@ const handleAccountDelete = async (request: NodeReq, response: NodeRes): Promise
   response.status(200).json({ ok: true });
 };
 
+const handleCoachDataAction = async (request: NodeReq, response: NodeRes, action: string): Promise<void> => {
+  setNoStore(response);
+  await createTenantTablesIfNeeded();
+  const user = await getSessionUser(request);
+  if (action === 'hiit-classes') {
+    await handleHiitClasses(request, response, user);
+    return;
+  }
+  await handleClassLocations(request, response, user);
+};
+
 export default async function handler(request: NodeReq, response: NodeRes): Promise<void> {
   const action = getAction(request);
   try {
@@ -128,6 +141,10 @@ export default async function handler(request: NodeReq, response: NodeRes): Prom
     }
     if (action === 'account') {
       await handleAccountDelete(request, response);
+      return;
+    }
+    if (action === 'hiit-classes' || action === 'class-locations') {
+      await handleCoachDataAction(request, response, action);
       return;
     }
     response.status(404).json({ error: 'Not found' });

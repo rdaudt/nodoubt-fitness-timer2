@@ -43,6 +43,21 @@ export interface TimerRun {
   updatedAt: string;
 }
 
+export interface HiitClass extends TimerRun {
+  classDate: string | null;
+  startTime: string | null;
+  endTime: string | null;
+  locationId: string | null;
+  locationLabelAtRun: string | null;
+}
+
+export interface HiitClassLocation {
+  id: string;
+  label: string;
+  isDefault: boolean;
+  sortOrder: number;
+}
+
 export interface AppSettings {
   kobeEverywhere: boolean;
   imagesInAllTimers: boolean;

@@ -45,24 +45,26 @@ const SettingsIcon = () => (
 const navItems = [
   { to: '', label: 'Timers', icon: TimersIcon },
   { to: '/templates', label: 'Templates', icon: TemplatesIcon },
-  { to: '/history', label: 'History', icon: HistoryIcon },
+  { to: '/history', label: 'HIIT Classes', icon: HistoryIcon, coachOnly: true },
   { to: '/about', label: 'About', icon: AboutIcon },
   { to: '/settings', label: 'Settings', icon: SettingsIcon },
 ];
 
 interface BottomNavProps {
   clickable: boolean;
+  coachMode?: boolean;
   toTenantPath?: (path: string) => string;
 }
 
-export const BottomNav = ({ clickable, toTenantPath }: BottomNavProps) => {
+export const BottomNav = ({ clickable, coachMode = false, toTenantPath }: BottomNavProps) => {
   const location = useLocation();
   const normalizePath = (value: string): string => value.replace(/\/+$/, '') || '/';
+  const visibleNavItems = navItems.filter((item) => !item.coachOnly || coachMode);
 
   if (!clickable) {
     return (
       <nav className="bottom-nav" aria-label="Primary Navigation">
-        {navItems.map((item) => (
+        {visibleNavItems.map((item) => (
           <div key={item.to} className="nav-item nav-item-disabled" aria-disabled="true">
             <span className="nav-icon" aria-hidden="true">
               <item.icon />
@@ -76,7 +78,7 @@ export const BottomNav = ({ clickable, toTenantPath }: BottomNavProps) => {
 
   return (
     <nav className="bottom-nav" aria-label="Primary Navigation">
-      {navItems.map((item) => (
+      {visibleNavItems.map((item) => (
         <NavLink
           key={item.to}
           to={toTenantPath ? toTenantPath(item.to) : item.to}
