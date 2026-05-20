@@ -15,7 +15,7 @@ import { TimerListPage } from './pages/TimerListPage';
 import { SettingsProvider } from './services/settingsContext';
 import { AuthProvider, useAuth, useCoachMode } from './services/authContext';
 import { clearMyCoachSlug, getMyCoachSlug, isValidCoachSlug } from './services/coachDirectory';
-import { fetchTenantPublicProfile, fetchTenantPublicProfileWithStatus } from './services/tenantApi';
+import { fetchTenantPublicProfileWithStatus } from './services/tenantApi';
 import { TenantProvider, useTenant } from './services/tenantContext';
 
 const TimerEditRedirect = () => {
