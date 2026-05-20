@@ -15,7 +15,7 @@ import { TimerListPage } from './pages/TimerListPage';
 import { SettingsProvider } from './services/settingsContext';
 import { AuthProvider, useAuth, useCoachMode } from './services/authContext';
 import { clearMyCoachSlug, getMyCoachSlug, isValidCoachSlug } from './services/coachDirectory';
-import { fetchTenantPublicProfile } from './services/tenantApi';
+import { fetchTenantPublicProfile, fetchTenantPublicProfileWithStatus } from './services/tenantApi';
 import { TenantProvider, useTenant } from './services/tenantContext';
 
 const TimerEditRedirect = () => {
@@ -100,7 +100,7 @@ const RootLaunchPage = () => {
       setLoading(false);
       return;
     }
-    void fetchTenantPublicProfile(slug).then((profile) => {
+    void fetchTenantPublicProfileWithStatus(slug).then(({ profile, status }) => {
       if (!active) {
         return;
       }
@@ -108,11 +108,16 @@ const RootLaunchPage = () => {
         navigate(`/${slug}`, { replace: true });
         return;
       }
-      clearMyCoachSlug();
-      setNotice('Your saved coach is no longer available. Please choose My Coach again.');
+      if (status === 404) {
+        clearMyCoachSlug();
+        setNotice('Your saved coach is no longer available. Please choose My Coach again.');
+      } else {
+        setNotice('We could not verify your saved coach right now. Please try again.');
+      }
       setLoading(false);
     }).catch(() => {
       if (active) {
+        setNotice('We could not verify your saved coach right now. Please try again.');
         setLoading(false);
       }
     });

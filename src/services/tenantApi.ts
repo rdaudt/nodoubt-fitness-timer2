@@ -7,6 +7,11 @@ interface PerfFetchOptions {
   onCacheSource?: (source: 'network' | 'sw-cache') => void;
 }
 
+export interface TenantPublicProfileFetchResult {
+  profile: TenantPublicProfile | null;
+  status: number;
+}
+
 const buildPerfHeaders = (options?: PerfFetchOptions): HeadersInit | undefined => {
   if (!options?.traceId) {
     return undefined;
@@ -111,7 +116,10 @@ const normalizeCoachDirectoryItem = (value: unknown): CoachDirectoryItem | null 
   };
 };
 
-export const fetchTenantPublicProfile = async (slug: string, options?: PerfFetchOptions): Promise<TenantPublicProfile | null> => {
+export const fetchTenantPublicProfileWithStatus = async (
+  slug: string,
+  options?: PerfFetchOptions,
+): Promise<TenantPublicProfileFetchResult> => {
   const startedAt = performance.now();
   const perfEnabled = isPerfTriageEnabled();
   let headersAt = startedAt;
@@ -125,14 +133,22 @@ export const fetchTenantPublicProfile = async (slug: string, options?: PerfFetch
     recordFetchMetric('tenant_public_headers_ms', headersAt - startedAt);
   }
   if (!response.ok) {
-    return null;
+    return { profile: null, status: response.status };
   }
   const parseStart = performance.now();
   const payload = await response.json();
   if (perfEnabled) {
     recordFetchMetric('tenant_public_json_parse_ms', performance.now() - parseStart);
   }
-  return normalizeProfile(payload);
+  return {
+    profile: normalizeProfile(payload),
+    status: response.status,
+  };
+};
+
+export const fetchTenantPublicProfile = async (slug: string, options?: PerfFetchOptions): Promise<TenantPublicProfile | null> => {
+  const result = await fetchTenantPublicProfileWithStatus(slug, options);
+  return result.profile;
 };
 
 export const fetchTenantPublicTemplates = async (slug: string, options?: PerfFetchOptions): Promise<PublicTemplate[]> => {
