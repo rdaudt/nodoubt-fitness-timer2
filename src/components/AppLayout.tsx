@@ -1,14 +1,12 @@
 import { useEffect } from 'react';
 import { Outlet, useLocation } from 'react-router-dom';
 import { APP_NAME, BRAND } from '../config';
-import { useCoachMode } from '../services/authContext';
 import { getPerfTraceId, isPerfTriageEnabled, registerExpectedImage, settleImage } from '../services/perfTriage';
 import { useTenant } from '../services/tenantContext';
 import { BottomNav } from './BottomNav';
 
 export const AppLayout = () => {
   const location = useLocation();
-  const isCoachMode = useCoachMode();
   const { profile, toTenantPath } = useTenant();
   const isRunningView = /\/timer\/[^/]+\/run$/.test(location.pathname);
   const isAboutPage = /\/about\/?$/.test(location.pathname);
@@ -78,7 +76,6 @@ export const AppLayout = () => {
               <p className="coach-name">{coachName}</p>
             </a>
           )}
-          {isCoachMode && <p className="coach-mode-on">Coach mode ON</p>}
         </div>
       </header>
 

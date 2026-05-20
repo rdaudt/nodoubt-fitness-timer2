@@ -3,14 +3,6 @@ import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import { describe, expect, it, vi } from 'vitest';
 import { AppLayout } from './AppLayout';
 
-const { coachModeMock } = vi.hoisted(() => ({
-  coachModeMock: vi.fn(),
-}));
-
-vi.mock('../services/authContext', () => ({
-  useCoachMode: () => coachModeMock(),
-}));
-
 vi.mock('../services/tenantContext', () => ({
   useTenant: () => ({
     profile: {
@@ -34,21 +26,8 @@ vi.mock('../services/perfTriage', () => ({
 }));
 
 describe('AppLayout', () => {
-  it('shows coach mode badge based on computed coach mode', () => {
-    coachModeMock.mockReturnValue(true);
-    const { rerender } = render(
-      <MemoryRouter initialEntries={['/']}>
-        <Routes>
-          <Route path="/" element={<AppLayout />}>
-            <Route index element={<div>child</div>} />
-          </Route>
-        </Routes>
-      </MemoryRouter>,
-    );
-    expect(screen.getByText('Coach mode ON')).toBeInTheDocument();
-
-    coachModeMock.mockReturnValue(false);
-    rerender(
+  it('does not render the coach mode text in the header', () => {
+    render(
       <MemoryRouter initialEntries={['/']}>
         <Routes>
           <Route path="/" element={<AppLayout />}>
