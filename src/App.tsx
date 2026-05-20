@@ -30,11 +30,20 @@ const LoginPage = () => {
   }
 
   return (
-    <section className="invalid-url-page">
+    <section className="login-page">
       <h1 className="screen-title">Sign In Required</h1>
-      <p className="timer-meta">Please sign in with Google to continue.</p>
-      <div className="actions-row">
-        <button className="primary-btn" onClick={() => login(nextPath)}>Continue with Google</button>
+      <div className="actions-row login-actions-row">
+        <button className="google-signin-btn" onClick={() => login(nextPath)}>
+          <span className="google-signin-icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+              <path fill="#EA4335" d="M12 10.2v4.1h5.7c-.2 1.3-.8 2.4-1.7 3.2l3 2.3c1.8-1.7 2.9-4.1 2.9-6.9 0-.7-.1-1.3-.2-1.9H12z" />
+              <path fill="#34A853" d="M12 22c2.7 0 4.9-.9 6.5-2.4l-3-2.3c-.8.6-2 .9-3.5.9-2.7 0-4.9-1.8-5.7-4.3l-3.1 2.4C4.8 19.6 8.1 22 12 22z" />
+              <path fill="#4A90E2" d="M6.3 13.9c-.2-.6-.3-1.2-.3-1.9s.1-1.3.3-1.9L3.2 7.7C2.4 9.2 2 10.6 2 12s.4 2.8 1.2 4.3l3.1-2.4z" />
+              <path fill="#FBBC05" d="M12 5.8c1.5 0 2.8.5 3.8 1.5l2.8-2.8C16.9 2.9 14.7 2 12 2 8.1 2 4.8 4.4 3.2 7.7l3.1 2.4C7.1 7.6 9.3 5.8 12 5.8z" />
+            </svg>
+          </span>
+          <span>Sign in with Google</span>
+        </button>
       </div>
     </section>
   );
