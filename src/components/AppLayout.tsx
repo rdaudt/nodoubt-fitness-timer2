@@ -2,13 +2,14 @@ import { useEffect } from 'react';
 import { Outlet, useLocation } from 'react-router-dom';
 import { APP_NAME, BRAND } from '../config';
 import { getPerfTraceId, isPerfTriageEnabled, registerExpectedImage, settleImage } from '../services/perfTriage';
-import { useCoachMode } from '../services/authContext';
+import { useAuth, useCoachMode } from '../services/authContext';
 import { useTenant } from '../services/tenantContext';
 import { BottomNav } from './BottomNav';
 
 export const AppLayout = () => {
   const location = useLocation();
   const { profile, toTenantPath } = useTenant();
+  const { user } = useAuth();
   const coachMode = useCoachMode();
   const isRunningView = /\/timer\/[^/]+\/run$/.test(location.pathname);
   const isAboutPage = /\/about\/?$/.test(location.pathname);
@@ -48,6 +49,7 @@ export const AppLayout = () => {
   return (
     <div className="app-shell">
       <header className={isRunningView ? 'topbar topbar-compact' : 'topbar'}>
+        <div className="topbar-user-email">{user?.email ?? ''}</div>
         <div className="topbar-inner">
           <a href={primaryLink} target="_blank" rel="noreferrer" className="brand-logo-link" aria-label={APP_NAME}>
             {logoUrl && (

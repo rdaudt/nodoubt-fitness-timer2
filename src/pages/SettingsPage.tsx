@@ -1,9 +1,11 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { DEFAULT_SETTINGS, TYPE_LABELS } from '../config';
 import { intervalColorsAreUnique } from '../lib/settingsRules';
 import { trackAnalyticsEvent } from '../services/analytics';
 import { exportTimersToDevice, importTimersFromFile } from '../services/timerTransfer';
 import { useAuth } from '../services/authContext';
+import { clearMyCoachSlug } from '../services/coachDirectory';
 import { useSettings } from '../services/settingsContext';
 import { useTenant } from '../services/tenantContext';
 import { clearCurrentTenantLocalData } from '../services/storage';
@@ -14,6 +16,7 @@ import kobeAngry from '../../media/kobe-angry.png';
 const types: IntervalType[] = ['warmup', 'work', 'rest', 'cooldown'];
 
 export const SettingsPage = () => {
+  const navigate = useNavigate();
   const { settings, saveSettings } = useSettings();
   const { logoutUser, deleteCurrentAccount } = useAuth();
   const { profile } = useTenant();
@@ -91,6 +94,11 @@ export const SettingsPage = () => {
     } catch {
       setTransferMessage({ type: 'error', text: 'Failed to delete account. Please try again.' });
     }
+  };
+
+  const onSwitchCoach = () => {
+    clearMyCoachSlug();
+    navigate('/');
   };
 
   return (
@@ -187,6 +195,7 @@ export const SettingsPage = () => {
 
       <div className="actions-row settings-actions-row">
         <button className="primary-btn" onClick={() => updateDraft(DEFAULT_SETTINGS)}>Reset Defaults</button>
+        <button className="primary-btn" onClick={onSwitchCoach}>Switch Coach</button>
       </div>
 
       <div className="stack settings-stack settings-transfer-section">

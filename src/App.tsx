@@ -1,6 +1,8 @@
-import { BrowserRouter, Navigate, Route, Routes, useLocation, useParams } from 'react-router-dom';
+import { useEffect, useState } from 'react';
+import { BrowserRouter, Navigate, Route, Routes, useLocation, useNavigate, useParams } from 'react-router-dom';
 import { AppLayout } from './components/AppLayout';
 import { AboutPage } from './pages/AboutPage';
+import { CoachDirectoryPage } from './pages/CoachDirectoryPage';
 import { HistoryPage } from './pages/HistoryPage';
 import { NewTimerPage } from './pages/NewTimerPage';
 import { RunningTimerPage } from './pages/RunningTimerPage';
@@ -12,6 +14,8 @@ import { TimerDetailPage } from './pages/TimerDetailPage';
 import { TimerListPage } from './pages/TimerListPage';
 import { SettingsProvider } from './services/settingsContext';
 import { AuthProvider, useAuth, useCoachMode } from './services/authContext';
+import { clearMyCoachSlug, getMyCoachSlug, isValidCoachSlug } from './services/coachDirectory';
+import { fetchTenantPublicProfileWithStatus } from './services/tenantApi';
 import { TenantProvider, useTenant } from './services/tenantContext';
 
 const TimerEditRedirect = () => {
@@ -31,6 +35,7 @@ const LoginPage = () => {
 
   return (
     <section className="login-page">
+      <p className="topbar-user-email login-user-email">{user?.email ?? ''}</p>
       <h1 className="screen-title">Sign In Required</h1>
       <div className="actions-row login-actions-row">
         <button className="google-signin-btn" onClick={() => login(nextPath)}>
@@ -80,6 +85,57 @@ const TenantShell = () => {
   );
 };
 
+const RootLaunchPage = () => {
+  const navigate = useNavigate();
+  const [loading, setLoading] = useState(true);
+  const [notice, setNotice] = useState('');
+
+  useEffect(() => {
+    let active = true;
+    const slug = getMyCoachSlug();
+    if (!slug || !isValidCoachSlug(slug)) {
+      if (slug) {
+        clearMyCoachSlug();
+      }
+      setLoading(false);
+      return;
+    }
+    void fetchTenantPublicProfileWithStatus(slug).then(({ profile, status }) => {
+      if (!active) {
+        return;
+      }
+      if (profile) {
+        navigate(`/${slug}`, { replace: true });
+        return;
+      }
+      if (status === 404) {
+        clearMyCoachSlug();
+        setNotice('Your saved coach is no longer available. Please choose My Coach again.');
+      } else {
+        setNotice('We could not verify your saved coach right now. Please try again.');
+      }
+      setLoading(false);
+    }).catch(() => {
+      if (active) {
+        setNotice('We could not verify your saved coach right now. Please try again.');
+        setLoading(false);
+      }
+    });
+    return () => {
+      active = false;
+    };
+  }, [navigate]);
+
+  if (loading) {
+    return (
+      <section className="invalid-url-page">
+        <h1 className="screen-title">Loading...</h1>
+      </section>
+    );
+  }
+  return <CoachDirectoryPage notice={notice} />;
+};
+
 const CoachOnlyHistoryRoute = () => {
   const coachMode = useCoachMode();
   const { toTenantPath } = useTenant();
@@ -89,6 +145,15 @@ const CoachOnlyHistoryRoute = () => {
   return <HistoryPage />;
 };
 
+const NonCoachOnlyAboutRoute = () => {
+  const coachMode = useCoachMode();
+  const { toTenantPath } = useTenant();
+  if (coachMode) {
+    return <Navigate to={toTenantPath('')} replace />;
+  }
+  return <AboutPage />;
+};
+
 function App() {
   return (
     <BrowserRouter>
@@ -96,7 +161,7 @@ function App() {
         <Routes>
           <Route path="/login" element={<LoginPage />} />
           <Route path="/invalid-url" element={<InvalidUrlPage />} />
-          <Route path="/" element={<InvalidUrlPage />} />
+          <Route path="/" element={<RequireAuth><RootLaunchPage /></RequireAuth>} />
           <Route path="/history" element={<InvalidUrlPage />} />
           <Route path="/about" element={<InvalidUrlPage />} />
           <Route path="/templates" element={<InvalidUrlPage />} />
@@ -110,7 +175,7 @@ function App() {
           <Route path="/:tenantSlug" element={<TenantShell />}>
             <Route index element={<TimerListPage />} />
             <Route path="history" element={<CoachOnlyHistoryRoute />} />
-            <Route path="about" element={<AboutPage />} />
+            <Route path="about" element={<NonCoachOnlyAboutRoute />} />
             <Route path="templates" element={<TemplatesPage />} />
             <Route path="template/:id" element={<TemplateDetailPage />} />
             <Route path="settings" element={<SettingsPage />} />

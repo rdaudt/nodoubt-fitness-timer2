@@ -1,10 +1,15 @@
-import type { PublicTemplate, TenantPublicProfile } from '../types';
+import type { CoachDirectoryItem, CoachDirectoryResponse, PublicTemplate, TenantPublicProfile } from '../types';
 import { isPerfTriageEnabled, recordFetchMetric } from './perfTriage';
 
 interface PerfFetchOptions {
   traceId?: string;
   route?: string;
   onCacheSource?: (source: 'network' | 'sw-cache') => void;
+}
+
+export interface TenantPublicProfileFetchResult {
+  profile: TenantPublicProfile | null;
+  status: number;
 }
 
 const buildPerfHeaders = (options?: PerfFetchOptions): HeadersInit | undefined => {
@@ -93,7 +98,28 @@ const normalizeTemplate = (value: unknown): PublicTemplate | null => {
   };
 };
 
-export const fetchTenantPublicProfile = async (slug: string, options?: PerfFetchOptions): Promise<TenantPublicProfile | null> => {
+const normalizeCoachDirectoryItem = (value: unknown): CoachDirectoryItem | null => {
+  if (!value || typeof value !== 'object') {
+    return null;
+  }
+  const typed = value as Record<string, unknown>;
+  const slug = asString(typed.slug).trim().toLowerCase();
+  if (!slug) {
+    return null;
+  }
+  return {
+    slug,
+    coachName: asString(typed.coachName),
+    businessName: asString(typed.businessName),
+    coachPhotoUrl: asString(typed.coachPhotoUrl),
+    igUsername: asString(typed.igUsername),
+  };
+};
+
+export const fetchTenantPublicProfileWithStatus = async (
+  slug: string,
+  options?: PerfFetchOptions,
+): Promise<TenantPublicProfileFetchResult> => {
   const startedAt = performance.now();
   const perfEnabled = isPerfTriageEnabled();
   let headersAt = startedAt;
@@ -107,14 +133,22 @@ export const fetchTenantPublicProfile = async (slug: string, options?: PerfFetch
     recordFetchMetric('tenant_public_headers_ms', headersAt - startedAt);
   }
   if (!response.ok) {
-    return null;
+    return { profile: null, status: response.status };
   }
   const parseStart = performance.now();
   const payload = await response.json();
   if (perfEnabled) {
     recordFetchMetric('tenant_public_json_parse_ms', performance.now() - parseStart);
   }
-  return normalizeProfile(payload);
+  return {
+    profile: normalizeProfile(payload),
+    status: response.status,
+  };
+};
+
+export const fetchTenantPublicProfile = async (slug: string, options?: PerfFetchOptions): Promise<TenantPublicProfile | null> => {
+  const result = await fetchTenantPublicProfileWithStatus(slug, options);
+  return result.profile;
 };
 
 export const fetchTenantPublicTemplates = async (slug: string, options?: PerfFetchOptions): Promise<PublicTemplate[]> => {
@@ -142,4 +176,28 @@ export const fetchTenantPublicTemplates = async (slug: string, options?: PerfFet
     return [];
   }
   return payload.map((item) => normalizeTemplate(item)).filter((item): item is PublicTemplate => Boolean(item));
+};
+
+export const fetchCoachDirectory = async (query: string, page: number, pageSize: number): Promise<CoachDirectoryResponse> => {
+  const params = new URLSearchParams({
+    view: 'directory',
+    query,
+    page: String(page),
+    pageSize: String(pageSize),
+  });
+  const response = await fetch(`/api/tenant-public?${params.toString()}`);
+  if (!response.ok) {
+    throw new Error('Failed to load coach directory.');
+  }
+  const payload = await response.json() as Record<string, unknown>;
+  const items = Array.isArray(payload.items)
+    ? payload.items.map((item) => normalizeCoachDirectoryItem(item)).filter((item): item is CoachDirectoryItem => Boolean(item))
+    : [];
+  return {
+    items,
+    page: Math.max(1, asNumber(payload.page) || 1),
+    pageSize: Math.max(1, asNumber(payload.pageSize) || pageSize),
+    total: Math.max(0, asNumber(payload.total)),
+    hasNextPage: Boolean(payload.hasNextPage),
+  };
 };

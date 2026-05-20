@@ -83,6 +83,19 @@ select {
   padding: 0.35rem 0.9rem 0.25rem;
 }
 
+.topbar-user-email {
+  font-size: 0.68rem;
+  line-height: 1.2;
+  color: #cfcfcf;
+  padding: 0.3rem 0.9rem 0 0.9rem;
+  text-align: center;
+  word-break: break-all;
+}
+
+.login-user-email {
+  margin: 0;
+}
+
 .brand-logo-link {
   display: block;
   flex: 0 0 auto;
@@ -762,6 +775,35 @@ select {
 .settings-success-inline {
   color: #7bd88f;
   margin: 0.2rem 0 0;
+}
+
+.coach-directory-page {
+  display: grid;
+  gap: 0.75rem;
+}
+
+.coach-card {
+  display: grid;
+  grid-template-columns: 54px minmax(0, 1fr) auto;
+  gap: 0.65rem;
+  align-items: center;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: #111;
+  padding: 0.55rem;
+  cursor: pointer;
+}
+
+.coach-card-photo {
+  width: 54px;
+  height: 54px;
+  border-radius: 10px;
+  object-fit: cover;
+}
+
+.coach-card-copy h3,
+.coach-card-copy p {
+  margin: 0;
 }
 
 .settings-toggle-row {

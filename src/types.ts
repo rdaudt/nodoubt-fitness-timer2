@@ -150,3 +150,19 @@ export interface PublicTemplate {
   createdAt: string;
   updatedAt: string;
 }
+
+export interface CoachDirectoryItem {
+  slug: string;
+  coachName: string;
+  businessName: string;
+  coachPhotoUrl: string;
+  igUsername: string;
+}
+
+export interface CoachDirectoryResponse {
+  items: CoachDirectoryItem[];
+  page: number;
+  pageSize: number;
+  total: number;
+  hasNextPage: boolean;
+}
