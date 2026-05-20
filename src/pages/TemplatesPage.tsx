@@ -2,15 +2,15 @@ import { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { formatTimerTotal, getTimerSummaryItems } from '../lib/time';
 import { trackAnalyticsEvent } from '../services/analytics';
+import { useCoachMode } from '../services/authContext';
 import { createTimerFromTemplate, deleteTemplate, listTemplates } from '../services/templateService';
 import { TimerRepository } from '../services/storage';
-import { useSettings } from '../services/settingsContext';
 import { useTenant } from '../services/tenantContext';
 import type { Template } from '../types';
 
 export const TemplatesPage = () => {
   const navigate = useNavigate();
-  const { settings } = useSettings();
+  const coachMode = useCoachMode();
   const { templates: publicTemplates, toTenantPath } = useTenant();
   const [templates, setTemplates] = useState<Template[]>([]);
 
@@ -62,7 +62,7 @@ export const TemplatesPage = () => {
                   <h3>{template.name}</h3>
                 </div>
                 <div className="timer-card-meta-row">
-                  {getTimerSummaryItems(template, settings.coachMode).map((item) => (
+                  {getTimerSummaryItems(template, coachMode).map((item) => (
                     <span className="timer-type-total" key={`${item.type}-${item.label}`}>
                       {item.label} {item.value}
                     </span>

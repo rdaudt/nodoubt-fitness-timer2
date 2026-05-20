@@ -3,6 +3,7 @@ import { Link, useParams, useSearchParams } from 'react-router-dom';
 import { formatClock, getStationWorkoutDurationMs, getWorkDurationMs } from '../lib/time';
 import { useTimerRunner } from '../lib/useTimerRunner';
 import { trackAnalyticsEvent } from '../services/analytics';
+import { useCoachMode } from '../services/authContext';
 import { useSettings } from '../services/settingsContext';
 import { useTenant } from '../services/tenantContext';
 import { TimerRepository, TimerRunRepository } from '../services/storage';
@@ -143,6 +144,7 @@ export const RunningTimerPage = () => {
   const { id = '' } = useParams();
   const [searchParams] = useSearchParams();
   const { settings, saveSettings } = useSettings();
+  const coachMode = useCoachMode();
   const { toTenantPath } = useTenant();
   const [timer, setTimer] = useState<Timer | null>(null);
   const [showSessionMap, setShowSessionMap] = useState(true);
@@ -158,7 +160,7 @@ export const RunningTimerPage = () => {
     TimerRepository.get(id).then((value) => setTimer(value ?? null));
   }, [id]);
 
-  const runner = useTimerRunner(timer ?? emptyTimer(), settings.coachMode, {
+  const runner = useTimerRunner(timer ?? emptyTimer(), coachMode, {
     endIntervalLongBeep: settings.endIntervalLongBeep,
     countdownLast5Beeps: settings.countdownLast5Beeps,
   });
@@ -206,10 +208,10 @@ export const RunningTimerPage = () => {
       cooldownEnabled: timer.cooldownEnabled,
       cooldownSec: timer.cooldownMinutes * 60 + timer.cooldownSeconds,
       category: 'GENERAL',
-      coachModeAtRun: settings.coachMode,
+      coachModeAtRun: coachMode,
     } as const;
     trackAnalyticsEvent(complete ? 'timer_run_completed' : 'timer_run_incomplete', runPayload);
-    if (settings.coachMode) {
+    if (coachMode) {
       trackAnalyticsEvent('timer_run_coach_mode', runPayload);
     }
   };
@@ -252,7 +254,7 @@ export const RunningTimerPage = () => {
       observer?.disconnect();
       window.removeEventListener('resize', updateOffset);
     };
-  }, [settings.coachMode, timer?.startStationWorkManually, runner.state.status, confirmAction]);
+  }, [coachMode, timer?.startStationWorkManually, runner.state.status, confirmAction]);
 
   const donePath = searchParams.get('from') === 'home'
     ? toTenantPath('')
@@ -404,16 +406,16 @@ export const RunningTimerPage = () => {
           >
             {currentImage && <img className="run-current-image" src={currentImage} alt="" aria-hidden="true" />}
             <div className="run-current-copy">
-              <p className="run-current-context">{entryContext(activeEntry, settings.coachMode)}</p>
-              <h1>{entryTitle(activeEntry, settings.coachMode)}</h1>
+              <p className="run-current-context">{entryContext(activeEntry, coachMode)}</p>
+              <h1>{entryTitle(activeEntry, coachMode)}</h1>
               <p className="run-current-time">{formatClock(runner.state.currentRemainingMs / 1000)}</p>
             </div>
           </article>
 
           <article className="run-next-card" style={nextStyle}>
             <span>next</span>
-            <strong>{entryTitle(nextEntry, settings.coachMode)}</strong>
-            {nextEntry && <p>{entryContext(nextEntry, settings.coachMode)} ({formatClock(nextEntry.durationMs / 1000)})</p>}
+            <strong>{entryTitle(nextEntry, coachMode)}</strong>
+            {nextEntry && <p>{entryContext(nextEntry, coachMode)} ({formatClock(nextEntry.durationMs / 1000)})</p>}
           </article>
 
           <div className={`actions-row run-actions ${confirmAction ? 'run-actions-confirm' : 'run-actions-main'}`}>
@@ -466,7 +468,7 @@ export const RunningTimerPage = () => {
                 aria-label="Show session map"
               />
             </label>
-            {settings.coachMode && (
+            {coachMode && (
               <label className="run-map-toggle-row">
                 <span>Start Set Manually</span>
                 <input

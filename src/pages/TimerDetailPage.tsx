@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState, type WheelEvent } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { estimateTimerDurationMs, formatClock } from '../lib/time';
 import { normalizeTimerFields, validateTimer } from '../lib/timerRules';
-import { useSettings } from '../services/settingsContext';
+import { useCoachMode } from '../services/authContext';
 import { useTenant } from '../services/tenantContext';
 import { TimerRepository } from '../services/storage';
 import type { Timer } from '../types';
@@ -182,7 +182,7 @@ export const TimerDetailPage = () => {
   const { id = '' } = useParams();
   const navigate = useNavigate();
   const { toTenantPath } = useTenant();
-  const { settings } = useSettings();
+  const coachMode = useCoachMode();
 
   const [timer, setTimer] = useState<Timer | null>(null);
   const [allTimers, setAllTimers] = useState<Timer[]>([]);
@@ -272,7 +272,7 @@ export const TimerDetailPage = () => {
     return <p className="empty">Timer not found.</p>;
   }
 
-  const stationLabel = settings.coachMode ? '# Stations' : '# Sets';
+  const stationLabel = coachMode ? '# Stations' : '# Sets';
   const stationWorkoutTypes = timer.stationWorkoutTypes ?? [];
   const onLoadRandomWorkouts = () => {
     const next = [...stationWorkoutTypes];
@@ -405,7 +405,7 @@ export const TimerDetailPage = () => {
         </div>
       </section>
 
-      {settings.coachMode && (
+      {coachMode && (
         <label className="field detail-repeat-toggle-row">
           <span>Start Set Manually</span>
           <input
@@ -418,7 +418,7 @@ export const TimerDetailPage = () => {
         </label>
       )}
 
-      {settings.coachMode && (
+      {coachMode && (
         <section className="stack">
           <h3>Workout Types (Optional)</h3>
           {SHOW_LOAD_RANDOM_WORKOUTS_BUTTON && (

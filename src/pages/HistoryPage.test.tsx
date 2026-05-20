@@ -3,11 +3,12 @@ import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { HistoryPage } from './HistoryPage';
 
-const { listAllRunsMock, listTimersMock, updateRunMock, settingsMock } = vi.hoisted(() => ({
+const { listAllRunsMock, listTimersMock, updateRunMock, settingsMock, coachModeMock } = vi.hoisted(() => ({
   listAllRunsMock: vi.fn(),
   listTimersMock: vi.fn(),
   updateRunMock: vi.fn(),
   settingsMock: vi.fn(),
+  coachModeMock: vi.fn(),
 }));
 
 vi.mock('../services/storage', () => ({
@@ -27,6 +28,10 @@ vi.mock('../services/settingsContext', () => ({
     loaded: true,
     saveSettings: vi.fn(),
   }),
+}));
+
+vi.mock('../services/authContext', () => ({
+  useCoachMode: () => coachModeMock(),
 }));
 
 const timer = {
@@ -85,7 +90,6 @@ describe('HistoryPage', () => {
       status: 'queued',
     }), { status: 200 }));
     settingsMock.mockReturnValue({
-      coachMode: true,
       kobeEverywhere: true,
       imagesInAllTimers: false,
       bwTimerImages: true,
@@ -99,6 +103,7 @@ describe('HistoryPage', () => {
       },
     });
     listTimersMock.mockResolvedValue([timer]);
+    coachModeMock.mockReturnValue(true);
     listAllRunsMock.mockResolvedValue([{
       id: 'run-1',
       timerId: 'timer-1',
@@ -237,7 +242,6 @@ describe('HistoryPage', () => {
 
   it('hides share button when coach mode is off', async () => {
     settingsMock.mockReturnValue({
-      coachMode: false,
       kobeEverywhere: true,
       imagesInAllTimers: false,
       bwTimerImages: true,
@@ -250,6 +254,7 @@ describe('HistoryPage', () => {
         cooldown: '#3B82F6',
       },
     });
+    coachModeMock.mockReturnValue(false);
 
     render(
       <MemoryRouter initialEntries={['/history']}>

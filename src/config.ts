@@ -14,7 +14,6 @@ export const BRAND = {
 };
 
 export const DEFAULT_SETTINGS: AppSettings = {
-  coachMode: true,
   kobeEverywhere: true,
   imagesInAllTimers: false,
   bwTimerImages: true,

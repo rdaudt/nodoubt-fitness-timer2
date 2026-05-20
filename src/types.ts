@@ -44,7 +44,6 @@ export interface TimerRun {
 }
 
 export interface AppSettings {
-  coachMode: boolean;
   kobeEverywhere: boolean;
   imagesInAllTimers: boolean;
   bwTimerImages: boolean;

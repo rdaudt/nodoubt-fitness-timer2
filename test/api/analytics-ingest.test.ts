@@ -40,7 +40,7 @@ const baseValidBody = {
   osFamily: 'android' as const,
   osVersion: '14',
   deviceType: 'mobile' as const,
-  payload: { category: 'GENERAL' },
+  payload: { category: 'GENERAL', coachMode: false },
 };
 
 const isTenantLookup = (sql: string) => /FROM coach_tenants/i.test(sql);
@@ -92,6 +92,20 @@ describe('analytics-ingest API', () => {
       },
     }, res);
 
+    expect(store.statusCode).toBe(400);
+    expect(executeMock).not.toHaveBeenCalled();
+  });
+
+  it('rejects payload missing coachMode in event payload', async () => {
+    const { default: handler } = await import('../../api/analytics-ingest');
+    const { res, store } = createMockRes();
+    await handler({
+      method: 'POST',
+      body: {
+        ...baseValidBody,
+        payload: { category: 'GENERAL' },
+      },
+    }, res);
     expect(store.statusCode).toBe(400);
     expect(executeMock).not.toHaveBeenCalled();
   });

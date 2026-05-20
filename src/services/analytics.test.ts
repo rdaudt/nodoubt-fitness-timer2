@@ -4,6 +4,7 @@ import {
   detectDeviceType,
   detectOsFamily,
   detectOsVersionMajor,
+  setAnalyticsCoachModeProvider,
   startAnalyticsSession,
   trackAnalyticsEvent,
 } from './analytics';
@@ -12,6 +13,7 @@ describe('analytics service', () => {
   beforeEach(() => {
     vi.restoreAllMocks();
     window.localStorage.clear();
+    setAnalyticsCoachModeProvider(null);
   });
 
   it('detects browser families using coarse labels only', () => {
@@ -72,5 +74,6 @@ describe('analytics service', () => {
     expect(typeof body.osFamily).toBe('string');
     expect(typeof body.osVersion).toBe('string');
     expect(typeof body.deviceType).toBe('string');
+    expect((body.payload as Record<string, unknown>).coachMode).toBe(false);
   });
 });

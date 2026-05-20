@@ -10,7 +10,6 @@ describe('settingsRules', () => {
   it('rejects duplicates', () => {
     expect(
       intervalColorsAreUnique({
-        coachMode: true,
         kobeEverywhere: true,
         imagesInAllTimers: false,
         bwTimerImages: true,

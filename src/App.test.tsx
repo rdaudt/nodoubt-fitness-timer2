@@ -64,6 +64,6 @@ describe('App invalid URL behavior', () => {
     render(<App />);
 
     await waitFor(() => expect(screen.getByRole('heading', { name: 'Invalid Timer URL' })).toBeInTheDocument());
-    expect(fetchTenantPublicProfileMock).toHaveBeenCalledWith('unknown-tenant');
+    expect(fetchTenantPublicProfileMock).toHaveBeenCalledWith('unknown-tenant', undefined);
   });
 });

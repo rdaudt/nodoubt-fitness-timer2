@@ -10,7 +10,7 @@ import {
   getWorkDurationMs,
 } from '../lib/time';
 import { normalizeTimerFields } from '../lib/timerRules';
-import { useSettings } from '../services/settingsContext';
+import { useCoachMode } from '../services/authContext';
 import { useTenant } from '../services/tenantContext';
 import { TimerRepository, TimerRunRepository } from '../services/storage';
 import type { Timer, TimerRun } from '../types';
@@ -125,7 +125,7 @@ const saveStoredJobs = (jobs: Record<string, StoredJobInfo>) => {
 };
 
 export const HistoryPage = () => {
-  const { settings } = useSettings();
+  const coachMode = useCoachMode();
   const { toTenantPath } = useTenant();
   const [runs, setRuns] = useState<TimerRun[]>([]);
   const [timers, setTimers] = useState<Timer[]>([]);
@@ -305,7 +305,7 @@ export const HistoryPage = () => {
   };
 
   const generateIgImage = async (run: TimerRun) => {
-    if (!settings.coachMode) {
+    if (!coachMode) {
       return;
     }
     if (!run.complete || !hasCompleteWorkoutTypes(run)) {
@@ -430,7 +430,7 @@ export const HistoryPage = () => {
               imageUrl: null,
               jobId: null,
             };
-            const canGenerate = settings.coachMode && run.complete && hasCompleteWorkoutTypes(run);
+            const canGenerate = coachMode && run.complete && hasCompleteWorkoutTypes(run);
             return (
               <article key={run.id} className="timer-run-card history-run-card">
                 <div className="history-run-card-head">
@@ -460,7 +460,7 @@ export const HistoryPage = () => {
                     <p className="history-run-location">Location: {run.location || 'Not set'}</p>
                     <div className="history-card-actions" aria-label="Run actions">
                       <button className="secondary-btn history-action-btn" onClick={() => downloadRunExport(run)}>Data Export</button>
-                      {settings.coachMode && SHOW_CREATE_CONTENT_BUTTON && (
+                      {coachMode && SHOW_CREATE_CONTENT_BUTTON && (
                         <button
                           className="primary-btn history-action-btn"
                           onClick={() => void generateIgImage(run)}

@@ -10,8 +10,13 @@ const { getMock, listMock, upsertMock, removeMock } = vi.hoisted(() => ({
   upsertMock: vi.fn(),
   removeMock: vi.fn(),
 }));
-const { settingsMock } = vi.hoisted(() => ({
+const { coachModeMock, settingsMock } = vi.hoisted(() => ({
+  coachModeMock: vi.fn(),
   settingsMock: vi.fn(),
+}));
+
+vi.mock('../services/authContext', () => ({
+  useCoachMode: () => coachModeMock(),
 }));
 
 vi.mock('../services/settingsContext', () => ({
@@ -57,7 +62,6 @@ describe('TimerDetailPage', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     settingsMock.mockReturnValue({
-      coachMode: true,
       kobeEverywhere: true,
       imagesInAllTimers: false,
       bwTimerImages: true,
@@ -70,6 +74,7 @@ describe('TimerDetailPage', () => {
         cooldown: '#3b82f6',
       },
     });
+    coachModeMock.mockReturnValue(true);
     getMock.mockResolvedValue(timer);
     listMock.mockResolvedValue([timer]);
     upsertMock.mockResolvedValue(undefined);
@@ -245,7 +250,6 @@ describe('TimerDetailPage', () => {
 
   it('hides workout type section when coach mode is off', async () => {
     settingsMock.mockReturnValue({
-      coachMode: false,
       kobeEverywhere: true,
       imagesInAllTimers: false,
       bwTimerImages: true,
@@ -258,6 +262,7 @@ describe('TimerDetailPage', () => {
         cooldown: '#3b82f6',
       },
     });
+    coachModeMock.mockReturnValue(false);
 
     render(
       <MemoryRouter initialEntries={['/timer/timer-1']}>

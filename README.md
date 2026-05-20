@@ -5,7 +5,7 @@ Mobile-first, offline-capable HIIT timer PWA with coach-focused workflows.
 ## Overview
 This app lets users create and run station-based HIIT workouts with warmup, work/rest rounds, station transitions, and cooldown. It also includes templates, run history, timer import/export, and optional coach content-generation workflows.
 
-Core timer usage is local-first and stored in IndexedDB. Google authentication is required for all users. Tenant profile and published templates are read from shared Turso data managed by `best-hiit-timer-portal`. Optional backend APIs (Vercel serverless) also support analytics and async image generation jobs.
+Core timer usage is local-first and stored in tenant-scoped IndexedDB databases. Google authentication is required for all users. Tenant profile and published templates are read from shared Turso data managed by `best-hiit-timer-portal`. Optional backend APIs (Vercel serverless) also support analytics and image generation jobs.
 
 ## Key Features
 - Timer CRUD with station/round model
@@ -38,7 +38,7 @@ Core timer usage is local-first and stored in IndexedDB. Google authentication i
 - React Router
 - IndexedDB via `idb`
 - Vitest + Testing Library
-- Vercel Serverless Functions (`api/*`)
+- Vercel Serverless Functions (`api/*`, capped at 12 on Vercel Hobby)
 - Turso (`@libsql/client`) for analytics/job metadata
 - Vercel Blob for generated image storage
 
@@ -52,6 +52,8 @@ Core timer usage is local-first and stored in IndexedDB. Google authentication i
 - `/:tenantSlug/history` run history
 - `/:tenantSlug/about` business/about page
 - `/:tenantSlug/settings` settings + timer import/export
+- `/login` sign-in screen (Google OAuth entry)
+- `/invalid-url` invalid route/slug fallback
 
 ## Project Structure
 ```text
@@ -65,6 +67,10 @@ public/              static assets + service worker + manifest
 templates/           built-in timer template JSON files
 scripts/             maintenance scripts (analytics DB init)
 ```
+
+Current architecture details are documented in:
+- `docs/ARCHITECTURE.md`
+- `docs/DEPLOYMENT.md`
 
 ## Getting Started
 ### Prerequisites
@@ -101,9 +107,9 @@ npm run preview
 ## Local Development Modes
 ### 1) Frontend-only mode (limited without auth)
 Use `npm run dev`.
-- Timer CRUD/run/settings/templates/history (local data) work in browser.
+- App shell and local screens can load in browser.
 - API routes are not available in this mode.
-- Google sign-in flow is not available in this mode.
+- Google sign-in flow requires serverless `/api/auth` and is not available in this mode.
 
 ### 2) Full-stack mode (frontend + `/api/*`)
 Use Vercel dev runtime when testing serverless endpoints locally.
@@ -138,6 +144,10 @@ Set these in `.env.local` for local full-stack/serverless work and in Vercel Pro
 - `GOOGLE_CLIENT_ID`
 - `GOOGLE_CLIENT_SECRET`
 - `AUTH_SESSION_SECRET`
+
+### Optional perf-triage flags
+- `PERF_TRIAGE_ENABLED=1`
+- `VITE_PERF_TRIAGE=1`
 
 ## Analytics Setup
 Initialize analytics tables once:
@@ -174,6 +184,11 @@ Build settings:
 
 Serverless APIs under `api/` are deployed automatically with the project.
 
+Important Vercel Hobby constraint:
+- This plan allows up to 12 serverless functions per project.
+- This repository currently uses all 12 function slots (one per non-underscore file in `api/`).
+- Adding a new API endpoint requires consolidating or removing an existing endpoint.
+
 ## Data & Privacy Notes
 - Core timer data is local to the browser (IndexedDB).
 - Google authentication is required for app usage.
@@ -181,11 +196,13 @@ Serverless APIs under `api/` are deployed automatically with the project.
 - Timer import/export covers timer definitions only (run history excluded).
 
 ## Documentation
-- Product requirements: `docs/hiit-timer-prd.md`
-- Business rules: `docs/business-rules.md`
+- Architecture: `docs/ARCHITECTURE.md`
+- Deployment + serverless function budget: `docs/DEPLOYMENT.md`
 - Analytics setup: `docs/analytics.md`
-- Deployment: `docs/DEPLOYMENT.md`
-- Brand reference: `docs/BRAND.md`
+- Perf triage runbook: `docs/perf-triage-console-capture-runbook.md`
+- Portal context docs (reference for shared platform assumptions):
+  - `docs/best-hiit-timer-portal-prd.md`
+  - `docs/best-hiit-timer-portal-setup-guide.md`
 
 ## NPM Scripts
 - `npm run dev` - start Vite dev server

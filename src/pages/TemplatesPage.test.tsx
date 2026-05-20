@@ -12,23 +12,8 @@ const { upsertTimerMock } = vi.hoisted(() => ({
   upsertTimerMock: vi.fn(),
 }));
 
-vi.mock('../services/settingsContext', () => ({
-  useSettings: () => ({
-    settings: {
-      coachMode: true,
-      kobeEverywhere: true,
-      imagesInAllTimers: false,
-      bwTimerImages: true,
-      endIntervalLongBeep: true,
-      countdownLast5Beeps: true,
-      intervalColors: {
-        warmup: '#ff8c00',
-        work: '#ff4444',
-        rest: '#2ecc71',
-        cooldown: '#3b82f6',
-      },
-    },
-  }),
+vi.mock('../services/authContext', () => ({
+  useCoachMode: () => true,
 }));
 
 vi.mock('../services/templateService', () => ({

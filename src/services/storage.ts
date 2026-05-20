@@ -318,7 +318,6 @@ export const SettingsRepository = {
     return {
       ...DEFAULT_SETTINGS,
       ...row.value,
-      coachMode: row.value.coachMode ?? DEFAULT_SETTINGS.coachMode,
       kobeEverywhere: row.value.kobeEverywhere ?? DEFAULT_SETTINGS.kobeEverywhere,
       imagesInAllTimers: row.value.imagesInAllTimers ?? DEFAULT_SETTINGS.imagesInAllTimers,
       bwTimerImages: row.value.bwTimerImages ?? DEFAULT_SETTINGS.bwTimerImages,

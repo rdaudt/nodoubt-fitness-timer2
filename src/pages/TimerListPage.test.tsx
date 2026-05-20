@@ -7,7 +7,6 @@ import type { Timer } from '../types';
 const { listMock, settingsMock } = vi.hoisted(() => ({
   listMock: vi.fn(),
   settingsMock: {
-    coachMode: true,
     kobeEverywhere: true,
     imagesInAllTimers: true,
     bwTimerImages: true,
@@ -27,6 +26,10 @@ vi.mock('../services/settingsContext', () => ({
     settings: settingsMock,
     saveSettings: vi.fn(),
   }),
+}));
+
+vi.mock('../services/authContext', () => ({
+  useCoachMode: () => true,
 }));
 
 vi.mock('../services/storage', () => ({

@@ -21,6 +21,10 @@ vi.mock('../services/settingsContext', () => ({
   }),
 }));
 
+vi.mock('../services/authContext', () => ({
+  useCoachMode: () => true,
+}));
+
 vi.mock('../services/storage', () => ({
   TimerRepository: {
     get: getMock,
@@ -74,7 +78,6 @@ describe('RunningTimerPage', () => {
     upsertMock.mockResolvedValue(undefined);
     createRunMock.mockResolvedValue(undefined);
     settingsMock.mockReturnValue({
-      coachMode: true,
       kobeEverywhere: true,
       imagesInAllTimers: false,
       bwTimerImages: true,
@@ -447,7 +450,6 @@ describe('RunningTimerPage', () => {
 
   it('hides running card cat image when Kobe Everywhere is off', async () => {
     settingsMock.mockReturnValue({
-      coachMode: true,
       kobeEverywhere: false,
       imagesInAllTimers: false,
       bwTimerImages: true,
@@ -758,7 +760,6 @@ describe('RunningTimerPage', () => {
 
   it('uses settings interval colors for map circles', async () => {
     settingsMock.mockReturnValue({
-      coachMode: true,
       kobeEverywhere: true,
       imagesInAllTimers: false,
       bwTimerImages: true,
@@ -819,7 +820,6 @@ describe('RunningTimerPage', () => {
 
     expect(saveSettingsMock).toHaveBeenCalledTimes(1);
     expect(saveSettingsMock).toHaveBeenCalledWith({
-      coachMode: true,
       kobeEverywhere: false,
       imagesInAllTimers: false,
       bwTimerImages: true,
@@ -842,7 +842,6 @@ describe('RunningTimerPage', () => {
 
     expect(saveSettingsMock).toHaveBeenCalledTimes(1);
     expect(saveSettingsMock).toHaveBeenCalledWith({
-      coachMode: true,
       kobeEverywhere: true,
       imagesInAllTimers: false,
       bwTimerImages: true,

@@ -52,6 +52,7 @@ const hasOnlyKeys = (value: Record<string, unknown>, keys: string[]): boolean =>
 
 const isRunPayload = (value: Record<string, unknown>): boolean => (
   hasOnlyKeys(value, [
+    'coachMode',
     'stationCount',
     'roundsPerStation',
     'workSec',
@@ -65,6 +66,7 @@ const isRunPayload = (value: Record<string, unknown>): boolean => (
     'coachModeAtRun',
   ])
   && isFiniteNonNegativeInt(value.stationCount)
+  && typeof value.coachMode === 'boolean'
   && value.stationCount >= 1
   && isFiniteNonNegativeInt(value.roundsPerStation)
   && value.roundsPerStation >= 1
@@ -84,7 +86,7 @@ const validatePayloadByEvent = (
   payload: Record<string, unknown>,
 ): boolean => {
   if (eventName === 'app_opened') {
-    return hasOnlyKeys(payload, []);
+    return hasOnlyKeys(payload, ['coachMode']) && typeof payload.coachMode === 'boolean';
   }
   if (
     eventName === 'timer_created'
@@ -92,10 +94,14 @@ const validatePayloadByEvent = (
     || eventName === 'timer_created_from_template'
     || eventName === 'template_created_from_timer'
   ) {
-    return hasOnlyKeys(payload, ['category']) && isCategory(payload.category);
+    return hasOnlyKeys(payload, ['category', 'coachMode'])
+      && isCategory(payload.category)
+      && typeof payload.coachMode === 'boolean';
   }
   if (eventName === 'timers_exported' || eventName === 'timers_imported') {
-    return hasOnlyKeys(payload, ['timerCount']) && isFiniteNonNegativeInt(payload.timerCount);
+    return hasOnlyKeys(payload, ['timerCount', 'coachMode'])
+      && isFiniteNonNegativeInt(payload.timerCount)
+      && typeof payload.coachMode === 'boolean';
   }
   return isRunPayload(payload);
 };

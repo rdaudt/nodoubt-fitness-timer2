@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { TimerCard } from '../components/TimerCard';
 import { randomUniqueTimerName } from '../lib/timerFactory';
 import { trackAnalyticsEvent } from '../services/analytics';
+import { useCoachMode } from '../services/authContext';
 import { createTemplateFromTimer } from '../services/templateService';
 import { useSettings } from '../services/settingsContext';
 import { useTenant } from '../services/tenantContext';
@@ -52,7 +53,8 @@ const assignCardImages = (cardCount: number, imagesInAllTimers: boolean): Array<
 };
 
 export const TimerListPage = () => {
-  const { settings, saveSettings } = useSettings();
+  const { settings } = useSettings();
+  const coachMode = useCoachMode();
   const { toTenantPath } = useTenant();
   const [timers, setTimers] = useState<Timer[]>([]);
   const [cardImages, setCardImages] = useState<Array<string | undefined>>([]);
@@ -115,17 +117,6 @@ export const TimerListPage = () => {
         </Link>
       </div>
 
-      <label className="field settings-toggle-row home-coach-mode-row">
-        <span>Coach Mode</span>
-        <input
-          className="settings-toggle-input"
-          type="checkbox"
-          checked={settings.coachMode}
-          onChange={(e) => saveSettings({ ...settings, coachMode: e.target.checked })}
-          aria-label="Coach Mode"
-        />
-      </label>
-
       <div className="stack">
         {visibleTimers.length === 0
           ? <p className="empty">No timers yet. Create your first interval plan.</p>
@@ -134,7 +125,7 @@ export const TimerListPage = () => {
               key={timer.id}
               timer={timer}
               intervalColors={settings.intervalColors}
-              coachMode={settings.coachMode}
+              coachMode={coachMode}
               featureImage={cardImages[index]}
               imageGrayscale={settings.bwTimerImages}
               onDelete={onDeleteTimer}
