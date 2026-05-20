@@ -120,9 +120,13 @@ select {
 
 .brand-tagline {
   margin: 0.1rem 0 0;
-  color: var(--muted);
+  color: var(--text);
   font-size: 0.72rem;
   line-height: 1.1;
+}
+
+.brand-tagline-coach-mode {
+  color: var(--accent);
 }
 
 .coach-wrap {
@@ -149,6 +153,10 @@ select {
   font-weight: 600;
   line-height: 1.05;
   white-space: nowrap;
+}
+
+.coach-name-coach-mode {
+  color: var(--accent);
 }
 
 .screen {

@@ -62,7 +62,9 @@ export const AppLayout = () => {
           </a>
           <a href={primaryLink} target="_blank" rel="noreferrer" className="brand-text-wrap" aria-label={APP_NAME}>
             <p className={coachMode ? 'brand-name brand-name-coach-mode' : 'brand-name'}>{businessName}</p>
-            {headerTagline && <p className="brand-tagline">{headerTagline}</p>}
+            {headerTagline && (
+              <p className={coachMode ? 'brand-tagline brand-tagline-coach-mode' : 'brand-tagline'}>{headerTagline}</p>
+            )}
           </a>
           {!isAboutPage && (
             <a href={primaryLink} target="_blank" rel="noreferrer" className="coach-wrap" aria-label={coachName}>
@@ -75,7 +77,7 @@ export const AppLayout = () => {
                   onError={() => settleImage('header-coach-photo', true)}
                 />
               )}
-              <p className="coach-name">{coachName}</p>
+              <p className={coachMode ? 'coach-name coach-name-coach-mode' : 'coach-name'}>{coachName}</p>
             </a>
           )}
         </div>
