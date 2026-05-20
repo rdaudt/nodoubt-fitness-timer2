@@ -1,7 +1,7 @@
 import type { AppSettings } from './types';
 import type { WorkoutCategory } from './types';
 
-export const APP_NAME = 'HIIT Timer by NoDoubt Training Co.';
+export const APP_NAME = 'Best HIIT Timer';
 
 export const BRAND = {
   businessName: 'NoDoubt Training Co.',

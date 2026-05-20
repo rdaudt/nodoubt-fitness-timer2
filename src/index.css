@@ -885,6 +885,10 @@ select {
   flex-direction: column;
 }
 
+.about-title {
+  text-align: center;
+}
+
 .about-coach-photo {
   width: min(360px, 96%);
   margin: 0.25rem auto 0.15rem;
@@ -895,6 +899,8 @@ select {
 .settings-qr-code {
   width: min(180px, 48%);
   image-rendering: auto;
+  margin-left: 0;
+  margin-right: auto;
 }
 
 .about-coach-name {

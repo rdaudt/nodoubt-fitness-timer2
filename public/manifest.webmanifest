@@ -1,6 +1,6 @@
 {
-  "name": "HIIT Timer by NoDoubt Training Co.",
-  "short_name": "NoDoubt HIIT",
+  "name": "Best HIIT Timer",
+  "short_name": "Best HIIT Timer",
   "description": "Offline-ready HIIT timer for custom intervals and sets.",
   "start_url": "/",
   "display": "standalone",

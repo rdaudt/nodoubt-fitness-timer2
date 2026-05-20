@@ -37,7 +37,7 @@ export const AboutPage = () => {
 
   return (
     <section className="about-page">
-      <h1 className="screen-title">About {businessName}</h1>
+      <h1 className="screen-title about-title">About {businessName}</h1>
       {coachPhoto && (
         <img
           src={tracedImageUrl(coachPhoto)}
