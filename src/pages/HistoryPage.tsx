@@ -118,7 +118,7 @@ const saveStoredJobs = (jobs: Record<string, StoredJobInfo>) => {
 
 export const HistoryPage = () => {
   const coachMode = useCoachMode();
-  const { slug, toTenantPath } = useTenant();
+  const { slug, toTenantPath, profile } = useTenant();
   const [runs, setRuns] = useState<HiitClass[]>([]);
   const [timers, setTimers] = useState<Timer[]>([]);
   const [locations, setLocations] = useState<HiitClassLocation[]>([]);
@@ -278,11 +278,12 @@ export const HistoryPage = () => {
   }, []);
 
   const startEdit = (run: HiitClass) => {
+    const defaultLocationId = locations.find((location) => location.isDefault)?.id ?? '';
     setEditingRunId(run.id);
     setDraftClassDate(run.classDate ?? '');
     setDraftStartTime(run.startTime ?? '');
     setDraftEndTime(run.endTime ?? '');
-    setDraftLocation(run.locationId ?? '');
+    setDraftLocation(run.locationId ?? defaultLocationId);
   };
 
   const saveEdit = async (run: HiitClass) => {
@@ -457,6 +458,14 @@ export const HistoryPage = () => {
                         ? `Class: ${run.classDate}${run.startTime ? ` ${run.startTime}` : ''}${run.endTime ? ` - ${run.endTime}` : ''}`
                         : `Run logged: ${new Date(run.ranAt).toLocaleString()}`}
                     </p>
+                    <p className="history-run-location">Location: {run.locationLabelAtRun || 'Not set'}</p>
+                    {run.locationLabelAtRun && profile?.logoUrl && (
+                      <img
+                        src={profile.logoUrl}
+                        alt="Location logo"
+                        className="history-location-logo"
+                      />
+                    )}
                   </div>
                   <span className={`history-run-complete ${run.complete ? 'is-on' : 'is-off'}`}>
                     {run.complete ? 'Complete' : 'Incomplete'}
@@ -471,7 +480,6 @@ export const HistoryPage = () => {
                       <StatCard label="Rounds" value={String(normalizedSnapshot.roundsPerStation)} />
                       <StatCard label="Stations" value={String(normalizedSnapshot.stationCount)} />
                     </div>
-                    <p className="history-run-location">Location: {run.locationLabelAtRun || 'Not set'}</p>
                     <div className="history-card-actions" aria-label="Run actions">
                       <button className="secondary-btn history-action-btn" onClick={() => downloadRunExport(run)}>Data Export</button>
                       {coachMode && SHOW_CREATE_CONTENT_BUTTON && (

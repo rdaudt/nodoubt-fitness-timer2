@@ -2208,6 +2208,13 @@ select {
   font-size: 0.9rem;
 }
 
+.history-location-logo {
+  width: 28px;
+  height: 28px;
+  object-fit: contain;
+  margin-top: 0.3rem;
+}
+
 .history-card-actions {
   display: flex;
   gap: 0.45rem;

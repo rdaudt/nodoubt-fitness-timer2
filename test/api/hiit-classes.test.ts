@@ -136,46 +136,53 @@ describe('HIIT Classes API helpers', () => {
   });
 
   it('creates a HIIT Class using the default location when available', async () => {
-    executeMock.mockImplementation(async (call: { sql: string }) => {
-      if (tenantQuery(call.sql)) {
-        return { rows: [{ id: 'tenant-1', slug: 'fit-coach' }] };
-      }
-      if (locationsQuery(call.sql)) {
-        return { rows: [{ id: 'loc-1', business_name: 'No Doubt', location_name: 'Main' }] };
-      }
-      if (selectClass(call.sql)) {
-        return { rows: [{ ...classRow, location_id: 'loc-1', location_label_at_run: 'No Doubt - Main' }] };
-      }
-      return { rows: [], rowsAffected: 1 };
-    });
-    const { handleHiitClasses } = await import('../../api/_hiitClasses');
-    const { res, store } = createMockRes();
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date('2026-05-20T13:00:00.000Z'));
+    try {
+      executeMock.mockImplementation(async (call: { sql: string }) => {
+        if (tenantQuery(call.sql)) {
+          return { rows: [{ id: 'tenant-1', slug: 'fit-coach' }] };
+        }
+        if (locationsQuery(call.sql)) {
+          return { rows: [{ id: 'loc-1', business_name: 'No Doubt', location_name: 'Main' }] };
+        }
+        if (selectClass(call.sql)) {
+          return { rows: [{ ...classRow, location_id: 'loc-1', location_label_at_run: 'No Doubt - Main' }] };
+        }
+        return { rows: [], rowsAffected: 1 };
+      });
+      const { handleHiitClasses } = await import('../../api/_hiitClasses');
+      const { res, store } = createMockRes();
 
-    await handleHiitClasses({
-      method: 'POST',
-      query: { tenantSlug: 'fit-coach' },
-      body: {
-        run: {
-          id: 'class-1',
-          timerId: 'timer-1',
-          timerNameAtRun: 'Demo Timer',
-          timerSnapshot: { id: 'timer-1', name: 'Demo Timer' },
-          stationWorkoutTypes: ['Burpees'],
-          totalPerStationMs: 30000,
-          totalWorkMs: 30000,
-          complete: true,
-          ranAt: '2026-02-01T10:00:00.000Z',
-          createdAt: '2026-02-01T10:00:00.000Z',
+      await handleHiitClasses({
+        method: 'POST',
+        query: { tenantSlug: 'fit-coach' },
+        body: {
+          run: {
+            id: 'class-1',
+            timerId: 'timer-1',
+            timerNameAtRun: 'Demo Timer',
+            timerSnapshot: { id: 'timer-1', name: 'Demo Timer' },
+            stationWorkoutTypes: ['Burpees'],
+            totalPerStationMs: 30000,
+            totalWorkMs: 30000,
+            complete: true,
+            ranAt: '2026-02-01T10:00:00.000Z',
+            createdAt: '2026-02-01T10:00:00.000Z',
+          },
         },
-      },
-    }, res, coachUser);
+      }, res, coachUser);
 
-    expect(store.statusCode).toBe(201);
-    const insert = executeMock.mock.calls.find(([call]) => insertClass((call as { sql: string }).sql));
-    expect(insert).toBeDefined();
-    const args = (insert![0] as { args: unknown[] }).args;
-    expect(args[12]).toBe('loc-1');
-    expect(args[13]).toBe('No Doubt - Main');
+      expect(store.statusCode).toBe(201);
+      const insert = executeMock.mock.calls.find(([call]) => insertClass((call as { sql: string }).sql));
+      expect(insert).toBeDefined();
+      const args = (insert![0] as { args: unknown[] }).args;
+      expect(args[12]).toBe('2026-05-20');
+      expect(args[13]).toBe('loc-1');
+      expect(args[14]).toBe('No Doubt - Main');
+    } finally {
+      vi.useRealTimers();
+    }
   });
 
   it('patch clears nullable class date, time, and location fields', async () => {

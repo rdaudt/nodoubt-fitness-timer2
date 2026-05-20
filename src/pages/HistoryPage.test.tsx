@@ -48,6 +48,7 @@ vi.mock('../services/tenantContext', () => ({
   useTenant: () => ({
     slug: 'coach-slug',
     toTenantPath: (path: string) => path,
+    profile: { logoUrl: '/logo.png' },
   }),
 }));
 
@@ -204,6 +205,20 @@ describe('HistoryPage', () => {
     expect(updateClassMock).not.toHaveBeenCalled();
   });
 
+  it('defaults edit location to the coach default location when class location is null', async () => {
+    render(
+      <MemoryRouter initialEntries={['/history']}>
+        <Routes>
+          <Route path="/history" element={<HistoryPage />} />
+        </Routes>
+      </MemoryRouter>,
+    );
+
+    await screen.findByRole('link', { name: 'Demo Timer' });
+    fireEvent.click(screen.getByRole('button', { name: 'Edit' }));
+    expect(screen.getByLabelText('Class location')).toHaveValue('loc-1');
+  });
+
   afterEach(() => {
     createObjectURLSpy.mockRestore();
     revokeObjectURLSpy.mockRestore();
@@ -280,5 +295,23 @@ describe('HistoryPage', () => {
 
     await screen.findByRole('link', { name: 'Demo Timer' });
     expect(screen.queryByRole('button', { name: 'Create Content' })).toBeNull();
+  });
+
+  it('renders a small location logo under location details', async () => {
+    listClassesMock.mockResolvedValue([{
+      ...completeRun,
+      locationId: 'loc-1',
+      locationLabelAtRun: 'No Doubt - Downtown',
+    }]);
+    render(
+      <MemoryRouter initialEntries={['/history']}>
+        <Routes>
+          <Route path="/history" element={<HistoryPage />} />
+        </Routes>
+      </MemoryRouter>,
+    );
+
+    await screen.findByText('Location: No Doubt - Downtown');
+    expect(screen.getByAltText('Location logo')).toBeInTheDocument();
   });
 });

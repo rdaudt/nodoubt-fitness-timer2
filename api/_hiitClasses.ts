@@ -295,7 +295,7 @@ export const handleHiitClasses = async (
             created_at,
             updated_at
           )
-          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NULL, NULL, NULL, ?, ?, ?, ?)
+          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NULL, NULL, ?, ?, ?, ?)
         `,
         args: [
           id,
@@ -310,6 +310,7 @@ export const handleHiitClasses = async (
           typeof run.category === 'string' ? run.category : 'GENERAL',
           run.complete ? 1 : 0,
           requiredString(run.ranAt, 'Missing run timestamp.'),
+          now.slice(0, 10),
           defaultLocation?.id ?? null,
           defaultLocation?.label ?? null,
           typeof run.createdAt === 'string' ? run.createdAt : now,

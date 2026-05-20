@@ -56,6 +56,7 @@ export interface HiitClassLocation {
   label: string;
   isDefault: boolean;
   sortOrder: number;
+  logoUrl?: string;
 }
 
 export interface AppSettings {
