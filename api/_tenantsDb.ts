@@ -202,6 +202,20 @@ const createTenantTables = async () => {
     { name: 'updated_at', definition: `updated_at TEXT NOT NULL DEFAULT ''` },
   ]);
 
+  // Backfill ownership for pre-migration rows so PATCH/DELETE auth filters keep working.
+  await db.execute({
+    sql: `
+      UPDATE coach_hiit_classes
+      SET coach_google_sub = (
+        SELECT ct.owner_google_sub
+        FROM coach_tenants ct
+        WHERE ct.id = coach_hiit_classes.tenant_id
+      )
+      WHERE coalesce(coach_google_sub, '') = ''
+    `,
+    args: [],
+  });
+
   await db.batch([
     `CREATE INDEX IF NOT EXISTS idx_coach_class_locations_tenant_sort ON coach_class_locations (tenant_id, sort_order);`,
     `CREATE INDEX IF NOT EXISTS idx_coach_hiit_classes_tenant_ran_at ON coach_hiit_classes (tenant_id, ran_at);`,

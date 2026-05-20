@@ -35,6 +35,9 @@ describe('tenant DB migrations', () => {
     await expect(createTenantTablesIfNeeded()).resolves.toBeUndefined();
 
     expect(executeMock).toHaveBeenCalledWith(expect.stringMatching(/ALTER TABLE coach_class_locations ADD COLUMN is_default/));
+    expect(executeMock).toHaveBeenCalledWith(expect.objectContaining({
+      sql: expect.stringMatching(/UPDATE coach_hiit_classes/i),
+    }));
     expect(batchMock).toHaveBeenCalledTimes(2);
   });
 });
