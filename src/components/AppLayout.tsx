@@ -88,7 +88,7 @@ export const AppLayout = () => {
       </main>
 
       {!isRunningView && (
-        <BottomNav clickable toTenantPath={toTenantPath} />
+        <BottomNav clickable coachMode={coachMode} toTenantPath={toTenantPath} />
       )}
     </div>
   );

@@ -3,10 +3,12 @@ import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { HistoryPage } from './HistoryPage';
 
-const { listAllRunsMock, listTimersMock, updateRunMock, settingsMock, coachModeMock } = vi.hoisted(() => ({
-  listAllRunsMock: vi.fn(),
+const { listClassesMock, listLocationsMock, updateClassMock, removeClassMock, listTimersMock, settingsMock, coachModeMock } = vi.hoisted(() => ({
+  listClassesMock: vi.fn(),
+  listLocationsMock: vi.fn(),
+  updateClassMock: vi.fn(),
+  removeClassMock: vi.fn(),
   listTimersMock: vi.fn(),
-  updateRunMock: vi.fn(),
   settingsMock: vi.fn(),
   coachModeMock: vi.fn(),
 }));
@@ -15,11 +17,19 @@ vi.mock('../services/storage', () => ({
   TimerRepository: {
     list: listTimersMock,
   },
-  TimerRunRepository: {
-    listAll: listAllRunsMock,
-    update: updateRunMock,
-    remove: vi.fn(),
+}));
+
+vi.mock('../services/hiitClassApi', () => ({
+  HiitClassApi: {
+    list: listClassesMock,
+    listLocations: listLocationsMock,
+    update: updateClassMock,
+    remove: removeClassMock,
   },
+  sortHiitClasses: (classes: typeof completeRun[]) => [...classes].sort((a, b) => {
+    const key = (item: typeof completeRun) => (item.classDate ? `${item.classDate}T${item.startTime ?? '00:00'}` : item.ranAt);
+    return key(b).localeCompare(key(a));
+  }),
 }));
 
 vi.mock('../services/settingsContext', () => ({
@@ -32,6 +42,13 @@ vi.mock('../services/settingsContext', () => ({
 
 vi.mock('../services/authContext', () => ({
   useCoachMode: () => coachModeMock(),
+}));
+
+vi.mock('../services/tenantContext', () => ({
+  useTenant: () => ({
+    slug: 'coach-slug',
+    toTenantPath: (path: string) => path,
+  }),
 }));
 
 const timer = {
@@ -68,6 +85,11 @@ const completeRun = {
   complete: true,
   ranAt: '2026-02-01T10:00:00.000Z',
   location: '',
+  classDate: null,
+  startTime: null,
+  endTime: null,
+  locationId: null,
+  locationLabelAtRun: null,
   createdAt: '2026-02-01T10:00:00.000Z',
   updatedAt: '2026-02-01T10:00:00.000Z',
 };
@@ -104,7 +126,10 @@ describe('HistoryPage', () => {
     });
     listTimersMock.mockResolvedValue([timer]);
     coachModeMock.mockReturnValue(true);
-    listAllRunsMock.mockResolvedValue([{
+    listLocationsMock.mockResolvedValue([
+      { id: 'loc-1', label: 'No Doubt - Downtown', logoUrl: '/location-logo.png', isDefault: true, sortOrder: 1 },
+    ]);
+    listClassesMock.mockResolvedValue([{
       id: 'run-1',
       timerId: 'timer-1',
       timerNameAtRun: 'Demo Timer',
@@ -115,13 +140,26 @@ describe('HistoryPage', () => {
       complete: false,
       ranAt: '2026-02-01T10:00:00.000Z',
       location: '',
+      classDate: null,
+      startTime: null,
+      endTime: null,
+      locationId: null,
+      locationLabelAtRun: null,
       createdAt: '2026-02-01T10:00:00.000Z',
       updatedAt: '2026-02-01T10:00:00.000Z',
     }]);
-    updateRunMock.mockResolvedValue(undefined);
+    updateClassMock.mockResolvedValue({
+      ...completeRun,
+      classDate: '2026-03-01',
+      startTime: '09:00',
+      endTime: '10:00',
+      locationId: 'loc-1',
+      locationLabelAtRun: 'No Doubt - Downtown',
+      location: 'No Doubt - Downtown',
+    });
   });
 
-  it('renders compact run history card and updates location', async () => {
+  it('renders compact HIIT Class card and updates nullable class fields', async () => {
     render(
       <MemoryRouter initialEntries={['/history']}>
         <Routes>
@@ -137,65 +175,18 @@ describe('HistoryPage', () => {
     expect(screen.getByText('Rounds')).toBeInTheDocument();
     expect(screen.getByText('Stations')).toBeInTheDocument();
     fireEvent.click(screen.getByRole('button', { name: 'Edit' }));
-    const input = screen.getByLabelText('Run location');
-    fireEvent.change(input, { target: { value: 'Downtown Box' } });
-    fireEvent.click(screen.getByRole('button', { name: 'Save Session' }));
-    await waitFor(() => expect(updateRunMock).toHaveBeenCalledTimes(1));
-    expect(updateRunMock.mock.calls[0][0]).toEqual(expect.objectContaining({ location: 'Downtown Box' }));
-  });
-
-  afterEach(() => {
-    createObjectURLSpy.mockRestore();
-    revokeObjectURLSpy.mockRestore();
-    promptSpy.mockRestore();
-    fetchSpy.mockRestore();
-    cleanup();
-  });
-
-  it('edits run station workout types without mutating timer', async () => {
-    render(
-      <MemoryRouter initialEntries={['/history']}>
-        <Routes>
-          <Route path="/history" element={<HistoryPage />} />
-        </Routes>
-      </MemoryRouter>,
-    );
-
-    await screen.findByRole('link', { name: 'Demo Timer' });
-    fireEvent.click(screen.getByRole('button', { name: 'Edit' }));
-    const stationInput = screen.getByLabelText('Run station 1 workout type');
-    fireEvent.change(stationInput, { target: { value: 'Pullups' } });
-    fireEvent.click(screen.getByRole('button', { name: 'Save Session' }));
-
-    await waitFor(() => expect(updateRunMock).toHaveBeenCalledTimes(1));
-    expect(updateRunMock.mock.calls[0][0]).toEqual(expect.objectContaining({
-      stationWorkoutTypes: ['Pullups'],
-      timerSnapshot: expect.objectContaining({
-        stationWorkoutTypes: ['Burpees'],
-      }),
-    }));
-  });
-
-  it('allows editing timer name in run history', async () => {
-    render(
-      <MemoryRouter initialEntries={['/history']}>
-        <Routes>
-          <Route path="/history" element={<HistoryPage />} />
-        </Routes>
-      </MemoryRouter>,
-    );
-
-    await screen.findByRole('link', { name: 'Demo Timer' });
-    fireEvent.click(screen.getByRole('button', { name: 'Edit' }));
-    const runTimerNameInput = screen.getByLabelText('Run timer name');
-    fireEvent.change(runTimerNameInput, { target: { value: 'Saturday Burner' } });
-    fireEvent.click(screen.getByRole('button', { name: 'Save Session' }));
-
-    await waitFor(() => expect(updateRunMock).toHaveBeenCalledTimes(1));
-    expect(updateRunMock.mock.calls[0][0]).toEqual(expect.objectContaining({
-      timerNameAtRun: 'Saturday Burner',
-    }));
-    expect(await screen.findByRole('link', { name: 'Saturday Burner' })).toBeInTheDocument();
+    fireEvent.change(screen.getByLabelText('Class date'), { target: { value: '2026-03-01' } });
+    fireEvent.change(screen.getByLabelText('Class start time'), { target: { value: '09:00' } });
+    fireEvent.change(screen.getByLabelText('Class end time'), { target: { value: '10:00' } });
+    fireEvent.change(screen.getByLabelText('Class location'), { target: { value: 'loc-1' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Save Class' }));
+    await waitFor(() => expect(updateClassMock).toHaveBeenCalledTimes(1));
+    expect(updateClassMock).toHaveBeenCalledWith('coach-slug', 'run-1', {
+      classDate: '2026-03-01',
+      startTime: '09:00',
+      endTime: '10:00',
+      locationId: 'loc-1',
+    });
   });
 
   it('cancels inline edit without saving', async () => {
@@ -210,7 +201,29 @@ describe('HistoryPage', () => {
     await screen.findByRole('link', { name: 'Demo Timer' });
     fireEvent.click(screen.getByRole('button', { name: 'Edit' }));
     fireEvent.click(screen.getByRole('button', { name: 'Cancel' }));
-    expect(updateRunMock).not.toHaveBeenCalled();
+    expect(updateClassMock).not.toHaveBeenCalled();
+  });
+
+  it('defaults edit location to the coach default location when class location is null', async () => {
+    render(
+      <MemoryRouter initialEntries={['/history']}>
+        <Routes>
+          <Route path="/history" element={<HistoryPage />} />
+        </Routes>
+      </MemoryRouter>,
+    );
+
+    await screen.findByRole('link', { name: 'Demo Timer' });
+    fireEvent.click(screen.getByRole('button', { name: 'Edit' }));
+    expect(screen.getByLabelText('Class location')).toHaveValue('loc-1');
+  });
+
+  afterEach(() => {
+    createObjectURLSpy.mockRestore();
+    revokeObjectURLSpy.mockRestore();
+    promptSpy.mockRestore();
+    fetchSpy.mockRestore();
+    cleanup();
   });
 
   it('exports a run entry as JSON', async () => {
@@ -264,12 +277,13 @@ describe('HistoryPage', () => {
       </MemoryRouter>,
     );
 
-    await screen.findByRole('link', { name: 'Demo Timer' });
+    await screen.findByText('No HIIT Classes logged yet.');
+    expect(listClassesMock).not.toHaveBeenCalled();
     expect(screen.queryByRole('button', { name: 'Create Content' })).toBeNull();
   });
 
   it('hides create content button even when coach mode is on', async () => {
-    listAllRunsMock.mockResolvedValue([completeRun]);
+    listClassesMock.mockResolvedValue([completeRun]);
     render(
       <MemoryRouter initialEntries={['/history']}>
         <Routes>
@@ -280,5 +294,23 @@ describe('HistoryPage', () => {
 
     await screen.findByRole('link', { name: 'Demo Timer' });
     expect(screen.queryByRole('button', { name: 'Create Content' })).toBeNull();
+  });
+
+  it('renders a small location logo under location details', async () => {
+    listClassesMock.mockResolvedValue([{
+      ...completeRun,
+      locationId: 'loc-1',
+      locationLabelAtRun: 'No Doubt - Downtown',
+    }]);
+    render(
+      <MemoryRouter initialEntries={['/history']}>
+        <Routes>
+          <Route path="/history" element={<HistoryPage />} />
+        </Routes>
+      </MemoryRouter>,
+    );
+
+    await screen.findByText('No Doubt - Downtown');
+    expect(screen.getByAltText('Location logo')).toHaveAttribute('src', '/location-logo.png');
   });
 });

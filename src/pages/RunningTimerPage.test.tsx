@@ -4,14 +4,15 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { TimelineEntry } from '../types';
 import { RunningTimerPage } from './RunningTimerPage';
 
-const { getMock, upsertMock, createRunMock, startMock, runnerMock, settingsMock, saveSettingsMock } = vi.hoisted(() => ({
+const { getMock, upsertMock, createClassMock, startMock, runnerMock, settingsMock, saveSettingsMock, coachModeMock } = vi.hoisted(() => ({
   getMock: vi.fn(),
   upsertMock: vi.fn(),
-  createRunMock: vi.fn(),
+  createClassMock: vi.fn(),
   startMock: vi.fn(),
   runnerMock: vi.fn(),
   settingsMock: vi.fn(),
   saveSettingsMock: vi.fn(),
+  coachModeMock: vi.fn(),
 }));
 
 vi.mock('../services/settingsContext', () => ({
@@ -22,16 +23,26 @@ vi.mock('../services/settingsContext', () => ({
 }));
 
 vi.mock('../services/authContext', () => ({
-  useCoachMode: () => true,
+  useCoachMode: () => coachModeMock(),
+}));
+
+vi.mock('../services/tenantContext', () => ({
+  useTenant: () => ({
+    slug: 'coach-slug',
+    toTenantPath: (path: string) => path || '/',
+  }),
+}));
+
+vi.mock('../services/hiitClassApi', () => ({
+  HiitClassApi: {
+    create: createClassMock,
+  },
 }));
 
 vi.mock('../services/storage', () => ({
   TimerRepository: {
     get: getMock,
     upsert: upsertMock,
-  },
-  TimerRunRepository: {
-    create: createRunMock,
   },
 }));
 
@@ -74,9 +85,10 @@ const renderRunningPage = (initialPath: string) => render(
 describe('RunningTimerPage', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    coachModeMock.mockReturnValue(true);
     saveSettingsMock.mockResolvedValue(undefined);
     upsertMock.mockResolvedValue(undefined);
-    createRunMock.mockResolvedValue(undefined);
+    createClassMock.mockResolvedValue(undefined);
     settingsMock.mockReturnValue({
       kobeEverywhere: true,
       imagesInAllTimers: false,
@@ -321,11 +333,12 @@ describe('RunningTimerPage', () => {
     expect(firstSrc).toBe(secondSrc);
   });
 
-  it('logs one run when timer completes', async () => {
+  it('logs one HIIT Class for coaches when timer completes', async () => {
     renderRunningPage('/timer/timer-1/run');
     await screen.findByRole('link', { name: 'Done' });
-    await waitFor(() => expect(createRunMock).toHaveBeenCalledTimes(1));
-    expect(createRunMock.mock.calls[0][0]).toEqual(expect.objectContaining({
+    await waitFor(() => expect(createClassMock).toHaveBeenCalledTimes(1));
+    expect(createClassMock.mock.calls[0][0]).toBe('coach-slug');
+    expect(createClassMock.mock.calls[0][1]).toEqual(expect.objectContaining({
       timerId: 'timer-1',
       timerNameAtRun: 'Demo Timer',
       category: 'GENERAL',
@@ -335,6 +348,15 @@ describe('RunningTimerPage', () => {
       complete: true,
       location: '',
     }));
+  });
+
+  it('does not persist a HIIT Class for athletes when timer completes', async () => {
+    coachModeMock.mockReturnValue(false);
+
+    renderRunningPage('/timer/timer-1/run');
+
+    await screen.findByRole('link', { name: 'Done' });
+    await waitFor(() => expect(createClassMock).not.toHaveBeenCalled());
   });
 
   it('logs an incomplete run when user confirms stop before completion', async () => {
@@ -370,8 +392,8 @@ describe('RunningTimerPage', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Stop Timer' }));
     fireEvent.click(screen.getByRole('button', { name: 'Confirm Stop' }));
 
-    await waitFor(() => expect(createRunMock).toHaveBeenCalledTimes(1));
-    expect(createRunMock.mock.calls[0][0]).toEqual(expect.objectContaining({
+    await waitFor(() => expect(createClassMock).toHaveBeenCalledTimes(1));
+    expect(createClassMock.mock.calls[0][1]).toEqual(expect.objectContaining({
       timerId: 'timer-1',
       complete: false,
     }));

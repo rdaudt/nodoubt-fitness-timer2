@@ -1,7 +1,11 @@
 import { render, screen } from '@testing-library/react';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
-import { describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { AppLayout } from './AppLayout';
+
+const { coachModeMock } = vi.hoisted(() => ({
+  coachModeMock: vi.fn(),
+}));
 
 vi.mock('../services/tenantContext', () => ({
   useTenant: () => ({
@@ -26,10 +30,14 @@ vi.mock('../services/perfTriage', () => ({
 }));
 
 vi.mock('../services/authContext', () => ({
-  useCoachMode: () => false,
+  useCoachMode: () => coachModeMock(),
 }));
 
 describe('AppLayout', () => {
+  beforeEach(() => {
+    coachModeMock.mockReturnValue(false);
+  });
+
   it('does not render the coach mode text in the header', () => {
     render(
       <MemoryRouter initialEntries={['/']}>
@@ -41,5 +49,35 @@ describe('AppLayout', () => {
       </MemoryRouter>,
     );
     expect(screen.queryByText('Coach mode ON')).toBeNull();
+  });
+
+  it('hides HIIT Classes nav item for athletes', () => {
+    render(
+      <MemoryRouter initialEntries={['/']}>
+        <Routes>
+          <Route path="/" element={<AppLayout />}>
+            <Route index element={<div>child</div>} />
+          </Route>
+        </Routes>
+      </MemoryRouter>,
+    );
+
+    expect(screen.queryByText('HIIT Classes')).toBeNull();
+  });
+
+  it('shows HIIT Classes nav item for coaches', () => {
+    coachModeMock.mockReturnValue(true);
+
+    render(
+      <MemoryRouter initialEntries={['/']}>
+        <Routes>
+          <Route path="/" element={<AppLayout />}>
+            <Route index element={<div>child</div>} />
+          </Route>
+        </Routes>
+      </MemoryRouter>,
+    );
+
+    expect(screen.getByText('HIIT Classes')).toBeInTheDocument();
   });
 });

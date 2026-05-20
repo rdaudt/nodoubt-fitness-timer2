@@ -2,6 +2,15 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const fetchMock = vi.fn();
 
+const readFileMock = vi.fn(async (_path: string, encoding?: string) => (
+  encoding === 'utf8' ? 'Prompt doc' : new Uint8Array([137, 80, 78, 71])
+));
+
+vi.mock('node:fs/promises', () => ({
+  default: { readFile: readFileMock },
+  readFile: readFileMock,
+}));
+
 type MockResponse = {
   statusCode: number;
   body: unknown;

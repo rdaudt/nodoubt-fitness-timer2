@@ -11,18 +11,10 @@ import {
 } from '../lib/time';
 import { normalizeTimerFields } from '../lib/timerRules';
 import { useCoachMode } from '../services/authContext';
+import { HiitClassApi, sortHiitClasses } from '../services/hiitClassApi';
 import { useTenant } from '../services/tenantContext';
-import { TimerRepository, TimerRunRepository } from '../services/storage';
-import type { Timer, TimerRun } from '../types';
-
-const toDateTimeLocal = (value: string): string => {
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) {
-    return '';
-  }
-  const pad = (n: number) => String(n).padStart(2, '0');
-  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}`;
-};
+import { TimerRepository } from '../services/storage';
+import type { HiitClass, HiitClassLocation, Timer, TimerRun } from '../types';
 
 type RunExportPayload = TimerRun & {
   stationSetWorkoutTypes: Array<{
@@ -126,26 +118,59 @@ const saveStoredJobs = (jobs: Record<string, StoredJobInfo>) => {
 
 export const HistoryPage = () => {
   const coachMode = useCoachMode();
-  const { toTenantPath } = useTenant();
-  const [runs, setRuns] = useState<TimerRun[]>([]);
+  const { slug, toTenantPath } = useTenant();
+  const [runs, setRuns] = useState<HiitClass[]>([]);
   const [timers, setTimers] = useState<Timer[]>([]);
+  const [locations, setLocations] = useState<HiitClassLocation[]>([]);
+  const [loadError, setLoadError] = useState<string | null>(null);
   const [editingRunId, setEditingRunId] = useState<string | null>(null);
-  const [draftTimerName, setDraftTimerName] = useState('');
-  const [draftDateTime, setDraftDateTime] = useState('');
+  const [draftClassDate, setDraftClassDate] = useState('');
+  const [draftStartTime, setDraftStartTime] = useState('');
+  const [draftEndTime, setDraftEndTime] = useState('');
   const [draftLocation, setDraftLocation] = useState('');
-  const [draftStationWorkoutTypes, setDraftStationWorkoutTypes] = useState<string[]>([]);
   const [generationByRunId, setGenerationByRunId] = useState<Record<string, GenerationState>>({});
 
   useEffect(() => {
-    Promise.all([TimerRunRepository.listAll(), TimerRepository.list()]).then(([allRuns, allTimers]) => {
-      setRuns(allRuns);
-      setTimers(allTimers);
-    });
-  }, []);
+    if (!coachMode) {
+      return;
+    }
+    let active = true;
+    Promise.all([HiitClassApi.list(slug), HiitClassApi.listLocations(slug), TimerRepository.list()])
+      .then(([allRuns, allLocations, allTimers]) => {
+        if (!active) {
+          return;
+        }
+        setRuns(allRuns);
+        setLocations(allLocations);
+        setTimers(allTimers);
+        setLoadError(null);
+      })
+      .catch((error) => {
+        if (!active) {
+          return;
+        }
+        setLoadError(error instanceof Error ? error.message : 'Failed to load HIIT Classes.');
+      });
+    return () => {
+      active = false;
+    };
+  }, [coachMode, slug]);
+
+  useEffect(() => {
+    if (!coachMode) {
+      TimerRepository.list().then((allTimers) => {
+        setTimers(allTimers);
+      });
+    }
+  }, [coachMode]);
 
   const timerById = useMemo(
     () => new Map(timers.map((timer) => [timer.id, timer])),
     [timers],
+  );
+  const locationById = useMemo(
+    () => new Map(locations.map((location) => [location.id, location])),
+    [locations],
   );
 
   const setGenerationState = (runId: string, next: GenerationState) => {
@@ -256,43 +281,32 @@ export const HistoryPage = () => {
     });
   }, []);
 
-  const startEdit = (run: TimerRun) => {
+  const startEdit = (run: HiitClass) => {
+    const defaultLocationId = locations.find((location) => location.isDefault)?.id ?? '';
     setEditingRunId(run.id);
-    setDraftTimerName(run.timerNameAtRun);
-    setDraftDateTime(toDateTimeLocal(run.ranAt));
-    setDraftLocation(run.location ?? '');
-    setDraftStationWorkoutTypes((run.stationWorkoutTypes ?? run.timerSnapshot.stationWorkoutTypes ?? []).slice(0, run.timerSnapshot.stationCount));
+    setDraftClassDate(run.classDate ?? '');
+    setDraftStartTime(run.startTime ?? '');
+    setDraftEndTime(run.endTime ?? '');
+    setDraftLocation(run.locationId ?? defaultLocationId);
   };
 
-  const saveEdit = async (run: TimerRun) => {
-    const parsed = new Date(draftDateTime);
-    if (Number.isNaN(parsed.getTime())) {
-      return;
-    }
-    const next: TimerRun = {
-      ...run,
-      timerNameAtRun: draftTimerName.trim() || run.timerNameAtRun,
-      ranAt: parsed.toISOString(),
-      location: draftLocation.trim(),
-      category: 'GENERAL',
-      stationWorkoutTypes: draftStationWorkoutTypes
-        .slice(0, run.timerSnapshot.stationCount)
-        .map((item) => item.trim()),
-      updatedAt: new Date().toISOString(),
-    };
-    await TimerRunRepository.update(next);
-    setRuns((prev) => prev
-      .map((item) => (item.id === run.id ? next : item))
-      .sort((a, b) => +new Date(b.ranAt) - +new Date(a.ranAt)));
+  const saveEdit = async (run: HiitClass) => {
+    const next = await HiitClassApi.update(slug, run.id, {
+      classDate: draftClassDate || null,
+      startTime: draftStartTime || null,
+      endTime: draftEndTime || null,
+      locationId: draftLocation || null,
+    });
+    setRuns((prev) => sortHiitClasses(prev.map((item) => (item.id === run.id ? next : item))));
     setEditingRunId(null);
   };
 
   const deleteRun = async (runId: string) => {
-    const ok = window.confirm('Delete this run?');
+    const ok = window.confirm('Delete this HIIT Class?');
     if (!ok) {
       return;
     }
-    await TimerRunRepository.remove(runId);
+    await HiitClassApi.remove(slug, runId);
     setRuns((prev) => prev.filter((run) => run.id !== runId));
   };
 
@@ -402,10 +416,11 @@ export const HistoryPage = () => {
   return (
     <section className="history-page">
       <div className="section-header">
-        <h1 className="screen-title">Run History</h1>
+        <h1 className="screen-title">HIIT Classes</h1>
       </div>
+      {loadError && <p role="alert">{loadError}</p>}
       {runs.length === 0 ? (
-        <p className="empty">No runs logged yet.</p>
+        <p className="empty">No HIIT Classes logged yet.</p>
       ) : (
         <div className="stack">
           {runs.map((run) => {
@@ -442,7 +457,19 @@ export const HistoryPage = () => {
                     ) : (
                       <p className="history-run-title-link">{run.timerNameAtRun} (Deleted timer)</p>
                     )}
-                    <p className="history-run-datetime">{new Date(run.ranAt).toLocaleString()}</p>
+                    <p className="history-run-datetime">
+                      {run.classDate
+                        ? `Class: ${run.classDate}${run.startTime ? ` ${run.startTime}` : ''}${run.endTime ? ` - ${run.endTime}` : ''}`
+                        : `Run logged: ${new Date(run.ranAt).toLocaleString()}`}
+                    </p>
+                    <p className="history-run-location">{run.locationLabelAtRun || 'Not set'}</p>
+                    {run.locationId && locationById.get(run.locationId)?.logoUrl && (
+                      <img
+                        src={locationById.get(run.locationId)?.logoUrl}
+                        alt="Location logo"
+                        className="history-location-logo"
+                      />
+                    )}
                   </div>
                   <span className={`history-run-complete ${run.complete ? 'is-on' : 'is-off'}`}>
                     {run.complete ? 'Complete' : 'Incomplete'}
@@ -457,7 +484,6 @@ export const HistoryPage = () => {
                       <StatCard label="Rounds" value={String(normalizedSnapshot.roundsPerStation)} />
                       <StatCard label="Stations" value={String(normalizedSnapshot.stationCount)} />
                     </div>
-                    <p className="history-run-location">Location: {run.location || 'Not set'}</p>
                     <div className="history-card-actions" aria-label="Run actions">
                       <button className="secondary-btn history-action-btn" onClick={() => downloadRunExport(run)}>Data Export</button>
                       {coachMode && SHOW_CREATE_CONTENT_BUTTON && (
@@ -503,36 +529,46 @@ export const HistoryPage = () => {
                 ) : (
                   <div className="history-edit-layout">
                     <section className="history-edit-section">
-                      <h2 className="history-edit-title">General Parameters</h2>
+                      <h2 className="history-edit-title">Class Details</h2>
                       <label className="field">
-                        <span>Session Name</span>
+                        <span>Date</span>
                         <input
-                          type="text"
-                          value={draftTimerName}
-                          maxLength={25}
-                          onChange={(e) => setDraftTimerName(e.target.value)}
-                          aria-label="Run timer name"
-                          placeholder="Timer name"
+                          type="date"
+                          value={draftClassDate}
+                          onChange={(e) => setDraftClassDate(e.target.value)}
+                          aria-label="Class date"
                         />
                       </label>
                       <label className="field">
-                        <span>Date & time</span>
+                        <span>Start time</span>
                         <input
-                          type="datetime-local"
-                          value={draftDateTime}
-                          onChange={(e) => setDraftDateTime(e.target.value)}
-                          aria-label="Run date and time"
+                          type="time"
+                          value={draftStartTime}
+                          onChange={(e) => setDraftStartTime(e.target.value)}
+                          aria-label="Class start time"
+                        />
+                      </label>
+                      <label className="field">
+                        <span>End time</span>
+                        <input
+                          type="time"
+                          value={draftEndTime}
+                          onChange={(e) => setDraftEndTime(e.target.value)}
+                          aria-label="Class end time"
                         />
                       </label>
                       <label className="field">
                         <span>Location</span>
-                        <input
-                          type="text"
+                        <select
                           value={draftLocation}
                           onChange={(e) => setDraftLocation(e.target.value)}
-                          aria-label="Run location"
-                          placeholder="Location"
-                        />
+                          aria-label="Class location"
+                        >
+                          <option value="">No location</option>
+                          {locations.map((location) => (
+                            <option key={location.id} value={location.id}>{location.label}</option>
+                          ))}
+                        </select>
                       </label>
                     </section>
 
@@ -551,31 +587,9 @@ export const HistoryPage = () => {
                       </div>
                     </section>
 
-                    <section className="history-edit-section">
-                      <h2 className="history-edit-title">Workout Types</h2>
-                      <div className="stack">
-                        {Array.from({ length: run.timerSnapshot.stationCount }, (_, index) => (
-                          <label className="field" key={`run-${run.id}-station-${index + 1}`}>
-                            <span>Station {index + 1}</span>
-                            <input
-                              type="text"
-                              value={draftStationWorkoutTypes[index] ?? ''}
-                              onChange={(e) => setDraftStationWorkoutTypes((prev) => {
-                                const next = [...prev];
-                                next[index] = e.target.value;
-                                return next;
-                              })}
-                              aria-label={`Run station ${index + 1} workout type`}
-                              placeholder="e.g. pushups"
-                            />
-                          </label>
-                        ))}
-                      </div>
-                    </section>
-
                     <div className="history-edit-actions">
                       <button className="secondary-btn" onClick={() => setEditingRunId(null)}>Cancel</button>
-                      <button className="primary-btn" onClick={() => void saveEdit(run)}>Save Session</button>
+                      <button className="primary-btn" onClick={() => void saveEdit(run)}>Save Class</button>
                     </div>
                   </div>
                 )}

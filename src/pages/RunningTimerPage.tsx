@@ -4,9 +4,10 @@ import { formatClock, getStationWorkoutDurationMs, getWorkDurationMs } from '../
 import { useTimerRunner } from '../lib/useTimerRunner';
 import { trackAnalyticsEvent } from '../services/analytics';
 import { useCoachMode } from '../services/authContext';
+import { HiitClassApi } from '../services/hiitClassApi';
 import { useSettings } from '../services/settingsContext';
 import { useTenant } from '../services/tenantContext';
-import { TimerRepository, TimerRunRepository } from '../services/storage';
+import { TimerRepository } from '../services/storage';
 import type { AppSettings, CountdownType, Timer, TimerRun, TimelineEntry } from '../types';
 
 const currentImageByType: Partial<Record<CountdownType, string>> = {
@@ -145,7 +146,7 @@ export const RunningTimerPage = () => {
   const [searchParams] = useSearchParams();
   const { settings, saveSettings } = useSettings();
   const coachMode = useCoachMode();
-  const { toTenantPath } = useTenant();
+  const { slug, toTenantPath } = useTenant();
   const [timer, setTimer] = useState<Timer | null>(null);
   const [showSessionMap, setShowSessionMap] = useState(true);
   const [showOptions, setShowOptions] = useState(true);
@@ -196,7 +197,9 @@ export const RunningTimerPage = () => {
       createdAt: nowIso,
       updatedAt: nowIso,
     };
-    await TimerRunRepository.create(run);
+    if (coachMode) {
+      await HiitClassApi.create(slug, run);
+    }
     const runPayload = {
       stationCount: timer.stationCount,
       roundsPerStation: timer.roundsPerStation,

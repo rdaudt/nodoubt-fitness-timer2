@@ -11,8 +11,8 @@ import { InvalidUrlPage } from './pages/InvalidUrlPage';
 import { TimerDetailPage } from './pages/TimerDetailPage';
 import { TimerListPage } from './pages/TimerListPage';
 import { SettingsProvider } from './services/settingsContext';
-import { AuthProvider, useAuth } from './services/authContext';
-import { TenantProvider } from './services/tenantContext';
+import { AuthProvider, useAuth, useCoachMode } from './services/authContext';
+import { TenantProvider, useTenant } from './services/tenantContext';
 
 const TimerEditRedirect = () => {
   const { tenantSlug = '', id = '' } = useParams();
@@ -71,6 +71,15 @@ const TenantShell = () => {
   );
 };
 
+const CoachOnlyHistoryRoute = () => {
+  const coachMode = useCoachMode();
+  const { toTenantPath } = useTenant();
+  if (!coachMode) {
+    return <Navigate to={toTenantPath('')} replace />;
+  }
+  return <HistoryPage />;
+};
+
 function App() {
   return (
     <BrowserRouter>
@@ -91,7 +100,7 @@ function App() {
 
           <Route path="/:tenantSlug" element={<TenantShell />}>
             <Route index element={<TimerListPage />} />
-            <Route path="history" element={<HistoryPage />} />
+            <Route path="history" element={<CoachOnlyHistoryRoute />} />
             <Route path="about" element={<AboutPage />} />
             <Route path="templates" element={<TemplatesPage />} />
             <Route path="template/:id" element={<TemplateDetailPage />} />
