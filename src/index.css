@@ -114,6 +114,10 @@ select {
   white-space: nowrap;
 }
 
+.brand-name-coach-mode {
+  color: var(--accent);
+}
+
 .brand-tagline {
   margin: 0.1rem 0 0;
   color: var(--muted);

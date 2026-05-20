@@ -25,6 +25,10 @@ vi.mock('../services/perfTriage', () => ({
   settleImage: vi.fn(),
 }));
 
+vi.mock('../services/authContext', () => ({
+  useCoachMode: () => false,
+}));
+
 describe('AppLayout', () => {
   it('does not render the coach mode text in the header', () => {
     render(

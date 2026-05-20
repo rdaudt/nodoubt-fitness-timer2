@@ -2,12 +2,14 @@ import { useEffect } from 'react';
 import { Outlet, useLocation } from 'react-router-dom';
 import { APP_NAME, BRAND } from '../config';
 import { getPerfTraceId, isPerfTriageEnabled, registerExpectedImage, settleImage } from '../services/perfTriage';
+import { useCoachMode } from '../services/authContext';
 import { useTenant } from '../services/tenantContext';
 import { BottomNav } from './BottomNav';
 
 export const AppLayout = () => {
   const location = useLocation();
   const { profile, toTenantPath } = useTenant();
+  const coachMode = useCoachMode();
   const isRunningView = /\/timer\/[^/]+\/run$/.test(location.pathname);
   const isAboutPage = /\/about\/?$/.test(location.pathname);
   const igUsername = (profile?.igUsername ?? '').trim().replace(/^@+/, '');
@@ -59,7 +61,7 @@ export const AppLayout = () => {
             )}
           </a>
           <a href={primaryLink} target="_blank" rel="noreferrer" className="brand-text-wrap" aria-label={APP_NAME}>
-            <p className="brand-name">{businessName}</p>
+            <p className={coachMode ? 'brand-name brand-name-coach-mode' : 'brand-name'}>{businessName}</p>
             {headerTagline && <p className="brand-tagline">{headerTagline}</p>}
           </a>
           {!isAboutPage && (

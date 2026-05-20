@@ -95,8 +95,17 @@ const parseCookies = (cookieHeader: string): Record<string, string> => {
 };
 
 const isSecureCookie = (request?: NodeReq): boolean => {
-  const baseUrl = request ? getRequestBaseUrl(request) : requireEnv('APP_BASE_URL');
-  return baseUrl.startsWith('https://');
+  try {
+    if (request) {
+      const baseUrl = getRequestBaseUrl(request);
+      return baseUrl.startsWith('https://');
+    }
+    const baseUrl = process.env.APP_BASE_URL?.trim() ?? '';
+    return baseUrl.startsWith('https://');
+  } catch {
+    // Never fail auth endpoints only because secure-cookie detection could not resolve a base URL.
+    return false;
+  }
 };
 
 const serializeCookie = (
