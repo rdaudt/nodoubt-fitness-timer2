@@ -11,6 +11,14 @@ type NodeRes = {
 };
 
 const normalizeSlug = (value: unknown): string => (typeof value === 'string' ? value.trim().toLowerCase() : '');
+const normalizeString = (value: unknown): string => (typeof value === 'string' ? value.trim() : '');
+const normalizePositiveInt = (value: unknown, fallback: number, max: number): number => {
+  const parsed = Number(value);
+  if (!Number.isFinite(parsed)) {
+    return fallback;
+  }
+  return Math.min(max, Math.max(1, Math.floor(parsed)));
+};
 const getHeader = (headers: NodeReq['headers'], name: string): string => {
   if (!headers) {
     return '';
@@ -57,15 +65,68 @@ export default async function handler(request: NodeReq, response: NodeRes): Prom
     return;
   }
   const slug = normalizeSlug(request.query?.slug);
+  const view = normalizeString(request.query?.view).toLowerCase();
   const traceId = getHeader(request.headers, 'x-perf-trace-id');
   const route = getHeader(request.headers, 'x-perf-route');
   const startedAt = Date.now();
-  if (!slug) {
-    response.status(400).json({ error: 'Missing slug.' });
-    return;
-  }
   try {
     const db = getTenantsDb();
+    if (view === 'directory') {
+      const query = normalizeString(request.query?.query).slice(0, 80);
+      const page = normalizePositiveInt(request.query?.page, 1, 999);
+      const pageSize = normalizePositiveInt(request.query?.pageSize, 12, 50);
+      const offset = (page - 1) * pageSize;
+      const search = `%${query.toLowerCase()}%`;
+      const dbStart = Date.now();
+      const countResult = await db.execute({
+        sql: `
+          SELECT COUNT(*) AS count
+          FROM coach_tenants
+          WHERE status = 'published'
+            AND (
+              LOWER(coach_name) LIKE ?
+              OR LOWER(business_name) LIKE ?
+            )
+        `,
+        args: [search, search],
+      });
+      const total = Number((countResult.rows[0] as Record<string, unknown> | undefined)?.count ?? 0) || 0;
+      const listResult = await db.execute({
+        sql: `
+          SELECT slug, coach_name, business_name, coach_photo_url, ig_username, created_at
+          FROM coach_tenants
+          WHERE status = 'published'
+            AND (
+              LOWER(coach_name) LIKE ?
+              OR LOWER(business_name) LIKE ?
+            )
+          ORDER BY coach_name ASC, business_name ASC, created_at ASC
+          LIMIT ? OFFSET ?
+        `,
+        args: [search, search, pageSize, offset],
+      });
+      perfLog(traceId, route, 'directory-query', Date.now() - dbStart, { total, returned: listResult.rows.length });
+      response.setHeader('Cache-Control', 'public, max-age=60, stale-while-revalidate=600');
+      response.status(200).json({
+        items: listResult.rows.map((item) => ({
+          slug: String((item as Record<string, unknown>).slug ?? ''),
+          coachName: String((item as Record<string, unknown>).coach_name ?? ''),
+          businessName: String((item as Record<string, unknown>).business_name ?? ''),
+          coachPhotoUrl: normalizeAssetUrl((item as Record<string, unknown>).coach_photo_url),
+          igUsername: String((item as Record<string, unknown>).ig_username ?? ''),
+        })),
+        page,
+        pageSize,
+        total,
+        hasNextPage: offset + listResult.rows.length < total,
+      });
+      perfLog(traceId, route, 'total', Date.now() - startedAt);
+      return;
+    }
+    if (!slug) {
+      response.status(400).json({ error: 'Missing slug.' });
+      return;
+    }
     const dbStart = Date.now();
     const tenantResult = await db.execute({
       sql: `

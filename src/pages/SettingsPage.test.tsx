@@ -1,15 +1,17 @@
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { MemoryRouter } from 'react-router-dom';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { SettingsPage } from './SettingsPage';
 import { DEFAULT_SETTINGS } from '../config';
 
-const { saveSettingsMock, exportTimersMock, importTimersMock, logoutUserMock, deleteCurrentAccountMock, clearLocalDataMock } = vi.hoisted(() => ({
+const { saveSettingsMock, exportTimersMock, importTimersMock, logoutUserMock, deleteCurrentAccountMock, clearLocalDataMock, clearMyCoachSlugMock } = vi.hoisted(() => ({
   saveSettingsMock: vi.fn(),
   exportTimersMock: vi.fn(),
   importTimersMock: vi.fn(),
   logoutUserMock: vi.fn(),
   deleteCurrentAccountMock: vi.fn(),
   clearLocalDataMock: vi.fn(),
+  clearMyCoachSlugMock: vi.fn(),
 }));
 
 vi.mock('../services/settingsContext', () => ({
@@ -39,7 +41,17 @@ vi.mock('../services/storage', () => ({
   clearCurrentTenantLocalData: clearLocalDataMock,
 }));
 
+vi.mock('../services/coachDirectory', () => ({
+  clearMyCoachSlug: clearMyCoachSlugMock,
+}));
+
 describe('SettingsPage import/export', () => {
+  const renderPage = () => render(
+    <MemoryRouter>
+      <SettingsPage />
+    </MemoryRouter>,
+  );
+
   beforeEach(() => {
     vi.clearAllMocks();
     exportTimersMock.mockResolvedValue(undefined);
@@ -47,6 +59,7 @@ describe('SettingsPage import/export', () => {
     logoutUserMock.mockResolvedValue(undefined);
     deleteCurrentAccountMock.mockResolvedValue(undefined);
     clearLocalDataMock.mockResolvedValue(undefined);
+    clearMyCoachSlugMock.mockReset();
     vi.spyOn(window, 'confirm').mockReturnValue(true);
     vi.spyOn(window, 'prompt').mockReturnValue('DELETE');
   });
@@ -56,7 +69,7 @@ describe('SettingsPage import/export', () => {
   });
 
   it('renders import/export controls', () => {
-    render(<SettingsPage />);
+    renderPage();
     expect(screen.getByLabelText('Images in all Timers')).toBeInTheDocument();
     expect(screen.getByLabelText('B&W Timer Images')).toBeInTheDocument();
     expect(screen.getByText('Import / Export Timers')).toBeInTheDocument();
@@ -65,7 +78,7 @@ describe('SettingsPage import/export', () => {
   });
 
   it('persists image toggles through saveSettings', () => {
-    render(<SettingsPage />);
+    renderPage();
     fireEvent.click(screen.getByLabelText('Images in all Timers'));
     fireEvent.click(screen.getByLabelText('B&W Timer Images'));
 
@@ -76,7 +89,7 @@ describe('SettingsPage import/export', () => {
   });
 
   it('reset defaults restores image toggle defaults', () => {
-    render(<SettingsPage />);
+    renderPage();
     fireEvent.click(screen.getByLabelText('Images in all Timers'));
     fireEvent.click(screen.getByLabelText('B&W Timer Images'));
     fireEvent.click(screen.getByRole('button', { name: 'Reset Defaults' }));
@@ -88,7 +101,7 @@ describe('SettingsPage import/export', () => {
   });
 
   it('exports and shows success message', async () => {
-    render(<SettingsPage />);
+    renderPage();
     const exportButton = screen.getAllByRole('button', { name: 'Export Timers' }).at(-1) as HTMLButtonElement;
     fireEvent.click(exportButton);
     await waitFor(() => expect(exportTimersMock).toHaveBeenCalledTimes(1));
@@ -97,7 +110,7 @@ describe('SettingsPage import/export', () => {
 
   it('requires confirmation before import and shows success', async () => {
     const dispatchSpy = vi.spyOn(window, 'dispatchEvent');
-    render(<SettingsPage />);
+    renderPage();
 
     const input = screen.getAllByLabelText('Import timers file').at(-1) as HTMLInputElement;
     const file = new File(['{}'], 'timers.json', { type: 'application/json' });
@@ -111,7 +124,7 @@ describe('SettingsPage import/export', () => {
 
   it('shows error and keeps state unchanged when import fails', async () => {
     importTimersMock.mockRejectedValueOnce(new Error('Invalid export file format.'));
-    render(<SettingsPage />);
+    renderPage();
     const input = screen.getAllByLabelText('Import timers file').at(-1) as HTMLInputElement;
     const file = new File(['{}'], 'timers.json', { type: 'application/json' });
     fireEvent.change(input, { target: { files: [file] } });
@@ -121,9 +134,15 @@ describe('SettingsPage import/export', () => {
   });
 
   it('deletes account after typed confirmation', async () => {
-    render(<SettingsPage />);
+    renderPage();
     fireEvent.click(screen.getByRole('button', { name: 'Delete Account' }));
     await waitFor(() => expect(deleteCurrentAccountMock).toHaveBeenCalledTimes(1));
     expect(clearLocalDataMock).toHaveBeenCalledTimes(1);
+  });
+
+  it('clears My Coach selection when switching coach', () => {
+    renderPage();
+    fireEvent.click(screen.getByRole('button', { name: 'Switch Coach' }));
+    expect(clearMyCoachSlugMock).toHaveBeenCalledTimes(1);
   });
 });

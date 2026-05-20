@@ -46,7 +46,7 @@ const navItems = [
   { to: '', label: 'Timers', icon: TimersIcon },
   { to: '/templates', label: 'Templates', icon: TemplatesIcon },
   { to: '/history', label: 'HIIT Classes', icon: HistoryIcon, coachOnly: true },
-  { to: '/about', label: 'About', icon: AboutIcon },
+  { to: '/about', label: 'About', icon: AboutIcon, hiddenInCoachMode: true },
   { to: '/settings', label: 'Settings', icon: SettingsIcon },
 ];
 
@@ -59,7 +59,15 @@ interface BottomNavProps {
 export const BottomNav = ({ clickable, coachMode = false, toTenantPath }: BottomNavProps) => {
   const location = useLocation();
   const normalizePath = (value: string): string => value.replace(/\/+$/, '') || '/';
-  const visibleNavItems = navItems.filter((item) => !item.coachOnly || coachMode);
+  const visibleNavItems = navItems.filter((item) => {
+    if (item.coachOnly && !coachMode) {
+      return false;
+    }
+    if (item.hiddenInCoachMode && coachMode) {
+      return false;
+    }
+    return true;
+  });
 
   if (!clickable) {
     return (
