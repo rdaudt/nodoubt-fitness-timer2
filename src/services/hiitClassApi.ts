@@ -64,6 +64,7 @@ const parseLocation = (value: unknown): HiitClassLocation | null => {
   return {
     id,
     label,
+    logoUrl: asString(row.logoUrl),
     isDefault: Boolean(row.isDefault),
     sortOrder: asNumber(row.sortOrder),
   };

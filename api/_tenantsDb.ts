@@ -137,6 +137,7 @@ const createTenantTables = async () => {
         tenant_id TEXT NOT NULL,
         business_name TEXT NOT NULL DEFAULT '',
         location_name TEXT NOT NULL,
+        logo_url TEXT NOT NULL DEFAULT '',
         is_default INTEGER NOT NULL DEFAULT 0,
         sort_order INTEGER NOT NULL DEFAULT 0,
         created_at TEXT NOT NULL,
@@ -175,6 +176,7 @@ const createTenantTables = async () => {
   await addMissingColumns(db, 'coach_class_locations', [
     { name: 'business_name', definition: `business_name TEXT NOT NULL DEFAULT ''` },
     { name: 'location_name', definition: `location_name TEXT NOT NULL DEFAULT ''` },
+    { name: 'logo_url', definition: `logo_url TEXT NOT NULL DEFAULT ''` },
     { name: 'is_default', definition: `is_default INTEGER NOT NULL DEFAULT 0` },
     { name: 'sort_order', definition: `sort_order INTEGER NOT NULL DEFAULT 0` },
     { name: 'created_at', definition: `created_at TEXT NOT NULL DEFAULT ''` },

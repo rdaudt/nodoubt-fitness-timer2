@@ -116,6 +116,7 @@ describe('HIIT Classes API helpers', () => {
               id: 'loc-1',
               business_name: 'No Doubt',
               location_name: 'Downtown',
+              logo_url: 'https://example.com/location-logo.png',
               is_default: 1,
               sort_order: 2,
             },
@@ -131,7 +132,13 @@ describe('HIIT Classes API helpers', () => {
 
     expect(store.statusCode).toBe(200);
     expect(store.body).toEqual({
-      locations: [{ id: 'loc-1', label: 'No Doubt - Downtown', isDefault: true, sortOrder: 2 }],
+      locations: [{
+        id: 'loc-1',
+        label: 'No Doubt - Downtown',
+        logoUrl: 'https://example.com/location-logo.png',
+        isDefault: true,
+        sortOrder: 2,
+      }],
     });
   });
 

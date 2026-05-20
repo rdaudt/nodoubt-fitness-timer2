@@ -48,7 +48,6 @@ vi.mock('../services/tenantContext', () => ({
   useTenant: () => ({
     slug: 'coach-slug',
     toTenantPath: (path: string) => path,
-    profile: { logoUrl: '/logo.png' },
   }),
 }));
 
@@ -128,7 +127,7 @@ describe('HistoryPage', () => {
     listTimersMock.mockResolvedValue([timer]);
     coachModeMock.mockReturnValue(true);
     listLocationsMock.mockResolvedValue([
-      { id: 'loc-1', label: 'No Doubt - Downtown', isDefault: true, sortOrder: 1 },
+      { id: 'loc-1', label: 'No Doubt - Downtown', logoUrl: '/location-logo.png', isDefault: true, sortOrder: 1 },
     ]);
     listClassesMock.mockResolvedValue([{
       id: 'run-1',
@@ -311,7 +310,7 @@ describe('HistoryPage', () => {
       </MemoryRouter>,
     );
 
-    await screen.findByText('Location: No Doubt - Downtown');
-    expect(screen.getByAltText('Location logo')).toBeInTheDocument();
+    await screen.findByText('No Doubt - Downtown');
+    expect(screen.getByAltText('Location logo')).toHaveAttribute('src', '/location-logo.png');
   });
 });

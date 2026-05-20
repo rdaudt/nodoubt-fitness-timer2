@@ -109,6 +109,25 @@ const classLocationLabel = (row: Record<string, unknown>): string => {
   return businessName ? `${businessName} - ${locationName}` : locationName;
 };
 
+const normalizeAssetUrl = (value: unknown): string => {
+  const raw = typeof value === 'string' ? value.trim() : '';
+  if (!raw) {
+    return '';
+  }
+  try {
+    const parsed = new URL(raw);
+    if (parsed.protocol !== 'https:') {
+      return '';
+    }
+    if (parsed.hostname.endsWith('.blob.vercel-storage.com')) {
+      return `/api/tenant-asset?url=${encodeURIComponent(parsed.toString())}`;
+    }
+    return parsed.toString();
+  } catch {
+    return '';
+  }
+};
+
 const authorizeCoachTenant = async (request: NodeReqWithBody, user: SessionUser | null): Promise<TenantRow> => {
   if (!user?.sub) {
     throw new ApiError(401, 'Unauthorized');
@@ -166,7 +185,7 @@ const listLocations = async (tenantId: string) => {
   const db = getTenantsDb();
   const result = await db.execute({
     sql: `
-      SELECT id, business_name, location_name, is_default, sort_order
+      SELECT id, business_name, location_name, logo_url, is_default, sort_order
       FROM coach_class_locations
       WHERE tenant_id = ?
       ORDER BY sort_order ASC, lower(business_name) ASC, lower(location_name) ASC
@@ -178,6 +197,7 @@ const listLocations = async (tenantId: string) => {
     return {
       id: String(row.id),
       label: classLocationLabel(row),
+      logoUrl: normalizeAssetUrl(row.logo_url),
       isDefault: Number(row.is_default ?? 0) === 1,
       sortOrder: Number(row.sort_order ?? 0),
     };

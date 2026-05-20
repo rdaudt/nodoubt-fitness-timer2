@@ -118,7 +118,7 @@ const saveStoredJobs = (jobs: Record<string, StoredJobInfo>) => {
 
 export const HistoryPage = () => {
   const coachMode = useCoachMode();
-  const { slug, toTenantPath, profile } = useTenant();
+  const { slug, toTenantPath } = useTenant();
   const [runs, setRuns] = useState<HiitClass[]>([]);
   const [timers, setTimers] = useState<Timer[]>([]);
   const [locations, setLocations] = useState<HiitClassLocation[]>([]);
@@ -167,6 +167,10 @@ export const HistoryPage = () => {
   const timerById = useMemo(
     () => new Map(timers.map((timer) => [timer.id, timer])),
     [timers],
+  );
+  const locationById = useMemo(
+    () => new Map(locations.map((location) => [location.id, location])),
+    [locations],
   );
 
   const setGenerationState = (runId: string, next: GenerationState) => {
@@ -458,10 +462,10 @@ export const HistoryPage = () => {
                         ? `Class: ${run.classDate}${run.startTime ? ` ${run.startTime}` : ''}${run.endTime ? ` - ${run.endTime}` : ''}`
                         : `Run logged: ${new Date(run.ranAt).toLocaleString()}`}
                     </p>
-                    <p className="history-run-location">Location: {run.locationLabelAtRun || 'Not set'}</p>
-                    {run.locationLabelAtRun && profile?.logoUrl && (
+                    <p className="history-run-location">{run.locationLabelAtRun || 'Not set'}</p>
+                    {run.locationId && locationById.get(run.locationId)?.logoUrl && (
                       <img
-                        src={profile.logoUrl}
+                        src={locationById.get(run.locationId)?.logoUrl}
                         alt="Location logo"
                         className="history-location-logo"
                       />
