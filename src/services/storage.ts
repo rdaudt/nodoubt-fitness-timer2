@@ -44,12 +44,16 @@ interface DeletedBuiltinTemplateMarker {
 
 type TemplateStoreRow = Template | DeletedBuiltinTemplateMarker;
 
-let currentTenantSlug = 'gabe';
 const dbPromises = new Map<string, ReturnType<typeof openDB<AppDb>>>();
 
-const getDbName = (tenantSlug: string): string => `${DB_NAME_PREFIX}:${tenantSlug}`;
+const LOGGED_OUT_STORAGE_SCOPE = '__logged_out__';
+let currentStorageScope = LOGGED_OUT_STORAGE_SCOPE;
 
-const createDbPromise = (tenantSlug: string) => openDB<AppDb>(getDbName(tenantSlug), DB_VERSION, {
+export const normalizeStorageUserScope = (email: string): string => email.trim().toLowerCase();
+
+const getDbName = (scope: string): string => `${DB_NAME_PREFIX}:${scope}`;
+
+const createDbPromise = (scope: string) => openDB<AppDb>(getDbName(scope), DB_VERSION, {
   upgrade(db) {
     if (!db.objectStoreNames.contains('timers')) {
       db.createObjectStore('timers', { keyPath: 'id' });
@@ -72,23 +76,27 @@ const createDbPromise = (tenantSlug: string) => openDB<AppDb>(getDbName(tenantSl
 });
 
 const getDbPromise = () => {
-  const existing = dbPromises.get(currentTenantSlug);
+  const existing = dbPromises.get(currentStorageScope);
   if (existing) {
     return existing;
   }
-  const promise = createDbPromise(currentTenantSlug);
-  dbPromises.set(currentTenantSlug, promise);
+  const promise = createDbPromise(currentStorageScope);
+  dbPromises.set(currentStorageScope, promise);
   return promise;
 };
 
-export const setStorageTenant = (tenantSlug: string) => {
-  currentTenantSlug = tenantSlug.trim().toLowerCase() || 'gabe';
+export const setStorageUserScope = (email: string) => {
+  currentStorageScope = normalizeStorageUserScope(email);
+};
+
+export const setStorageLoggedOutScope = () => {
+  currentStorageScope = LOGGED_OUT_STORAGE_SCOPE;
 };
 
 export const clearCurrentTenantLocalData = async (): Promise<void> => {
-  const targetSlug = currentTenantSlug;
-  const dbName = getDbName(targetSlug);
-  dbPromises.delete(targetSlug);
+  const targetScope = currentStorageScope;
+  const dbName = getDbName(targetScope);
+  dbPromises.delete(targetScope);
   await deleteDB(dbName);
   window.localStorage.removeItem('active_tenant_slug');
 };

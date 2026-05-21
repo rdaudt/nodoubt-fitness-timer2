@@ -3,7 +3,6 @@ import { useLocation, useNavigate, useParams } from 'react-router-dom';
 import type { PublicTemplate, TenantPublicProfile } from '../types';
 import { fetchTenantPublicProfile, fetchTenantPublicTemplates } from './tenantApi';
 import { flushPerfObservation, isPerfTriageEnabled, markPerf, recordCacheSource, startPerfRun } from './perfTriage';
-import { setStorageTenant } from './storage';
 import { clearTenantSessionCache, getTenantSessionCache, isTenantCacheStale, setTenantSessionCache } from './tenantSessionCache';
 
 const RESERVED_SLUGS = new Set(['api', 'timer', 'settings', 'templates', 'template', 'about', 'history']);
@@ -56,7 +55,6 @@ export const TenantProvider = ({ children }: { children: React.ReactNode }) => {
     }
     previousSlugRef.current = slug;
 
-    setStorageTenant(slug);
     window.localStorage.setItem('active_tenant_slug', slug);
     const cached = getTenantSessionCache(slug);
     const stale = cached ? isTenantCacheStale(cached.entry) : true;

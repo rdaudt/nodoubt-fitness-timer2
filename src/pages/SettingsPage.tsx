@@ -6,7 +6,6 @@ import { exportTimersToDevice, importTimersFromFile } from '../services/timerTra
 import { useAuth } from '../services/authContext';
 import { useSettings } from '../services/settingsContext';
 import { useTenant } from '../services/tenantContext';
-import { clearCurrentTenantLocalData } from '../services/storage';
 import type { AppSettings, IntervalType } from '../types';
 import kobeSmiling from '../../media/kobe-smiling.png';
 import kobeAngry from '../../media/kobe-angry.png';
@@ -86,7 +85,6 @@ export const SettingsPage = () => {
     }
     try {
       await deleteCurrentAccount();
-      await clearCurrentTenantLocalData();
       window.history.replaceState({}, '', '/login');
     } catch {
       setTransferMessage({ type: 'error', text: 'Failed to delete account. Please try again.' });

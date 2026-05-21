@@ -2,6 +2,7 @@ import { createContext, useContext, useEffect, useMemo, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { deleteAccount, fetchMe, getGoogleLoginUrl, logout, type AuthUser } from './authApi';
 import { setAnalyticsCoachModeProvider } from './analytics';
+import { clearCurrentTenantLocalData, setStorageLoggedOutScope, setStorageUserScope } from './storage';
 import { clearTenantSessionCache } from './tenantSessionCache';
 
 interface AuthContextValue {
@@ -19,8 +20,23 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [user, setUser] = useState<AuthUser | null>(null);
 
   useEffect(() => {
+    setStorageLoggedOutScope();
     fetchMe()
-      .then((me) => setUser(me))
+      .then((me) => {
+        if (!me) {
+          setStorageLoggedOutScope();
+          setUser(null);
+          return;
+        }
+        const normalizedEmail = me.email.trim().toLowerCase();
+        if (!normalizedEmail) {
+          setStorageLoggedOutScope();
+          setUser(null);
+          return;
+        }
+        setStorageUserScope(normalizedEmail);
+        setUser(me);
+      })
       .finally(() => setLoaded(true));
   }, []);
 
@@ -37,11 +53,14 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     logoutUser: async () => {
       await logout();
       clearTenantSessionCache();
+      setStorageLoggedOutScope();
       setUser(null);
     },
     deleteCurrentAccount: async () => {
       await deleteAccount();
+      await clearCurrentTenantLocalData();
       clearTenantSessionCache();
+      setStorageLoggedOutScope();
       setUser(null);
     },
   }), [loaded, user]);

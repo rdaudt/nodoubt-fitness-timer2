@@ -4,13 +4,12 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { SettingsPage } from './SettingsPage';
 import { DEFAULT_SETTINGS } from '../config';
 
-const { saveSettingsMock, exportTimersMock, importTimersMock, logoutUserMock, deleteCurrentAccountMock, clearLocalDataMock } = vi.hoisted(() => ({
+const { saveSettingsMock, exportTimersMock, importTimersMock, logoutUserMock, deleteCurrentAccountMock } = vi.hoisted(() => ({
   saveSettingsMock: vi.fn(),
   exportTimersMock: vi.fn(),
   importTimersMock: vi.fn(),
   logoutUserMock: vi.fn(),
   deleteCurrentAccountMock: vi.fn(),
-  clearLocalDataMock: vi.fn(),
 }));
 
 vi.mock('../services/settingsContext', () => ({
@@ -36,10 +35,6 @@ vi.mock('../services/authContext', () => ({
   }),
 }));
 
-vi.mock('../services/storage', () => ({
-  clearCurrentTenantLocalData: clearLocalDataMock,
-}));
-
 describe('SettingsPage import/export', () => {
   const renderPage = () => render(
     <MemoryRouter>
@@ -53,7 +48,6 @@ describe('SettingsPage import/export', () => {
     importTimersMock.mockResolvedValue(2);
     logoutUserMock.mockResolvedValue(undefined);
     deleteCurrentAccountMock.mockResolvedValue(undefined);
-    clearLocalDataMock.mockResolvedValue(undefined);
     vi.spyOn(window, 'confirm').mockReturnValue(true);
     vi.spyOn(window, 'prompt').mockReturnValue('DELETE');
   });
@@ -131,7 +125,6 @@ describe('SettingsPage import/export', () => {
     renderPage();
     fireEvent.click(screen.getByRole('button', { name: 'Delete Account' }));
     await waitFor(() => expect(deleteCurrentAccountMock).toHaveBeenCalledTimes(1));
-    expect(clearLocalDataMock).toHaveBeenCalledTimes(1);
   });
 
 });
