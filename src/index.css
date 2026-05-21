@@ -103,6 +103,10 @@ select {
   margin-top: 0.05rem;
 }
 
+.brand-link-disabled {
+  cursor: default;
+}
+
 .brand-text-wrap {
   flex: 1;
   min-width: 0;

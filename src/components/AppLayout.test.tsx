@@ -7,17 +7,19 @@ const { coachModeMock } = vi.hoisted(() => ({
   coachModeMock: vi.fn(),
 }));
 
+let mockProfile = {
+  igUsername: 'nodoubt',
+  socialLinks: [] as Array<{ label: string; url: string; sortOrder: number }>,
+  logoUrl: '',
+  coachPhotoUrl: '',
+  coachName: 'Coach',
+  businessName: 'Biz',
+  headerTagline: 'Tag',
+};
+
 vi.mock('../services/tenantContext', () => ({
   useTenant: () => ({
-    profile: {
-      igUsername: 'nodoubt',
-      socialLinks: [],
-      logoUrl: '',
-      coachPhotoUrl: '',
-      coachName: 'Coach',
-      businessName: 'Biz',
-      headerTagline: 'Tag',
-    },
+    profile: mockProfile,
     toTenantPath: (path: string) => path,
   }),
 }));
@@ -31,11 +33,21 @@ vi.mock('../services/perfTriage', () => ({
 
 vi.mock('../services/authContext', () => ({
   useCoachMode: () => coachModeMock(),
+  useAuth: () => ({ user: { email: 'user@example.com' } }),
 }));
 
 describe('AppLayout', () => {
   beforeEach(() => {
     coachModeMock.mockReturnValue(false);
+    mockProfile = {
+      igUsername: 'nodoubt',
+      socialLinks: [],
+      logoUrl: '',
+      coachPhotoUrl: '',
+      coachName: 'Coach',
+      businessName: 'Biz',
+      headerTagline: 'Tag',
+    };
   });
 
   it('does not render the coach mode text in the header', () => {
@@ -79,5 +91,24 @@ describe('AppLayout', () => {
     );
 
     expect(screen.getByText('HIIT Classes')).toBeInTheDocument();
+  });
+
+  it('does not render clickable header links without coach social handles', () => {
+    mockProfile = {
+      ...mockProfile,
+      igUsername: '',
+      socialLinks: [],
+    };
+    render(
+      <MemoryRouter initialEntries={['/']}>
+        <Routes>
+          <Route path="/" element={<AppLayout />}>
+            <Route index element={<div>child</div>} />
+          </Route>
+        </Routes>
+      </MemoryRouter>,
+    );
+
+    expect(screen.queryByRole('link', { name: 'No Doubt HIIT Timer' })).toBeNull();
   });
 });

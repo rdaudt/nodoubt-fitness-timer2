@@ -1,6 +1,6 @@
 import { useEffect } from 'react';
 import { Outlet, useLocation } from 'react-router-dom';
-import { APP_NAME, BRAND } from '../config';
+import { APP_NAME } from '../config';
 import { getPerfTraceId, isPerfTriageEnabled, registerExpectedImage, settleImage } from '../services/perfTriage';
 import { useAuth, useCoachMode } from '../services/authContext';
 import { useTenant } from '../services/tenantContext';
@@ -15,7 +15,8 @@ export const AppLayout = () => {
   const isAboutPage = /\/about\/?$/.test(location.pathname);
   const igUsername = (profile?.igUsername ?? '').trim().replace(/^@+/, '');
   const instagramUrl = igUsername ? `https://www.instagram.com/${encodeURIComponent(igUsername)}/` : '';
-  const primaryLink = instagramUrl || profile?.socialLinks[0]?.url || BRAND.instagramUrl;
+  const primaryLink = instagramUrl || profile?.socialLinks[0]?.url || '';
+  const hasPrimaryLink = Boolean(primaryLink);
   const logoUrl = profile?.logoUrl ?? '';
   const coachPhoto = profile?.coachPhotoUrl ?? '';
   const coachName = profile?.coachName ?? '';
@@ -51,24 +52,47 @@ export const AppLayout = () => {
       <header className={isRunningView ? 'topbar topbar-compact' : 'topbar'}>
         <div className="topbar-user-email">{user?.email ?? ''}</div>
         <div className="topbar-inner">
-          <a href={primaryLink} target="_blank" rel="noreferrer" className="brand-logo-link" aria-label={APP_NAME}>
-            {logoUrl && (
-              <img
-                src={tracedImageUrl(logoUrl)}
-                alt={`${businessName} logo`}
-                className="brand-logo"
-                onLoad={(event) => settleImage('header-logo', false, event.currentTarget.currentSrc)}
-                onError={() => settleImage('header-logo', true)}
-              />
-            )}
-          </a>
-          <a href={primaryLink} target="_blank" rel="noreferrer" className="brand-text-wrap" aria-label={APP_NAME}>
-            <p className={coachMode ? 'brand-name brand-name-coach-mode' : 'brand-name'}>{businessName}</p>
-            {headerTagline && (
-              <p className={coachMode ? 'brand-tagline brand-tagline-coach-mode' : 'brand-tagline'}>{headerTagline}</p>
-            )}
-          </a>
-          {!isAboutPage && (
+          {hasPrimaryLink ? (
+            <a href={primaryLink} target="_blank" rel="noreferrer" className="brand-logo-link" aria-label={APP_NAME}>
+              {logoUrl && (
+                <img
+                  src={tracedImageUrl(logoUrl)}
+                  alt={`${businessName} logo`}
+                  className="brand-logo"
+                  onLoad={(event) => settleImage('header-logo', false, event.currentTarget.currentSrc)}
+                  onError={() => settleImage('header-logo', true)}
+                />
+              )}
+            </a>
+          ) : (
+            <div className="brand-logo-link brand-link-disabled" aria-label={APP_NAME}>
+              {logoUrl && (
+                <img
+                  src={tracedImageUrl(logoUrl)}
+                  alt={`${businessName} logo`}
+                  className="brand-logo"
+                  onLoad={(event) => settleImage('header-logo', false, event.currentTarget.currentSrc)}
+                  onError={() => settleImage('header-logo', true)}
+                />
+              )}
+            </div>
+          )}
+          {hasPrimaryLink ? (
+            <a href={primaryLink} target="_blank" rel="noreferrer" className="brand-text-wrap" aria-label={APP_NAME}>
+              <p className={coachMode ? 'brand-name brand-name-coach-mode' : 'brand-name'}>{businessName}</p>
+              {headerTagline && (
+                <p className={coachMode ? 'brand-tagline brand-tagline-coach-mode' : 'brand-tagline'}>{headerTagline}</p>
+              )}
+            </a>
+          ) : (
+            <div className="brand-text-wrap brand-link-disabled" aria-label={APP_NAME}>
+              <p className={coachMode ? 'brand-name brand-name-coach-mode' : 'brand-name'}>{businessName}</p>
+              {headerTagline && (
+                <p className={coachMode ? 'brand-tagline brand-tagline-coach-mode' : 'brand-tagline'}>{headerTagline}</p>
+              )}
+            </div>
+          )}
+          {!isAboutPage && hasPrimaryLink && (
             <a href={primaryLink} target="_blank" rel="noreferrer" className="coach-wrap" aria-label={coachName}>
               {coachPhoto && (
                 <img
@@ -81,6 +105,20 @@ export const AppLayout = () => {
               )}
               <p className={coachMode ? 'coach-name coach-name-coach-mode' : 'coach-name'}>{coachName}</p>
             </a>
+          )}
+          {!isAboutPage && !hasPrimaryLink && (
+            <div className="coach-wrap brand-link-disabled" aria-label={coachName}>
+              {coachPhoto && (
+                <img
+                  src={tracedImageUrl(coachPhoto)}
+                  alt={coachName}
+                  className="coach-photo"
+                  onLoad={(event) => settleImage('header-coach-photo', false, event.currentTarget.currentSrc)}
+                  onError={() => settleImage('header-coach-photo', true)}
+                />
+              )}
+              <p className={coachMode ? 'coach-name coach-name-coach-mode' : 'coach-name'}>{coachName}</p>
+            </div>
           )}
         </div>
       </header>

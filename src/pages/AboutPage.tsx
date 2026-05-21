@@ -13,7 +13,7 @@ export const AboutPage = () => {
   const bio = profile?.bio || BRAND.aboutBio;
   const normalizedIgUsername = (profile?.igUsername ?? '').trim().replace(/^@+/, '');
   const dmUrl = normalizedIgUsername ? `https://ig.me/m/${encodeURIComponent(normalizedIgUsername)}` : '';
-  const ctaUrl = dmUrl || profile?.socialLinks[0]?.url || BRAND.instagramUrl;
+  const ctaUrl = dmUrl || profile?.socialLinks[0]?.url || '';
   const ctaLabel = BRAND.ctaLabel;
   const coachPhoto = profile?.coachPhotoUrl ?? '';
   const perfEnabled = isPerfTriageEnabled();
@@ -49,9 +49,15 @@ export const AboutPage = () => {
       )}
       <p className="about-coach-name">{coachName}</p>
       <p className="about-copy">{bio}</p>
-      <a className="primary-btn full pulse" href={ctaUrl} target="_blank" rel="noreferrer">
-        {ctaLabel}
-      </a>
+      {ctaUrl ? (
+        <a className="primary-btn full pulse" href={ctaUrl} target="_blank" rel="noreferrer">
+          {ctaLabel}
+        </a>
+      ) : (
+        <button className="primary-btn full" type="button" disabled>
+          {ctaLabel}
+        </button>
+      )}
       {settings.kobeEverywhere && <img src={kobeAiSolutions} alt="Kobe AI Solutions" className="about-kobe-ai-image" />}
     </section>
   );
