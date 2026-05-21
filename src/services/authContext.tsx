@@ -2,7 +2,7 @@ import { createContext, useContext, useEffect, useMemo, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { deleteAccount, fetchMe, getGoogleLoginUrl, logout, type AuthUser } from './authApi';
 import { setAnalyticsCoachModeProvider } from './analytics';
-import { setStorageLoggedOutScope, setStorageUserScope } from './storage';
+import { clearCurrentTenantLocalData, setStorageLoggedOutScope, setStorageUserScope } from './storage';
 import { clearTenantSessionCache } from './tenantSessionCache';
 
 interface AuthContextValue {
@@ -58,6 +58,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     },
     deleteCurrentAccount: async () => {
       await deleteAccount();
+      await clearCurrentTenantLocalData();
       clearTenantSessionCache();
       setStorageLoggedOutScope();
       setUser(null);

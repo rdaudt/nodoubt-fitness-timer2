@@ -8,12 +8,14 @@ const {
   fetchMeMock,
   logoutMock,
   deleteAccountMock,
+  clearCurrentTenantLocalDataMock,
   setStorageLoggedOutScopeMock,
   setStorageUserScopeMock,
 } = vi.hoisted(() => ({
   fetchMeMock: vi.fn(),
   logoutMock: vi.fn(),
   deleteAccountMock: vi.fn(),
+  clearCurrentTenantLocalDataMock: vi.fn(),
   setStorageLoggedOutScopeMock: vi.fn(),
   setStorageUserScopeMock: vi.fn(),
 }));
@@ -26,6 +28,7 @@ vi.mock('./authApi', () => ({
 }));
 
 vi.mock('./storage', () => ({
+  clearCurrentTenantLocalData: clearCurrentTenantLocalDataMock,
   setStorageLoggedOutScope: setStorageLoggedOutScopeMock,
   setStorageUserScope: setStorageUserScopeMock,
 }));
@@ -42,12 +45,13 @@ const createUser = (overrides: Partial<AuthUser> = {}): AuthUser => ({
 });
 
 const Probe = () => {
-  const { loaded, logoutUser } = useAuth();
+  const { loaded, logoutUser, deleteCurrentAccount } = useAuth();
   return createElement(
     'div',
     null,
     createElement('span', { 'data-testid': 'loaded' }, loaded ? 'yes' : 'no'),
     createElement('button', { onClick: () => void logoutUser(), type: 'button' }, 'logout'),
+    createElement('button', { onClick: () => void deleteCurrentAccount(), type: 'button' }, 'delete'),
   );
 };
 
@@ -72,6 +76,7 @@ describe('AuthProvider storage scope binding', () => {
     fetchMeMock.mockReset();
     logoutMock.mockReset();
     deleteAccountMock.mockReset();
+    clearCurrentTenantLocalDataMock.mockReset();
     setStorageLoggedOutScopeMock.mockReset();
     setStorageUserScopeMock.mockReset();
   });
@@ -94,5 +99,25 @@ describe('AuthProvider storage scope binding', () => {
     await waitFor(() => expect(getByTestId('loaded').textContent).toBe('yes'));
     expect(setStorageUserScopeMock).not.toHaveBeenCalled();
     expect(setStorageLoggedOutScopeMock).toHaveBeenCalledTimes(2);
+  });
+
+  it('clears active user local DB before switching to logged-out scope during account deletion', async () => {
+    fetchMeMock.mockResolvedValue(createUser({ email: 'user@example.com' }));
+    deleteAccountMock.mockResolvedValue(undefined);
+    clearCurrentTenantLocalDataMock.mockResolvedValue(undefined);
+
+    const { getByRole, getByTestId } = render(createElement(AuthProvider, null, createElement(Probe)));
+    await waitFor(() => expect(getByTestId('loaded').textContent).toBe('yes'));
+
+    setStorageLoggedOutScopeMock.mockClear();
+    clearCurrentTenantLocalDataMock.mockClear();
+
+    getByRole('button', { name: 'delete' }).click();
+
+    await waitFor(() => expect(deleteAccountMock).toHaveBeenCalledTimes(1));
+    await waitFor(() => expect(clearCurrentTenantLocalDataMock).toHaveBeenCalledTimes(1));
+    await waitFor(() => expect(setStorageLoggedOutScopeMock).toHaveBeenCalledTimes(1));
+    expect(clearCurrentTenantLocalDataMock.mock.invocationCallOrder[0])
+      .toBeLessThan(setStorageLoggedOutScopeMock.mock.invocationCallOrder[0]);
   });
 });
