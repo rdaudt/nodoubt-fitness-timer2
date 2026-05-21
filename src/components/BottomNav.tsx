@@ -44,7 +44,6 @@ const SettingsIcon = () => (
 
 const navItems = [
   { to: '', label: 'Timers', icon: TimersIcon },
-  { to: '/templates', label: 'Templates', icon: TemplatesIcon },
   { to: '/history', label: 'HIIT Classes', icon: HistoryIcon, coachOnly: true },
   { to: '/about', label: 'About', icon: AboutIcon, hiddenInCoachMode: true },
   { to: '/settings', label: 'Settings', icon: SettingsIcon },
