@@ -1,12 +1,14 @@
 import { useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { BRAND } from '../config';
+import { useCoachMode } from '../services/authContext';
+import { clearMyCoachSlug } from '../services/coachDirectory';
 import { getPerfTraceId, isPerfTriageEnabled, registerExpectedImage, settleImage } from '../services/perfTriage';
-import { useSettings } from '../services/settingsContext';
 import { useTenant } from '../services/tenantContext';
-import kobeAiSolutions from '../../media/kobe-ai-solutions.png';
 
 export const AboutPage = () => {
-  const { settings } = useSettings();
+  const navigate = useNavigate();
+  const coachMode = useCoachMode();
   const { profile } = useTenant();
   const businessName = profile?.businessName ?? '';
   const coachName = profile?.coachName ?? '';
@@ -27,6 +29,10 @@ export const AboutPage = () => {
     }
     const separator = url.includes('?') ? '&' : '?';
     return `${url}${separator}traceId=${encodeURIComponent(traceId)}&route=${encodeURIComponent('/about')}`;
+  };
+  const onSwitchCoach = () => {
+    clearMyCoachSlug();
+    navigate('/');
   };
 
   useEffect(() => {
@@ -58,7 +64,11 @@ export const AboutPage = () => {
           {ctaLabel}
         </button>
       )}
-      {settings.kobeEverywhere && <img src={kobeAiSolutions} alt="Kobe AI Solutions" className="about-kobe-ai-image" />}
+      {!coachMode && (
+        <button className="secondary-btn full" type="button" onClick={onSwitchCoach}>
+          Switch Coach
+        </button>
+      )}
     </section>
   );
 };
