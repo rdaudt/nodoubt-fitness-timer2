@@ -44,6 +44,7 @@ const SettingsIcon = () => (
 
 const navItems = [
   { to: '', label: 'Timers', icon: TimersIcon },
+  { to: '/templates', label: 'Templates', icon: TemplatesIcon, hidden: true },
   { to: '/history', label: 'HIIT Classes', icon: HistoryIcon, coachOnly: true },
   { to: '/about', label: 'About', icon: AboutIcon, hiddenInCoachMode: true },
   { to: '/settings', label: 'Settings', icon: SettingsIcon },
@@ -59,6 +60,9 @@ export const BottomNav = ({ clickable, coachMode = false, toTenantPath }: Bottom
   const location = useLocation();
   const normalizePath = (value: string): string => value.replace(/\/+$/, '') || '/';
   const visibleNavItems = navItems.filter((item) => {
+    if (item.hidden) {
+      return false;
+    }
     if (item.coachOnly && !coachMode) {
       return false;
     }
