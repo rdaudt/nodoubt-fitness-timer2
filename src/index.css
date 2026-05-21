@@ -931,6 +931,19 @@ select {
   flex-direction: column;
 }
 
+.about-actions {
+  margin-top: 0.4rem;
+}
+
+.about-switch-wrap {
+  margin-top: 0.8rem;
+}
+
+.about-switch-btn {
+  min-width: 170px;
+  width: auto;
+}
+
 .about-title {
   text-align: center;
 }

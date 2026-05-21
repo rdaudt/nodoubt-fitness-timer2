@@ -55,19 +55,23 @@ export const AboutPage = () => {
       )}
       <p className="about-coach-name">{coachName}</p>
       <p className="about-copy">{bio}</p>
-      {ctaUrl ? (
-        <a className="primary-btn full pulse" href={ctaUrl} target="_blank" rel="noreferrer">
-          {ctaLabel}
-        </a>
-      ) : (
-        <button className="primary-btn full" type="button" disabled>
-          {ctaLabel}
-        </button>
-      )}
+      <div className="about-actions">
+        {ctaUrl ? (
+          <a className="primary-btn full pulse" href={ctaUrl} target="_blank" rel="noreferrer">
+            {ctaLabel}
+          </a>
+        ) : (
+          <button className="primary-btn full" type="button" disabled>
+            {ctaLabel}
+          </button>
+        )}
+      </div>
       {!coachMode && (
-        <button className="secondary-btn full" type="button" onClick={onSwitchCoach}>
-          Switch Coach
-        </button>
+        <div className="about-switch-wrap">
+          <button className="secondary-btn about-switch-btn" type="button" onClick={onSwitchCoach}>
+            Switch Coach
+          </button>
+        </div>
       )}
     </section>
   );
