@@ -1,62 +1,11 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { newTimer } from '../lib/timerFactory';
-import { trackAnalyticsEvent } from '../services/analytics';
-import { TimerRepository } from '../services/storage';
+import { createNewTimer } from '../services/timerCreation';
 import { useTenant } from '../services/tenantContext';
-import type { Timer } from '../types';
-
-let pendingTimerCreation: Promise<Timer> | null = null;
-const CREATE_TIMER_TIMEOUT_MS = 8000;
-
-const withTimeout = async <T,>(promise: Promise<T>, timeoutMs: number): Promise<T> =>
-  new Promise<T>((resolve, reject) => {
-    const timeoutId = window.setTimeout(() => {
-      reject(new Error('Timer creation timed out.'));
-    }, timeoutMs);
-
-    promise
-      .then((value) => {
-        window.clearTimeout(timeoutId);
-        resolve(value);
-      })
-      .catch((error) => {
-        window.clearTimeout(timeoutId);
-        reject(error);
-      });
-  });
-
-const createTimerOnce = async (): Promise<Timer> => {
-  if (!pendingTimerCreation) {
-    pendingTimerCreation = (async () => {
-      const existingTimers = await TimerRepository.list();
-      const timer = newTimer(existingTimers.map((item) => item.name));
-      await TimerRepository.upsert(timer);
-      trackAnalyticsEvent('timer_created', {
-        category: timer.category,
-      });
-      return timer;
-    })();
-  }
-
-  const inFlight = pendingTimerCreation;
-  try {
-    const timer = await withTimeout(inFlight, CREATE_TIMER_TIMEOUT_MS);
-    if (pendingTimerCreation === inFlight) {
-      pendingTimerCreation = null;
-    }
-    return timer;
-  } catch (error) {
-    if (pendingTimerCreation === inFlight) {
-      pendingTimerCreation = null;
-    }
-    throw error;
-  }
-};
 
 export const NewTimerPage = () => {
   const navigate = useNavigate();
-  const { toTenantPath } = useTenant();
+  const { slug } = useTenant();
   const [error, setError] = useState('');
 
   useEffect(() => {
@@ -64,9 +13,10 @@ export const NewTimerPage = () => {
 
     const createAndGo = async () => {
       try {
-        const timer = await createTimerOnce();
+        const timer = await createNewTimer();
         if (active) {
-          navigate(toTenantPath(`/timer/${timer.id}`), { replace: true });
+          const timerPath = slug ? `/${slug}/timer/${timer.id}` : `/timer/${timer.id}`;
+          navigate(timerPath, { replace: true });
         }
       } catch {
         if (active) {
@@ -80,7 +30,7 @@ export const NewTimerPage = () => {
     return () => {
       active = false;
     };
-  }, [navigate, toTenantPath]);
+  }, [navigate, slug]);
 
   if (error) {
     return (

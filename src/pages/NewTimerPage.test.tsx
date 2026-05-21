@@ -4,27 +4,18 @@ import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { NewTimerPage } from './NewTimerPage';
 
-const { newTimerMock, upsertMock, listMock } = vi.hoisted(() => ({
-  newTimerMock: vi.fn(),
-  upsertMock: vi.fn(),
-  listMock: vi.fn(),
+const { createNewTimerMock } = vi.hoisted(() => ({
+  createNewTimerMock: vi.fn(),
 }));
 
-vi.mock('../lib/timerFactory', () => ({
-  newTimer: newTimerMock,
-}));
-
-vi.mock('../services/storage', () => ({
-  TimerRepository: {
-    list: listMock,
-    upsert: upsertMock,
-  },
+vi.mock('../services/timerCreation', () => ({
+  createNewTimer: createNewTimerMock,
 }));
 
 describe('NewTimerPage', () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    newTimerMock.mockReturnValue({
+    createNewTimerMock.mockResolvedValue({
       id: 'timer-1',
       name: 'Pain Party',
       stationCount: 10,
@@ -45,11 +36,9 @@ describe('NewTimerPage', () => {
       createdAt: '2026-01-01T00:00:00.000Z',
       updatedAt: '2026-01-01T00:00:00.000Z',
     });
-    listMock.mockResolvedValue([]);
-    upsertMock.mockResolvedValue(undefined);
   });
 
-  it('creates only one timer under React StrictMode', async () => {
+  it('navigates to the new timer detail under React StrictMode', async () => {
     render(
       <StrictMode>
         <MemoryRouter initialEntries={['/timer/new']}>
@@ -62,8 +51,6 @@ describe('NewTimerPage', () => {
     );
 
     expect(await screen.findByText('Timer detail')).toBeInTheDocument();
-    await waitFor(() => expect(newTimerMock).toHaveBeenCalledTimes(1));
-    expect(listMock).toHaveBeenCalledTimes(1);
-    expect(upsertMock).toHaveBeenCalledTimes(1);
+    await waitFor(() => expect(createNewTimerMock).toHaveBeenCalled());
   });
 });

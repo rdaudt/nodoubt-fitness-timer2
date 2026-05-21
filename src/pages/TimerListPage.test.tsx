@@ -1,10 +1,11 @@
-import { cleanup, render, screen, waitFor } from '@testing-library/react';
-import { MemoryRouter } from 'react-router-dom';
+import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { TimerListPage } from './TimerListPage';
 import type { Timer } from '../types';
 
-const { listMock, settingsMock } = vi.hoisted(() => ({
+const { createNewTimerMock, listMock, settingsMock } = vi.hoisted(() => ({
+  createNewTimerMock: vi.fn(),
   listMock: vi.fn(),
   settingsMock: {
     kobeEverywhere: true,
@@ -30,6 +31,10 @@ vi.mock('../services/settingsContext', () => ({
 
 vi.mock('../services/authContext', () => ({
   useCoachMode: () => true,
+}));
+
+vi.mock('../services/timerCreation', () => ({
+  createNewTimer: createNewTimerMock,
 }));
 
 vi.mock('../services/storage', () => ({
@@ -77,6 +82,7 @@ describe('TimerListPage', () => {
     vi.clearAllMocks();
     settingsMock.imagesInAllTimers = true;
     settingsMock.bwTimerImages = true;
+    createNewTimerMock.mockResolvedValue(buildTimer('timer-new', 'New Timer', 'GENERAL'));
   });
 
   afterEach(() => {
@@ -140,6 +146,26 @@ describe('TimerListPage', () => {
     const imageUrls = getImageUrls(container);
     expect(imageUrls).toHaveLength(4);
     expect(new Set(imageUrls).size).toBe(4);
+  });
+
+  it('creates only one timer when the new timer action is tapped repeatedly', async () => {
+    listMock.mockResolvedValue([]);
+
+    render(
+      <MemoryRouter initialEntries={['/']}>
+        <Routes>
+          <Route path="/" element={<TimerListPage />} />
+          <Route path="/timer/:id" element={<p>Timer detail</p>} />
+        </Routes>
+      </MemoryRouter>,
+    );
+
+    const button = screen.getByRole('button', { name: '+ New Timer' });
+    fireEvent.click(button);
+    fireEvent.click(button);
+
+    await screen.findByText('Timer detail');
+    expect(createNewTimerMock).toHaveBeenCalledTimes(1);
   });
 
 });
