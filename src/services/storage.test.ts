@@ -1,10 +1,13 @@
 import { describe, expect, it, vi } from 'vitest';
-import { normalizeTimer, normalizeTimerRun } from './storage';
+import { normalizeStorageUserScope, normalizeTimer, normalizeTimerRun, setStorageUserScope, TimerRepository } from './storage';
 import type { Timer, TimerRun } from '../types';
 
 vi.mock('idb', () => ({
   openDB: vi.fn(),
+  deleteDB: vi.fn(),
 }));
+
+import { openDB } from 'idb';
 
 const timer: Timer = {
   id: 'timer-1',
@@ -102,5 +105,28 @@ describe('normalizeTimerRun', () => {
       totalWorkMs: 67890,
     });
     expect(normalized?.category).toBe('GENERAL');
+  });
+});
+
+describe('user storage scope', () => {
+  it('normalizes email as trimmed lowercase scope key', () => {
+    expect(normalizeStorageUserScope('  USER@Example.COM  ')).toBe('user@example.com');
+  });
+
+  it('derives DB name from normalized user scope', async () => {
+    const openDbMock = vi.mocked(openDB);
+    openDbMock.mockReset();
+    openDbMock.mockResolvedValue({
+      getAll: vi.fn().mockResolvedValue([]),
+    } as never);
+
+    setStorageUserScope('  USER@Example.COM  ');
+    await TimerRepository.list();
+
+    expect(openDbMock).toHaveBeenCalledWith(
+      'nodoubt-hiit:user@example.com',
+      expect.any(Number),
+      expect.any(Object),
+    );
   });
 });
