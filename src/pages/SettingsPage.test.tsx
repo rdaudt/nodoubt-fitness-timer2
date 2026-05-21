@@ -4,14 +4,13 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { SettingsPage } from './SettingsPage';
 import { DEFAULT_SETTINGS } from '../config';
 
-const { saveSettingsMock, exportTimersMock, importTimersMock, logoutUserMock, deleteCurrentAccountMock, clearLocalDataMock, clearMyCoachSlugMock } = vi.hoisted(() => ({
+const { saveSettingsMock, exportTimersMock, importTimersMock, logoutUserMock, deleteCurrentAccountMock, clearLocalDataMock } = vi.hoisted(() => ({
   saveSettingsMock: vi.fn(),
   exportTimersMock: vi.fn(),
   importTimersMock: vi.fn(),
   logoutUserMock: vi.fn(),
   deleteCurrentAccountMock: vi.fn(),
   clearLocalDataMock: vi.fn(),
-  clearMyCoachSlugMock: vi.fn(),
 }));
 
 vi.mock('../services/settingsContext', () => ({
@@ -41,10 +40,6 @@ vi.mock('../services/storage', () => ({
   clearCurrentTenantLocalData: clearLocalDataMock,
 }));
 
-vi.mock('../services/coachDirectory', () => ({
-  clearMyCoachSlug: clearMyCoachSlugMock,
-}));
-
 describe('SettingsPage import/export', () => {
   const renderPage = () => render(
     <MemoryRouter>
@@ -59,7 +54,6 @@ describe('SettingsPage import/export', () => {
     logoutUserMock.mockResolvedValue(undefined);
     deleteCurrentAccountMock.mockResolvedValue(undefined);
     clearLocalDataMock.mockResolvedValue(undefined);
-    clearMyCoachSlugMock.mockReset();
     vi.spyOn(window, 'confirm').mockReturnValue(true);
     vi.spyOn(window, 'prompt').mockReturnValue('DELETE');
   });
@@ -140,9 +134,4 @@ describe('SettingsPage import/export', () => {
     expect(clearLocalDataMock).toHaveBeenCalledTimes(1);
   });
 
-  it('clears My Coach selection when switching coach', () => {
-    renderPage();
-    fireEvent.click(screen.getByRole('button', { name: 'Switch Coach' }));
-    expect(clearMyCoachSlugMock).toHaveBeenCalledTimes(1);
-  });
 });
