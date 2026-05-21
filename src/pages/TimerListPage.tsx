@@ -1,10 +1,11 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { TimerCard } from '../components/TimerCard';
 import { randomUniqueTimerName } from '../lib/timerFactory';
 import { trackAnalyticsEvent } from '../services/analytics';
 import { useCoachMode } from '../services/authContext';
 import { createTemplateFromTimer } from '../services/templateService';
+import { createNewTimer } from '../services/timerCreation';
 import { useSettings } from '../services/settingsContext';
 import { useTenant } from '../services/tenantContext';
 import { TimerRepository } from '../services/storage';
@@ -55,9 +56,12 @@ const assignCardImages = (cardCount: number, imagesInAllTimers: boolean): Array<
 export const TimerListPage = () => {
   const { settings } = useSettings();
   const coachMode = useCoachMode();
+  const navigate = useNavigate();
   const { toTenantPath } = useTenant();
   const [timers, setTimers] = useState<Timer[]>([]);
   const [cardImages, setCardImages] = useState<Array<string | undefined>>([]);
+  const [creatingTimer, setCreatingTimer] = useState(false);
+  const [createError, setCreateError] = useState('');
 
   useEffect(() => {
     const loadTimers = () => {
@@ -102,6 +106,21 @@ export const TimerListPage = () => {
     await createTemplateFromTimer(timer, nextName);
   };
 
+  const onCreateTimer = async () => {
+    if (creatingTimer) {
+      return;
+    }
+    setCreatingTimer(true);
+    setCreateError('');
+    try {
+      const timer = await createNewTimer();
+      navigate(toTenantPath(`/timer/${timer.id}`));
+    } catch {
+      setCreatingTimer(false);
+      setCreateError('Could not create timer. Try again.');
+    }
+  };
+
   const visibleTimers = useMemo(() => timers, [timers]);
 
   useEffect(() => {
@@ -112,10 +131,11 @@ export const TimerListPage = () => {
     <section className="home-page">
       <div className="section-header">
         <h1 className="screen-title">Your HIIT Timers</h1>
-        <Link to={toTenantPath('/timer/new')} className="primary-btn">
+        <button type="button" className="primary-btn" onClick={() => void onCreateTimer()} disabled={creatingTimer}>
           + New Timer
-        </Link>
+        </button>
       </div>
+      {createError && <p className="error-inline">{createError}</p>}
 
       <div className="stack">
         {visibleTimers.length === 0
